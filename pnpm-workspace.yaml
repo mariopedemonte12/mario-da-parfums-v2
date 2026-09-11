@@ -4,5 +4,6 @@ packages:
   - chatbot
 
 allowBuilds:
+  '@scarf/scarf': true
   argon2: false
   esbuild: false
