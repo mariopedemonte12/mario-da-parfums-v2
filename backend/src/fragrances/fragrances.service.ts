@@ -135,16 +135,21 @@ export class FragrancesService {
   }
 
   private async removeOne(id: string): Promise<BatchResultDto> {
-    const [fragrance] = await this.db
-      .delete(fragrances)
-      .where(eq(fragrances.id, id))
-      .returning();
+    try {
+      const [fragrance] = await this.db
+        .delete(fragrances)
+        .where(eq(fragrances.id, id))
+        .returning();
 
-    if (!fragrance) {
-      return { id, success: false, error: 'Fragrance not found' };
+      if (!fragrance) {
+        return { id, success: false, error: 'Fragrance not found' };
+      }
+
+      return { id, success: true };
+    } catch (error) {
+      this.logger.error(error instanceof Error ? error.message : String(error));
+      return { id, success: false, error: 'Failed to delete fragrance' };
     }
-
-    return { id, success: true };
   }
 
   private async findFragranceOrThrow(id: string): Promise<Fragrance> {

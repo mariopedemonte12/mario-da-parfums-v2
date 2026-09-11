@@ -22,7 +22,9 @@ Endpoints (según `module-standards`: create/update/delete son batch-only, no se
 - `PATCH /fragrances/batch` — edición múltiple, body `{ items: (UpdateFragranceDto & { id: string })[] }`.
 - `DELETE /fragrances/batch` — baja múltiple, body `{ ids: string[] }`.
 
-Todas las respuestas de batch reportan resultado por ítem (`{ id, success, error? }`) — partial-success por defecto, no transaccional (no hay requerimiento del negocio que pida todo-o-nada).
+Todas las respuestas de batch reportan resultado por ítem (`{ id, success, error? }`) — partial-success por defecto, no transaccional (no hay requerimiento del negocio que pida todo-o-nada). Esto aplica sin excepción a `DELETE /fragrances/batch` también: un error de DB al borrar un ítem (el que sea) se reporta como `{ id, success: false, error }` para ese ítem, sin abortar el resto del batch.
+
+**Borrado de una fragrancia → cascade sobre sus `listings`:** `listings.fragranceId` referencia a `fragrances.id` con `onDelete: 'cascade'`. Borrar una fragrancia borra también todos los `listings` que la referencian; no queda bloqueado por la FK ni requiere borrar los listings a mano primero. Decisión acordada con el usuario: no tiene sentido conservar un listing de venta para una fragrancia que ya no existe en el catálogo.
 
 ## Campos de `CreateFragranceDto`
 
@@ -55,4 +57,6 @@ Se discutió si conviene que un `class-validator` custom haga una request HTTP r
 
 ## Errores
 
-Sigue el esquema global (`docs/error-handling.md`): validación de DTO → 400 con `FieldError[]` vía `ValidationErrorCode` (se agregan códigos nuevos para `brand`, `concentration`, `description`, `imageUrl`; `name` reutiliza `NAME_REQUIRED`/`NAME_INVALID_TYPE` ya existentes). `name` duplicado → `ConflictException` (409). No encontrado → `NotFoundException` (404). Sin rol admin → `ForbiddenException` (403, vía `RolesGuard`). Sin token → `UnauthorizedException` (401, vía `JwtAuthGuard`).
+Sigue el esquema global (`docs/error-handling.md`) para lo que no es batch: validación de DTO → 400 con `FieldError[]` vía `ValidationErrorCode` (se agregan códigos nuevos para `brand`, `concentration`, `description`, `imageUrl`; `name` reutiliza `NAME_REQUIRED`/`NAME_INVALID_TYPE` ya existentes). `GET /fragrances/:id` no encontrado → `NotFoundException` (404). Sin rol admin → `ForbiddenException` (403, vía `RolesGuard`). Sin token → `UnauthorizedException` (401, vía `JwtAuthGuard`).
+
+`name` duplicado **no** es un `ConflictException` (409): como las mutaciones son batch-only (ver "Alcance del CRUD"), un `name` duplicado en `POST/PATCH /fragrances/batch` se reporta como fallo por-ítem (`{ success: false, error: 'Fragrance "X" already exists' }`) dentro de una respuesta 200/201, igual que cualquier otro error de escritura — nunca aborta el batch entero con un 409. Esta corrección reemplaza una versión anterior de este documento que mencionaba 409, contradiciendo la regla de partial-success ya establecida arriba.
