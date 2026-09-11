@@ -2,7 +2,7 @@
 
 Monorepo (pnpm workspaces) con los siguientes paquetes:
 
-- [`backend/`](backend) — API NestJS.
+- [`backend/`](backend) — API NestJS (docs en [`backend/docs/`](backend/docs)).
 - [`frontend/`](frontend) — aplicación web (pendiente).
 - [`chatbot/`](chatbot) — servicio de chatbot (pendiente).
 
