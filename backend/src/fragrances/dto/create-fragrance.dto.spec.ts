@@ -1,0 +1,139 @@
+import { plainToInstance } from 'class-transformer';
+import { validate } from 'class-validator';
+import { CreateFragranceDto } from './create-fragrance.dto.js';
+import { ValidationErrorCode } from '../../shared/enums/validation-error-code.enums.js';
+
+const VALID_PAYLOAD = {
+  name: 'Bleu de Chanel',
+  brand: 'Chanel',
+  concentration: 'Eau de Parfum',
+  description: 'A woody aromatic fragrance.',
+  imageUrl: 'https://example.com/images/bleu-de-chanel.jpg',
+};
+
+async function codesForField(
+  payload: Record<string, unknown>,
+  field: string,
+): Promise<string[]> {
+  const dto = plainToInstance(CreateFragranceDto, payload);
+  const errors = await validate(dto);
+  const fieldError = errors.find((e) => e.property === field);
+  if (!fieldError) return [];
+  const messages = Object.values(fieldError.constraints ?? {});
+  return messages.flatMap((message) =>
+    (JSON.parse(message) as { code: string }[]).map((i) => i.code),
+  );
+}
+
+describe('CreateFragranceDto', () => {
+  it('accepts a fully populated valid payload', async () => {
+    const dto = plainToInstance(CreateFragranceDto, VALID_PAYLOAD);
+    expect(await validate(dto)).toHaveLength(0);
+  });
+
+  it('accepts a valid payload with only the required fields', async () => {
+    const dto = plainToInstance(CreateFragranceDto, {
+      name: 'Bleu de Chanel',
+      brand: 'Chanel',
+    });
+    expect(await validate(dto)).toHaveLength(0);
+  });
+
+  describe('name', () => {
+    it('is required: missing fails, including NAME_REQUIRED', async () => {
+      // A missing value fails both @IsRequired and @IsStringField (undefined
+      // is neither a non-empty value nor a string), so both codes surface.
+      const { name: _name, ...rest } = VALID_PAYLOAD;
+      expect(await codesForField(rest, 'name')).toEqual(
+        expect.arrayContaining([ValidationErrorCode.NAME_REQUIRED]),
+      );
+    });
+
+    it('is required: empty string fails with NAME_REQUIRED', async () => {
+      expect(
+        await codesForField({ ...VALID_PAYLOAD, name: '' }, 'name'),
+      ).toEqual([ValidationErrorCode.NAME_REQUIRED]);
+    });
+
+    it('rejects a non-string value with NAME_INVALID_TYPE', async () => {
+      expect(
+        await codesForField({ ...VALID_PAYLOAD, name: 123 }, 'name'),
+      ).toEqual([ValidationErrorCode.NAME_INVALID_TYPE]);
+    });
+  });
+
+  describe('brand', () => {
+    it('is required: missing fails, including BRAND_REQUIRED', async () => {
+      const { brand: _brand, ...rest } = VALID_PAYLOAD;
+      expect(await codesForField(rest, 'brand')).toEqual(
+        expect.arrayContaining([ValidationErrorCode.BRAND_REQUIRED]),
+      );
+    });
+
+    it('is required: empty string fails with BRAND_REQUIRED', async () => {
+      expect(
+        await codesForField({ ...VALID_PAYLOAD, brand: '' }, 'brand'),
+      ).toEqual([ValidationErrorCode.BRAND_REQUIRED]);
+    });
+
+    it('rejects a non-string value with BRAND_INVALID_TYPE', async () => {
+      expect(
+        await codesForField({ ...VALID_PAYLOAD, brand: 456 }, 'brand'),
+      ).toEqual([ValidationErrorCode.BRAND_INVALID_TYPE]);
+    });
+  });
+
+  describe('concentration (optional)', () => {
+    it('passes when omitted', async () => {
+      const { concentration: _concentration, ...rest } = VALID_PAYLOAD;
+      expect(await codesForField(rest, 'concentration')).toEqual([]);
+    });
+
+    it('rejects a non-string value with CONCENTRATION_INVALID_TYPE', async () => {
+      expect(
+        await codesForField(
+          { ...VALID_PAYLOAD, concentration: 789 },
+          'concentration',
+        ),
+      ).toEqual([ValidationErrorCode.CONCENTRATION_INVALID_TYPE]);
+    });
+  });
+
+  describe('description (optional)', () => {
+    it('passes when omitted', async () => {
+      const { description: _description, ...rest } = VALID_PAYLOAD;
+      expect(await codesForField(rest, 'description')).toEqual([]);
+    });
+
+    it('rejects a non-string value with DESCRIPTION_INVALID_TYPE', async () => {
+      expect(
+        await codesForField(
+          { ...VALID_PAYLOAD, description: true },
+          'description',
+        ),
+      ).toEqual([ValidationErrorCode.DESCRIPTION_INVALID_TYPE]);
+    });
+  });
+
+  describe('imageUrl (optional)', () => {
+    it('passes when omitted', async () => {
+      const { imageUrl: _imageUrl, ...rest } = VALID_PAYLOAD;
+      expect(await codesForField(rest, 'imageUrl')).toEqual([]);
+    });
+
+    it('passes when explicitly null', async () => {
+      expect(
+        await codesForField({ ...VALID_PAYLOAD, imageUrl: null }, 'imageUrl'),
+      ).toEqual([]);
+    });
+
+    it('rejects a malformed/non-image URL with IMAGE_URL_INVALID_FORMAT', async () => {
+      expect(
+        await codesForField(
+          { ...VALID_PAYLOAD, imageUrl: 'https://example.com/a.pdf' },
+          'imageUrl',
+        ),
+      ).toEqual([ValidationErrorCode.IMAGE_URL_INVALID_FORMAT]);
+    });
+  });
+});
