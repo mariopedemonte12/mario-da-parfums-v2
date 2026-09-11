@@ -1,0 +1,21 @@
+# Backend (NestJS) guidelines
+
+See the repo-root [`CLAUDE.md`](../CLAUDE.md) for the monorepo-wide worktree/testing-session/graphify/module-documentation rules — this file only covers stack-specific conventions for `backend/`.
+
+Stack: NestJS 12, Drizzle ORM (`src/database`), `class-validator`/`class-transformer` for DTOs, `argon2` for password hashing, Vitest for tests, oxlint for linting. Modules live under `src/<domain>` (e.g. `src/fragrances`, `src/listings`, `src/vendors`, `src/users`, `src/auths`).
+
+- **Module boundaries**: each domain (`fragrances`, `listings`, `vendors`, `users`, `auths`, ...) is a self-contained Nest module — controller, service, DTOs, entities. Don't reach into another module's internals; import its service through the module's exports instead.
+- **Layering**: controllers handle HTTP concerns only (routing, status codes, param parsing) and delegate to services. Services hold business logic and talk to the database via Drizzle. Don't put query logic in controllers or HTTP concerns in services.
+- **DTOs**: every controller input is a class in `<module>/dto` validated with `class-validator` decorators. Use `@nestjs/mapped-types` (`PartialType`, `PickType`) to derive update/patch DTOs from create DTOs instead of redeclaring fields.
+- **Entities/schema**: Drizzle table definitions live in `src/database/schema`; per-module `entities` folders hold derived types (e.g. `InferSelectModel`), not new schema. Never hand-write SQL when a Drizzle query builder call does the job.
+- **Dependency injection**: use constructor injection with `private readonly`. Don't instantiate services manually or use service locator patterns.
+- **Guards/pipes/filters/decorators**: shared cross-cutting code goes in `src/common` (guards, filters, decorators) or `src/pipes`, not duplicated per-module. Check there before writing a new guard/pipe/filter.
+- **Validation beyond class-validator**: custom validators live in `src/validators` (with `config`, `helpers`, `wrappers` subfolders) — follow that structure for new custom validation logic rather than inlining it in DTOs.
+- **Errors**: throw Nest's built-in HTTP exceptions (`NotFoundException`, `BadRequestException`, `ConflictException`, etc.) from services; let the global exception filter in `src/common/filters` handle formatting. Don't catch-and-swallow errors in controllers.
+- **Auth**: password hashing goes through `src/passwords` (argon2); JWT handling goes through `src/auths`. Don't call `argon2` or `@nestjs/jwt` directly from other modules.
+- **Shared enums/types**: put cross-module enums in `src/shared/enums` rather than redefining them per module.
+- **Testing**: use Vitest (`*.spec.ts` next to the code for unit tests, `test/` for e2e via `vitest.config.e2e.ts`). Mock Drizzle/db access at the service boundary in unit tests; e2e tests hit a real test database. Per the root workflow, writing/running the tests that validate a feature's own behavior happens in the *testing* session, not the implementation session.
+- **Lint/format**: run `pnpm lint` (oxlint) and `pnpm format` (prettier) before finishing a task — don't hand-format.
+- **Module docs**: a module's `NOTES.md` (per the root convention) lives inside its own directory (e.g. `src/auths/NOTES.md`) — only create/update one when there's a real decision worth recording, not on every touch, and don't use it as working context.
+- **Module quality standards**: use the `module-standards` skill (`.claude/skills/module-standards/SKILL.md`) whenever creating or modifying a module's CRUD surface — it covers batch endpoints, server-side filtering/pagination, seeds, and module isolation. Apply it as part of the checklist below.
+- **New feature checklist**: worktree + branch (root convention) → spec file `specs/<feature-slug>.md` (root convention) → module folder → schema/entities → DTOs → service → controller → module wiring (imports/providers/exports in `<module>.module.ts` and `app.module.ts`) → apply the **module quality standards** skill → lint → module `NOTES.md` if warranted → hand off for testing in a separate session. Do not update the graphify graph in this worktree (root convention) — that happens once, manually, in main's checkout after merge.
