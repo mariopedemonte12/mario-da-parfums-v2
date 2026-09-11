@@ -1,0 +1,8 @@
+# `users` — notes
+
+- **Asymmetric authorization on purpose** (`UsersController`): `create`/`findAll`/`remove` are `RolesGuard` + `Role.ADMIN` (administrative operations), while `findOne`/`update` use `ResourceOwnerGuard` instead — any authenticated user can read/edit *their own* profile (guard compares `:id` to the JWT's `sub`) but not someone else's. Don't "fix" this into one uniform guard — it's deliberate.
+- **`UsersService.create()` doesn't hash passwords** — it receives `passwordHash` already computed as part of `NewUser`. Hashing happens in `AuthsService` via `PasswordsService.hash(...)` before calling `create()`, keeping hashing centralized in `src/passwords`.
+- **`create()` doesn't pre-check email/name duplicates** — it relies on the table's `unique` constraints and lets the caller (`AuthsService.register`) translate the Postgres `23505` violation into `ConflictException`. This avoids the classic check-then-insert race (two concurrent requests both passing a `findByEmail` check before either inserts).
+- **`UserResponseDto`** (`dto/response-user.dto.ts`) uses `@Exclude()` at the class level + explicit `@Expose()` per allowed field (whitelist), not `@Exclude()` on `passwordHash` alone (blacklist) — a new sensitive column added to the table is excluded by default instead of leaking until someone remembers to blacklist it.
+- `findAll`/`findOne`/`update`/`remove` on `UsersService` are still unimplemented stubs (Nest CLI placeholder) — only `findByEmail`/`create` have real logic.
+- **Test scope** (`users.controller.spec.ts`): smoke test only (DI wiring) — doesn't exercise any endpoint or guard. `users.service.spec.ts` covers `findByEmail`/`create` against a mocked `DRIZZLE`; the stub methods have no tests since there's no behavior yet.
