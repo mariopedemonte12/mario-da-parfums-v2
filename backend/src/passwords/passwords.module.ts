@@ -3,6 +3,6 @@ import { PasswordsService } from './passwords.service.js';
 
 @Module({
   providers: [PasswordsService],
-  exports: [PasswordsService]
+  exports: [PasswordsService],
 })
 export class PasswordsModule {}

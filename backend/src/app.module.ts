@@ -13,7 +13,7 @@ import { JwtConfigModule } from './auths/jwt-config.module.js';
 
 @Module({
   imports: [
-    ConfigModule.forRoot({ isGlobal: true}),
+    ConfigModule.forRoot({ isGlobal: true }),
     JwtConfigModule,
     UsersModule,
     DatabaseModule,

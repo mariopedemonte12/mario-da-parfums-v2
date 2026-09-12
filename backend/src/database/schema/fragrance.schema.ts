@@ -8,18 +8,10 @@ import {
   timestamp,
   date,
   numeric,
-  pgEnum,
   uuid,
   index,
   uniqueIndex,
 } from 'drizzle-orm/pg-core';
-
-export const seasonEnum = pgEnum('season', [
-  'spring',
-  'summer',
-  'winter',
-  'fall',
-]);
 
 export const fragrances = pgTable(
   'fragrances',

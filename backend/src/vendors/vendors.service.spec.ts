@@ -143,7 +143,9 @@ describe('VendorsService', () => {
 
       await service.findAll({ websiteUrl: 'example', page: 1, limit: 20 });
 
-      expect(whereCalls[0]).toEqual(and(ilike(vendors.websiteUrl, '%example%')));
+      expect(whereCalls[0]).toEqual(
+        and(ilike(vendors.websiteUrl, '%example%')),
+      );
       expect(whereCalls[1]).toEqual(whereCalls[0]);
     });
 
@@ -188,9 +190,7 @@ describe('VendorsService', () => {
         }),
       });
       await build({
-        select: vi.fn((arg?: unknown) =>
-          arg ? selectForCount() : select(),
-        ),
+        select: vi.fn((arg?: unknown) => (arg ? selectForCount() : select())),
       });
 
       await service.findAll({ page: 1, limit: 20 });
@@ -218,9 +218,7 @@ describe('VendorsService', () => {
         }),
       });
       await build({
-        select: vi.fn((arg?: unknown) =>
-          arg ? selectForCount() : select(),
-        ),
+        select: vi.fn((arg?: unknown) => (arg ? selectForCount() : select())),
       });
 
       await service.findAll({ page: 3, limit: 10 });
@@ -314,9 +312,7 @@ describe('VendorsService', () => {
         { name: 'Existing Vendor', websiteUrl: 'https://a.example.com' },
       ]);
 
-      expect(results).toEqual([
-        { success: false, error: NAME_CONFLICT_ERROR },
-      ]);
+      expect(results).toEqual([{ success: false, error: NAME_CONFLICT_ERROR }]);
       expect(results[0].id).toBeUndefined();
     });
 
@@ -327,13 +323,17 @@ describe('VendorsService', () => {
       const values = vi
         .fn()
         .mockReturnValueOnce({
-          returning: vi.fn().mockResolvedValue([makeVendor({ id: 1, name: 'Dup' })]),
+          returning: vi
+            .fn()
+            .mockResolvedValue([makeVendor({ id: 1, name: 'Dup' })]),
         })
         .mockReturnValueOnce({
           returning: vi.fn().mockRejectedValue(uniqueViolation()),
         })
         .mockReturnValueOnce({
-          returning: vi.fn().mockResolvedValue([makeVendor({ id: 2, name: 'Other' })]),
+          returning: vi
+            .fn()
+            .mockResolvedValue([makeVendor({ id: 2, name: 'Other' })]),
         });
       await build({ insert: vi.fn().mockReturnValue({ values }) });
 
@@ -395,7 +395,9 @@ describe('VendorsService', () => {
       const set = vi
         .fn()
         .mockReturnValueOnce({
-          where: vi.fn().mockReturnValue({ returning: vi.fn().mockResolvedValue([]) }),
+          where: vi
+            .fn()
+            .mockReturnValue({ returning: vi.fn().mockResolvedValue([]) }),
         })
         .mockReturnValueOnce({
           where: vi.fn().mockReturnValue({
@@ -479,18 +481,21 @@ describe('VendorsService', () => {
         { id: 1, name: 'Both', websiteUrl: 'https://both.example.com' },
         { name: 'Both', websiteUrl: 'https://both.example.com' },
       ],
-    ])('passes only the provided fields to set() for %j', async (item, expectedChanges) => {
-      const setSpy = vi.fn().mockReturnValue({
-        where: vi.fn().mockReturnValue({
-          returning: vi.fn().mockResolvedValue([makeVendor({ id: 1 })]),
-        }),
-      });
-      await build({ update: vi.fn().mockReturnValue({ set: setSpy }) });
+    ])(
+      'passes only the provided fields to set() for %j',
+      async (item, expectedChanges) => {
+        const setSpy = vi.fn().mockReturnValue({
+          where: vi.fn().mockReturnValue({
+            returning: vi.fn().mockResolvedValue([makeVendor({ id: 1 })]),
+          }),
+        });
+        await build({ update: vi.fn().mockReturnValue({ set: setSpy }) });
 
-      await service.updateMany([item]);
+        await service.updateMany([item]);
 
-      expect(setSpy).toHaveBeenCalledWith(expectedChanges);
-    });
+        expect(setSpy).toHaveBeenCalledWith(expectedChanges);
+      },
+    );
   });
 
   describe('removeMany', () => {
@@ -512,7 +517,9 @@ describe('VendorsService', () => {
       const del = vi
         .fn()
         .mockReturnValueOnce({
-          where: vi.fn().mockReturnValue({ returning: vi.fn().mockResolvedValue([]) }),
+          where: vi
+            .fn()
+            .mockReturnValue({ returning: vi.fn().mockResolvedValue([]) }),
         })
         .mockReturnValueOnce({
           where: vi.fn().mockReturnValue({

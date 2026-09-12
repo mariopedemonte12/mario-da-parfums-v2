@@ -6,17 +6,17 @@ import { IsRequired } from '../../validators/wrappers/is-not-empty.wrapper.js';
 import { ValidationErrorCode } from '../../shared/enums/validation-error-code.enums.js';
 
 export class RegisterDto {
-    @IsRequired(ValidationErrorCode.NAME_REQUIRED)
-    @IsStringField(ValidationErrorCode.NAME_INVALID_TYPE)
-    @IsNotProfane()
-    name: string;
+  @IsRequired(ValidationErrorCode.NAME_REQUIRED)
+  @IsStringField(ValidationErrorCode.NAME_INVALID_TYPE)
+  @IsNotProfane()
+  name: string;
 
-    @IsRequired(ValidationErrorCode.EMAIL_REQUIRED)
-    @IsEmailField(ValidationErrorCode.EMAIL_INVALID_FORMAT)
-    @IsNotProfane()
-    email: string;
+  @IsRequired(ValidationErrorCode.EMAIL_REQUIRED)
+  @IsEmailField(ValidationErrorCode.EMAIL_INVALID_FORMAT)
+  @IsNotProfane()
+  email: string;
 
-    @IsRequired(ValidationErrorCode.PASSWORD_REQUIRED)
-    @IsStrongPassword()
-    password: string;
+  @IsRequired(ValidationErrorCode.PASSWORD_REQUIRED)
+  @IsStrongPassword()
+  password: string;
 }

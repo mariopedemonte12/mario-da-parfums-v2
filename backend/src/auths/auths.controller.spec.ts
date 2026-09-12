@@ -5,7 +5,10 @@ import { AuthsService } from './auths.service.js';
 
 describe('AuthsController', () => {
   let controller: AuthsController;
-  let authsService: { register: ReturnType<typeof vi.fn>; login: ReturnType<typeof vi.fn> };
+  let authsService: {
+    register: ReturnType<typeof vi.fn>;
+    login: ReturnType<typeof vi.fn>;
+  };
 
   beforeEach(async () => {
     authsService = { register: vi.fn(), login: vi.fn() };
@@ -23,7 +26,11 @@ describe('AuthsController', () => {
   });
 
   it('register delegates to AuthsService.register', async () => {
-    const dto = { name: 'Jane Doe', email: 'jane@example.com', password: 'Str0ng!Pass' };
+    const dto = {
+      name: 'Jane Doe',
+      email: 'jane@example.com',
+      password: 'Str0ng!Pass',
+    };
     authsService.register.mockResolvedValue({ accessToken: 'token' });
 
     const result = await controller.register(dto);

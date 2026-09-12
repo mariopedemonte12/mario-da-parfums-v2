@@ -7,7 +7,6 @@ import {
   varchar,
   text,
   integer,
-  numeric,
   boolean,
   timestamp,
   pgEnum,
@@ -26,7 +25,7 @@ export const listings = pgTable(
       .references(() => vendors.id)
       .notNull(),
     sizeMl: integer('size_ml').notNull(),
-    price: numeric('price', { precision: 10, scale: 2 }).notNull(),
+    price: integer('price').notNull(),
     url: varchar('url', { length: 500 }).notNull(),
     inStock: boolean('in_stock').default(true).notNull(),
     scrapedAt: timestamp('scraped_at').defaultNow().notNull(),

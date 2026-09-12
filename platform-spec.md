@@ -64,9 +64,12 @@ No son nombres de tabla obligatorios, son las entidades que el negocio necesita:
   Fragrantica (vía el job semanal); el CRUD admin sobre fragancias
   ([`fragrances-crud.md`](./fragrances-crud.md)) es una vía de gestión manual, no la
   vía principal de llenado de datos en operación normal.
-- **Listing**: el precio vigente de **una fragancia en un vendor puntual**. Es la
-  entidad central del job diario — ver §4.2 para sus reglas, que son la parte más
-  crítica de todo el sistema.
+- **Listing**: el precio vigente de **una fragancia, en un tamaño puntual (p.ej.
+  50ml, 100ml), en un vendor puntual**. Un mismo par fragancia-vendor puede tener
+  varios `Listing` si el vendor la vende en más de un tamaño — cada tamaño es una
+  oferta independiente con su propio precio. Es la entidad central del job
+  diario — ver §4.2 para sus reglas, que son la parte más crítica de todo el
+  sistema.
 - **User**: una única cuenta con un campo `role` que puede ser `ADMIN` o `USER`
   (no dos modelos de cuenta separados, un admin es un `User` con `role = ADMIN`).
   Todo `User` se autentica (registro/login); lo que cambia según el rol es qué
@@ -98,14 +101,15 @@ de responsabilidades.
 - **Propósito**: por cada `Fragrance` registrada, buscar su precio en cada `Vendor`
   activo y dejar reflejado el precio vigente.
 - **Regla central**: **no se crea una fila nueva de precio cada día.** Existe una
-  única fila `Listing` por par `(fragranceId, vendorId)`; el job la actualiza
-  in-place. Una fila de `Listing` nueva solo se crea la primera vez que se detecta
-  que un vendor vende una fragancia dada (no existía el par todavía) — a partir de
-  ahí, todas las corridas diarias siguientes actualizan esa misma fila.
+  única fila `Listing` por tripleta `(fragranceId, vendorId, tamaño)`; el job la
+  actualiza in-place. Una fila de `Listing` nueva solo se crea la primera vez que
+  se detecta que un vendor vende una fragancia dada en un tamaño dado (no existía
+  esa combinación todavía) — a partir de ahí, todas las corridas diarias
+  siguientes actualizan esa misma fila.
 - **Campos que importa que existan en `Listing`** (conceptual, no nombres de columna
-  obligatorios): fragancia, vendor, precio actual (CLP, entero), URL del producto en
-  el sitio del vendor, si está actualmente disponible, y cuándo se revisó por
-  última vez.
+  obligatorios): fragancia, vendor, tamaño (p.ej. mililitros), precio actual (CLP,
+  entero), URL del producto en el sitio del vendor, si está actualmente
+  disponible, y cuándo se revisó por última vez.
 - **Sin historial de precios** (decisión acordada con el usuario): el `Listing`
   guarda **solo el precio actual**, no precios anteriores, ni una tabla de
   historial separada. No hay feature de "bajó de precio" ni de tendencia — se
@@ -119,9 +123,11 @@ de responsabilidades.
   referencia (no se borra la fila, no se pierde el dato). Si vuelve a aparecer,
   se marca `isAvailable = true` de nuevo y se actualiza el precio — sigue siendo
   la misma fila, no una nueva.
-- **Matching fragancia → producto del vendor**: la primera vez que se detecta un
-  par `(fragancia, vendor)`, el worker necesita encontrar la URL del producto en
-  el sitio del vendor (búsqueda/matching por nombre + marca). Una vez encontrada,
+- **Matching fragancia → producto del vendor**: la primera vez que se detecta una
+  combinación `(fragancia, vendor, tamaño)`, el worker necesita encontrar la URL
+  del producto (o variante de producto, si el vendor expone tamaños distintos
+  como variantes de una misma página) en el sitio del vendor (búsqueda/matching
+  por nombre + marca + tamaño). Una vez encontrada,
   esa URL se persiste en el `Listing` y las corridas siguientes scrapean
   directamente esa URL en vez de volver a buscar — evita rehacer el matching todos
   los días. Mejorar ese matching (fuzzy matching más robusto, manejo de

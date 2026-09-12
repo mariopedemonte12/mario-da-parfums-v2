@@ -72,7 +72,12 @@ describe('VendorsController (unit, mocked service)', () => {
     const result = await controller.findAll(query);
 
     expect(vendorsService.findAll).toHaveBeenCalledWith(query);
-    expect(result.meta).toEqual({ page: 2, limit: 20, total: 42, totalPages: 3 });
+    expect(result.meta).toEqual({
+      page: 2,
+      limit: 20,
+      total: 42,
+      totalPages: 3,
+    });
     expect(result.data).toHaveLength(1);
     expect(result.data[0]).toMatchObject({ id: 1, name: vendor.name });
   });
@@ -219,13 +224,17 @@ describe('VendorsController (HTTP, real guards + validation pipe)', () => {
     });
 
     it('returns 404 when the vendor does not exist', async () => {
-      vendorsService.findOne.mockRejectedValue(new NotFoundException('Vendor 999 not found'));
+      vendorsService.findOne.mockRejectedValue(
+        new NotFoundException('Vendor 999 not found'),
+      );
 
       await request(app.getHttpServer()).get('/vendors/999').expect(404);
     });
 
     it('returns 400 for a non-numeric id', async () => {
-      await request(app.getHttpServer()).get('/vendors/not-a-number').expect(400);
+      await request(app.getHttpServer())
+        .get('/vendors/not-a-number')
+        .expect(400);
     });
   });
 
@@ -235,10 +244,15 @@ describe('VendorsController (HTTP, real guards + validation pipe)', () => {
   // @UseGuards/@Roles decorators — downgraded from full 4x3 combinatorial
   // to avoid redundant coverage of the same guard wiring three times.
   describe('POST /vendors/batch — auth decision table', () => {
-    const body = { items: [{ name: 'A', websiteUrl: 'https://a.example.com' }] };
+    const body = {
+      items: [{ name: 'A', websiteUrl: 'https://a.example.com' }],
+    };
 
     it('no Authorization header -> 401', async () => {
-      await request(app.getHttpServer()).post('/vendors/batch').send(body).expect(401);
+      await request(app.getHttpServer())
+        .post('/vendors/batch')
+        .send(body)
+        .expect(401);
     });
 
     it('invalid/expired token -> 401', async () => {
@@ -270,7 +284,10 @@ describe('VendorsController (HTTP, real guards + validation pipe)', () => {
     const body = { items: [{ id: 1, name: 'New name' }] };
 
     it('no Authorization header -> 401', async () => {
-      await request(app.getHttpServer()).patch('/vendors/batch').send(body).expect(401);
+      await request(app.getHttpServer())
+        .patch('/vendors/batch')
+        .send(body)
+        .expect(401);
     });
 
     it('valid token with admin role -> 200', async () => {
@@ -320,13 +337,21 @@ describe('VendorsController (HTTP, real guards + validation pipe)', () => {
 
     it('accepts name at the 128-char boundary', async () => {
       await authed()
-        .send({ items: [{ name: 'a'.repeat(128), websiteUrl: 'https://a.example.com' }] })
+        .send({
+          items: [
+            { name: 'a'.repeat(128), websiteUrl: 'https://a.example.com' },
+          ],
+        })
         .expect(201);
     });
 
     it('rejects name one character past the 128-char boundary', async () => {
       await authed()
-        .send({ items: [{ name: 'a'.repeat(129), websiteUrl: 'https://a.example.com' }] })
+        .send({
+          items: [
+            { name: 'a'.repeat(129), websiteUrl: 'https://a.example.com' },
+          ],
+        })
         .expect(400);
     });
 
@@ -347,7 +372,9 @@ describe('VendorsController (HTTP, real guards + validation pipe)', () => {
       const websiteUrl = base + 'x'.repeat(255 - base.length);
       expect(websiteUrl).toHaveLength(255);
 
-      await authed().send({ items: [{ name: 'A', websiteUrl }] }).expect(201);
+      await authed()
+        .send({ items: [{ name: 'A', websiteUrl }] })
+        .expect(201);
     });
 
     it('rejects websiteUrl one character past the 255-char boundary', async () => {
@@ -355,7 +382,9 @@ describe('VendorsController (HTTP, real guards + validation pipe)', () => {
       const websiteUrl = base + 'x'.repeat(256 - base.length);
       expect(websiteUrl).toHaveLength(256);
 
-      await authed().send({ items: [{ name: 'A', websiteUrl }] }).expect(400);
+      await authed()
+        .send({ items: [{ name: 'A', websiteUrl }] })
+        .expect(400);
     });
   });
 
@@ -370,7 +399,9 @@ describe('VendorsController (HTTP, real guards + validation pipe)', () => {
     });
 
     it('rejects a non-integer id', async () => {
-      await authed().send({ ids: [1.5] }).expect(400);
+      await authed()
+        .send({ ids: [1.5] })
+        .expect(400);
     });
   });
 
