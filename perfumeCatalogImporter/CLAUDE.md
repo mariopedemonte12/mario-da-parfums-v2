@@ -87,26 +87,63 @@ class sets it explicitly on the `UPDATE` branch). Never touches `vendors` or
   `name` or `brand` before it reaches the repository), and the end-of-run
   summary/log.
 
-### 5. `PerfumeSimilarityIndex` (`similarity.py`) — the similarity-search prototype
+### 5. `PerfumeSimilarityIndex` (`similarity.py`) — the similarity-search engine
 
 - Takes an `encode: Callable[[Sequence[str]], np.ndarray]` in its constructor
   (dependency injection) — defaults to a real `sentence-transformers` model
   via `default_encoder()`, but tests should inject a fake, cheap encoder so
   they never need `torch` installed to exercise the ranking logic.
-- `build(records)` embeds every `(name, description)` pair once;
-  `search(query, top_k)` embeds the query and ranks by cosine similarity
-  (embeddings are pre-normalized, so it's a plain dot product).
-- `save`/`load` persist the index as a `.npz` file — no vector DB, no backend
-  wiring in this phase (see the spec's "Fuera de alcance").
+- `build(records)` embeds every `(name, description)` pair once (equivalent
+  to `sync()` from empty); `sync(records)` brings an already-built index in
+  line with a new set of records, encoding only names that are new or whose
+  description changed (single batched `encode()` call for all of them,
+  never one call per record), dropping names no longer present, and reusing
+  the existing embedding for everything unchanged. `search(query, top_k)`
+  embeds the query and ranks by **approximate** cosine similarity via an
+  HNSW graph (`hnswlib`, `space="ip"` — only correct because embeddings are
+  pre-normalized, see `NOTES.md`) — sub-linear query time, not the exact
+  brute-force scan an earlier version of this module used.
+- `save`/`load` persist the embeddings (names, descriptions, vectors) as a
+  `.npz` file plus the HNSW graph itself as a sibling `.hnsw` file — no
+  vector DB (see `NOTES.md` for why, and for the HNSW parameter/tuning
+  rationale and what "production ready at scale" does and doesn't cover
+  here).
 - Has no knowledge of `CatalogFragrance`/the repository/Postgres at all — it
   only ever sees `(name, description)` string pairs, so it can be built from
   any source of those pairs, not just this package's own import pipeline.
+
+### 6. `app.py` + `index_sync.py` + `server_config.py` — the FastAPI search server
+
+See [`specs/perfume-similarity-search.md`](../specs/perfume-similarity-search.md)
+for the full decision record. Summary:
+
+- **`app.py`** is the FastAPI app: a `/health` check and a `/search`
+  endpoint wrapping `PerfumeSimilarityIndex.search()`. Run with
+  `python -m perfumeCatalogImporter.app` or
+  `uvicorn perfumeCatalogImporter.app:app`. This is a separate long-running
+  process from the CLI importer (`main.py`) — they share `similarity.py` and
+  `repository.py` but are two different entrypoints into the same package,
+  not one process doing both jobs.
+- **`index_sync.py`** (`IndexSyncService`) is responsibility #1: on server
+  startup, read `(name, description)` straight from `fragrances` via
+  `FragranceRepository.fetch_search_corpus()`, load whatever embeddings
+  index already exists on disk, `sync()` it against the DB (encoding
+  anything new/changed with the sentence-transformers encoder), and save it
+  back if anything changed. The DB connection is only open during this
+  step — a search request never touches Postgres.
+- **`server_config.py`** loads this process's own env vars (`DATABASE_URL`,
+  `EMBEDDINGS_PATH`, `SIMILARITY_MODEL_NAME`, `HOST`, `PORT`, `LOG_LEVEL`).
+  Deliberately not `config.ImporterConfig` — different process, different
+  env surface, no shared fields worth factoring out.
+- The backend NestJS API is a plain HTTP client of this service — it never
+  imports `sentence-transformers` or talks to Postgres for embeddings.
 
 ## Suggested layout
 
 ```
 perfumeCatalogImporter/
   CLAUDE.md               # this file
+  NOTES.md                # non-obvious decisions (disk index vs pgvector, ANN scaling plan)
   main.py                 # CLI entrypoint: build source + repository, run orchestrator
   dataset_source.py       # KaggleCatalogSource
   description_generator.py # synthetic description templates
@@ -114,12 +151,16 @@ perfumeCatalogImporter/
   orchestrator.py         # CatalogSyncOrchestrator
   similarity.py           # PerfumeSimilarityIndex
   models.py               # CatalogFragrance dataclass, small result types
-  config.py                # env var loading (DB url, CSV path, log level)
+  config.py                # env var loading for the CLI importer (DB url, CSV path, log level)
   download_dataset.py      # manual Kaggle refresh, not part of the normal run
+  app.py                   # FastAPI search server entrypoint
+  index_sync.py            # IndexSyncService — keeps embeddings.npz in sync with the DB
+  server_config.py         # env var loading for app.py
   requirements.txt
   data/
     perfumes_dataset.csv   # gitignored — run download_dataset.py to fetch it
     README.md               # dataset attribution (CC BY 4.0) — required by its license, is committed
+  embeddings.npz            # gitignored — built/refreshed by index_sync.py at server startup
 ```
 
 ## Logging
@@ -145,4 +186,12 @@ skill). What this architecture buys for that later session:
   repository — no network, no DB, for the orchestration logic itself.
 - `PerfumeSimilarityIndex` can be tested with a fake `encode` function (e.g. a
   small hand-built vocabulary → vector map) — the ranking math is what's under
-  test, not `sentence-transformers` itself.
+  test, not `sentence-transformers` itself. `sync()`'s add/update/remove/
+  unchanged branches and its `SyncStats` counts are all exercisable this way,
+  no DB or real model needed.
+- `IndexSyncService` can be tested with a fake repository (returning a fixed
+  `list[tuple[str, str]]`) and a real `PerfumeSimilarityIndex` wired to a fake
+  encoder — no DB, no `torch`.
+- `app.py`'s endpoints can be tested with FastAPI's `TestClient` against an
+  app whose `lifespan` is overridden/skipped and `app.state.index` set
+  directly to a pre-built fake index — no DB, no model, no real HTTP server.

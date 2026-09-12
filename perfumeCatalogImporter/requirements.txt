@@ -3,3 +3,6 @@ sentence-transformers
 numpy
 kaggle
 python-dotenv
+fastapi
+uvicorn[standard]
+hnswlib

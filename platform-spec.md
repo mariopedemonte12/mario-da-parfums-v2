@@ -100,11 +100,11 @@ de responsabilidades.
   descripción sintética). No incluye imágenes (el dataset no las trae).
 - Incluye además un componente chico de ML (embeddings + similitud coseno)
   para búsqueda de perfumes por descripción libre — ver
-  `specs/perfume-catalog-import.md` para el mecanismo (prototipo local, ya
-  probado) y `specs/perfume-similarity-search.md` para cómo se expone (un
-  servicio FastAPI aparte — el backend NestJS no debe cargar el modelo ni
-  correr encoders — todavía no implementado, feature propia con su propia
-  sesión).
+  `specs/perfume-catalog-import.md` para el mecanismo (embeddings +
+  similitud coseno) y `specs/perfume-similarity-search.md` para cómo se
+  expone: un servidor FastAPI (`perfumeCatalogImporter/app.py`) — el backend
+  NestJS no carga el modelo ni corre encoders, consultaría este servicio por
+  HTTP (integración con el backend todavía no implementada).
 - **No** toca precios ni vendors — esa es responsabilidad exclusiva del job diario.
 
 ### 4.2 Job diario — precios por vendor (parte más crítica del proyecto)

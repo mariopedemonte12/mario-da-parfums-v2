@@ -72,10 +72,12 @@ credentials/
 .tmp
 
 # perfumeCatalogImporter: source dataset (fetched via download_dataset.py, not
-# committed — see perfumeCatalogImporter/data/README.md) and any local
-# embeddings model cache/index files.
+# committed — see perfumeCatalogImporter/data/README.md), any local
+# embeddings/HNSW index files, and its own virtualenv.
 perfumeCatalogImporter/data/*.csv
 perfumeCatalogImporter/*.npz
+perfumeCatalogImporter/*.hnsw
+perfumeCatalogImporter/.venv/
 
 # Runtime data
 pids

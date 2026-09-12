@@ -18,3 +18,16 @@ class FragranceRepository:
     def upsert(self, record: CatalogFragrance) -> UpsertResult:
         """INSERT ... ON CONFLICT (name) DO UPDATE, bumping updated_at explicitly."""
         raise NotImplementedError
+
+    def fetch_search_corpus(self) -> list[tuple[str, str]]:
+        """Return (name, description) for every fragrance with a description.
+
+        Read-only — feeds PerfumeSimilarityIndex.sync() (see similarity.py,
+        index_sync.py). A fragrance with a null description (shouldn't
+        happen for rows this package's own import wrote, but the CRUD admin
+        backend can create one without a description) is excluded rather
+        than fed to the encoder as an empty string.
+        """
+        with self.connection.cursor() as cursor:
+            cursor.execute("SELECT name, description FROM fragrances WHERE description IS NOT NULL")
+            return [(name, description) for name, description in cursor.fetchall()]
