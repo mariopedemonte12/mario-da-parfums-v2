@@ -20,9 +20,6 @@ lerna-debug.log*
 coverage/
 .nyc_output/
 
-# graphify generated output (regenerable, not source)
-graphify-out/
-
 # IDEs and editors
 .idea/
 .project

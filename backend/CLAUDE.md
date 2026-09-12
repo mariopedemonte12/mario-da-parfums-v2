@@ -1,6 +1,6 @@
 # Backend (NestJS) guidelines
 
-See the repo-root [`CLAUDE.md`](../CLAUDE.md) for the monorepo-wide worktree/testing-session/graphify/module-documentation rules — this file only covers stack-specific conventions for `backend/`.
+See the repo-root [`CLAUDE.md`](../CLAUDE.md) for the monorepo-wide worktree/testing-session/module-documentation rules — this file only covers stack-specific conventions for `backend/`.
 
 Stack: NestJS 12, Drizzle ORM (`src/database`), `class-validator`/`class-transformer` for DTOs, `argon2` for password hashing, Vitest for tests, oxlint for linting. Modules live under `src/<domain>` (e.g. `src/fragrances`, `src/listings`, `src/vendors`, `src/users`, `src/auths`).
 
@@ -18,4 +18,4 @@ Stack: NestJS 12, Drizzle ORM (`src/database`), `class-validator`/`class-transfo
 - **Lint/format**: run `pnpm lint` (oxlint) and `pnpm format` (prettier) before finishing a task — don't hand-format.
 - **Module docs**: a module's `NOTES.md` (per the root convention) lives inside its own directory (e.g. `src/auths/NOTES.md`) — only create/update one when there's a real decision worth recording, not on every touch, and don't use it as working context.
 - **Module quality standards**: use the `module-standards` skill (`.claude/skills/module-standards/SKILL.md`) whenever creating or modifying a module's CRUD surface — it covers batch endpoints, server-side filtering/pagination, seeds, and module isolation. Apply it as part of the checklist below.
-- **New feature checklist**: worktree + branch (root convention) → spec file `specs/<feature-slug>.md` (root convention) → module folder → schema/entities → DTOs → service → controller → module wiring (imports/providers/exports in `<module>.module.ts` and `app.module.ts`) → apply the **module quality standards** skill → lint → module `NOTES.md` if warranted → hand off for testing in a separate session. Do not update the graphify graph in this worktree (root convention) — that happens once, manually, in main's checkout after merge.
+- **New feature checklist**: worktree + branch (root convention) → spec file `specs/<feature-slug>.md` (root convention) → module folder → schema/entities → DTOs → service → controller → module wiring (imports/providers/exports in `<module>.module.ts` and `app.module.ts`) → apply the **module quality standards** skill → lint → module `NOTES.md` if warranted → hand off for testing in a separate session.

@@ -88,15 +88,14 @@ Workflow:
 ## Session flow
 
 1. Confirm this is the **testing** session for the worktree (not the implementation session) — per root `CLAUDE.md`.
-2. Query graphify first for what the module/feature touches (`/graphify query "..."` or `/graphify explain "<Module>"`) instead of re-reading the whole codebase.
-3. Recover the spec from `specs/<feature-slug>.md` first, falling back to DTO decorators and other business-rule docs for anything it doesn't cover — not the implementation internals.
-4. Apply the scope gate above: unit only, or unit + integration.
-5. Design cases: BVA → decision table → (if stateful) 0-switch transitions.
-6. Fill in genuinely hard-to-construct cases via hill-climbing fuzzing (only where manual derivation fails).
-7. Write the tests — see stack notes below for file placement/conventions.
-8. Run the suite, confirm green, and confirm it's testing the spec (re-read each test and ask "would this fail if the spec were violated, independent of how it's implemented?").
-9. Run mutation testing (tool and/or independent agent), drive every survivor to killed-or-justified-equivalent.
-10. Update the docs mirror (`test_docs/`) and the graphify graph (`/graphify --update`) before ending the session, per root conventions.
+2. Recover the spec from `specs/<feature-slug>.md` first, falling back to DTO decorators and other business-rule docs for anything it doesn't cover — not the implementation internals.
+3. Apply the scope gate above: unit only, or unit + integration.
+4. Design cases: BVA → decision table → (if stateful) 0-switch transitions.
+5. Fill in genuinely hard-to-construct cases via hill-climbing fuzzing (only where manual derivation fails).
+6. Write the tests — see stack notes below for file placement/conventions.
+7. Run the suite, confirm green, and confirm it's testing the spec (re-read each test and ask "would this fail if the spec were violated, independent of how it's implemented?").
+8. Run mutation testing (tool and/or independent agent), drive every survivor to killed-or-justified-equivalent.
+9. Update the docs mirror (`test_docs/`) before ending the session, per root conventions.
 
 ## Stack notes
 
