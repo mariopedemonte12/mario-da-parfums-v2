@@ -1,9 +1,9 @@
-"""CLI entrypoint: build a scraper + repository from config, run the orchestrator once."""
+"""CLI entrypoint: build a dataset source + repository from config, run the orchestrator once."""
 
 from .config import load_config
+from .dataset_source import KaggleCatalogSource
 from .orchestrator import CatalogSyncOrchestrator
 from .repository import FragranceRepository
-from .scraper import FragranticaScraper
 
 
 def main() -> None:

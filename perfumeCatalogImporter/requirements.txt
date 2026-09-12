@@ -1,0 +1,8 @@
+psycopg2-binary
+sentence-transformers
+numpy
+kaggle
+python-dotenv
+fastapi
+uvicorn[standard]
+hnswlib

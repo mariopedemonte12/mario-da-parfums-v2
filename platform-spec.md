@@ -82,17 +82,29 @@ No son nombres de tabla obligatorios, son las entidades que el negocio necesita:
 Hay exactamente dos jobs, con propósitos y cadencias distintas y sin superposición
 de responsabilidades.
 
-### 4.1 Job semanal — catálogo de fragancias (Fragrantica)
+### 4.1 Import de catálogo de fragancias (`perfumeCatalogImporter`)
 
-- **Cadencia**: semanal.
-- **Propósito**: mantener el catálogo de `Fragrance` alineado con lo que existe en
-  Fragrantica (altas de perfumes nuevos, actualización de datos de perfumes
-  existentes — marca, concentración, descripción, imagen).
-- **Costo**: es un proceso largo y pesado por diseño (recorre un catálogo grande).
-  Optimizarlo (p.ej. detectar solo el delta contra la corrida anterior en vez de
-  re-scrapear todo) es trabajo futuro explícitamente diferido — no es un
-  requisito de esta fase, pero el diseño de datos no debe impedirlo (p.ej. conviene
-  poder saber cuándo se vio por última vez cada fragancia en Fragrantica).
+- **Ya no es scraping en vivo de Fragrantica.** Se decidió explícitamente con
+  el usuario abandonar esa vía por riesgo legal de hacer scraping continuo de
+  un sitio de terceros — no por una limitación técnica (la implementación
+  original funcionaba). En su lugar, el catálogo se puebla desde un dataset
+  estático de Kaggle (marcas/nombres de perfumes reales) con descripciones
+  100% inventadas por este proyecto. Ver
+  [`specs/perfume-catalog-import.md`](specs/perfume-catalog-import.md) para el
+  detalle completo, incluyendo por qué cambió el scope.
+- **Cadencia**: bajo demanda / manual en esta fase (el dataset es estático, no
+  cambia semana a semana como cambiaría un sitio en vivo) — no una corrida
+  automatizada por ahora.
+- **Propósito**: mantener el catálogo de `Fragrance` poblado con perfumes
+  reales (marca, nombre) y metadatos derivados del dataset (concentración,
+  descripción sintética). No incluye imágenes (el dataset no las trae).
+- Incluye además un componente chico de ML (embeddings + similitud coseno)
+  para búsqueda de perfumes por descripción libre — ver
+  `specs/perfume-catalog-import.md` para el mecanismo (embeddings +
+  similitud coseno) y `specs/perfume-similarity-search.md` para cómo se
+  expone: un servidor FastAPI (`perfumeCatalogImporter/app.py`) — el backend
+  NestJS no carga el modelo ni corre encoders, consultaría este servicio por
+  HTTP (integración con el backend todavía no implementada).
 - **No** toca precios ni vendors — esa es responsabilidad exclusiva del job diario.
 
 ### 4.2 Job diario — precios por vendor (parte más crítica del proyecto)

@@ -1,11 +1,15 @@
-"""Plain data types shared between scraper.py, repository.py and orchestrator.py."""
+"""Plain data types shared across this package's modules."""
 
 from dataclasses import dataclass
 
 
 @dataclass
-class ScrapedFragrance:
-    """One perfume as extracted from Fragrantica, before any DB interaction."""
+class CatalogFragrance:
+    """One perfume built from the Kaggle dataset row, before any DB interaction.
+
+    `description` is synthetic (see description_generator.py) — never copied
+    editorial text. `image_url` is always None: this dataset has no photos.
+    """
 
     name: str | None
     brand: str | None
