@@ -80,11 +80,11 @@ export function IsRequired(
 **DTOs**: cuando el campo necesita un código más específico que el genérico
 (para que el frontend distinga "el nombre es obligatorio" de "el email es
 obligatorio"), se lo pasa explícitamente desde el enum — ver
-[`create-user.dto.ts`](../src/users/dto/create-user.dto.ts) como ejemplo de
-referencia:
+[`admin-create-user.dto.ts`](../src/auths/dto/admin-create-user.dto.ts) como
+ejemplo de referencia:
 
 ```ts
-export class CreateUserDto {
+export class AdminCreateUserDto {
     @IsRequired(ValidationErrorCode.NAME_REQUIRED)
     @IsStringField(ValidationErrorCode.NAME_INVALID_TYPE)
     @IsNotProfane()
@@ -95,24 +95,22 @@ export class CreateUserDto {
     @IsNotProfane()
     email: string;
 
+    @IsRequired(ValidationErrorCode.PASSWORD_REQUIRED)
+    @IsStrongPassword()
+    password: string;
+
     @IsEnumField(Role, ValidationErrorCode.ROLE_INVALID)
     role: Role;
-
-    // passwordHash no es input de usuario: se deja el default genérico (INVALID_TYPE)
-    @IsStringField()
-    passwordHash: string;
-
-    @IsOptional()
-    @IsStringField(ValidationErrorCode.PHOTO_S3_KEY_INVALID_TYPE)
-    photoS3Key?: string;
 }
 ```
 
 `LoginDto` y `RegisterDto` (`src/auths/dto/`) reutilizan los mismos códigos de
 `EMAIL_REQUIRED`/`EMAIL_INVALID_FORMAT`/`NAME_REQUIRED`/`PASSWORD_REQUIRED`
-que `CreateUserDto` — es justamente el punto de tener un catálogo único: el
-campo `email` significa lo mismo (y se traduce igual en el frontend) sin
-importar en qué DTO aparece.
+que `AdminCreateUserDto` — es justamente el punto de tener un catálogo único:
+el campo `email` significa lo mismo (y se traduce igual en el frontend) sin
+importar en qué DTO aparece. Cuenta creación (pública o admin) vive entera en
+`auths`; `users` (`update-user.dto.ts`) reutiliza los mismos códigos de
+`name`/`email`/`photoS3Key` para sus propios campos de perfil.
 
 **Validadores custom** (`@IsNotProfane`, `@IsStrongPassword`): al no ser
 wrappers de una regla de `class-validator`, no reciben un `code` por
@@ -158,4 +156,4 @@ function checkPasswordRules(value: string) {
 | `src/validators/wrappers/*` | Wrappers de reglas nativas de class-validator, tipados con `ValidationErrorCode` |
 | `src/validators/is-not-profane.validator.ts`, `is-password-strong.validator.ts` | Validadores custom que devuelven los enums directamente |
 | `src/pipes/custom-validation.pipe.ts` | Parsea el JSON del `message` de vuelta a `ValidationErrorItem[]` |
-| `src/users/dto/create-user.dto.ts` | Ejemplo de referencia de un DTO usando `ValidationErrorCode` |
+| `src/auths/dto/admin-create-user.dto.ts` | Ejemplo de referencia de un DTO usando `ValidationErrorCode` |
