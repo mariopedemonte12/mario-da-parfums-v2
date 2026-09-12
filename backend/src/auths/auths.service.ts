@@ -7,6 +7,7 @@ import { JwtService } from '@nestjs/jwt';
 import { plainToInstance } from 'class-transformer';
 import { RegisterDto } from './dto/register.dto.js';
 import { LoginDto } from './dto/login.dto.js';
+import { AdminCreateUserDto } from './dto/admin-create-user.dto.js';
 import { UsersService } from '../users/users.service.js';
 import { PasswordsService } from '../passwords/passwords.service.js';
 import { UserResponseDto } from '../users/dto/response-user.dto.js';
@@ -45,6 +46,38 @@ export class AuthsService {
     }
 
     return this.buildAuthResponse(user);
+  }
+
+  // Admin-only account creation — the only path that can set `role`
+  // (public `register` always forces Role.USER). No accessToken is issued
+  // here: this isn't the created user logging in, it's an admin acting on
+  // their behalf.
+  async adminCreate(dto: AdminCreateUserDto) {
+    const existingUser = await this.usersService.findByEmail(dto.email);
+    if (existingUser) {
+      throw new ConflictException('Email already registered');
+    }
+
+    const passwordHash = await this.passwordsService.hash(dto.password);
+
+    let user: User;
+    try {
+      user = await this.usersService.create({
+        name: dto.name,
+        email: dto.email,
+        passwordHash,
+        role: dto.role,
+      });
+    } catch (err) {
+      if ((err as { code?: string })?.code === '23505') {
+        throw new ConflictException('Email already registered');
+      }
+      throw err;
+    }
+
+    return plainToInstance(UserResponseDto, user, {
+      excludeExtraneousValues: true,
+    });
   }
 
   async login(dto: LoginDto) {

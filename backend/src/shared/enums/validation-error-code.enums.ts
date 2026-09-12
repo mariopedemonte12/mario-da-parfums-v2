@@ -26,6 +26,8 @@ export enum ValidationErrorCode {
 
   // photoS3Key
   PHOTO_S3_KEY_INVALID_TYPE = 'PHOTO_S3_KEY_INVALID_TYPE',
+  PHOTO_S3_KEY_INVALID_FORMAT = 'PHOTO_S3_KEY_INVALID_FORMAT',
+  PHOTO_S3_KEY_TOO_LONG = 'PHOTO_S3_KEY_TOO_LONG',
 
   // password: presencia/tipo. Para las reglas de fortaleza ver PasswordErrorCode.
   PASSWORD_REQUIRED = 'PASSWORD_REQUIRED',
