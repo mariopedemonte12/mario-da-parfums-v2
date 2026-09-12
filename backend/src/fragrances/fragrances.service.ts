@@ -18,12 +18,18 @@ import { CreateBatchResultDto } from './dto/create-batch-result.dto.js';
 
 const UNIQUE_VIOLATION = '23505';
 
-function isUniqueViolation(error: unknown): boolean {
+function pgErrorCode(error: unknown): string | undefined {
+  if (typeof error !== 'object' || error === null) return undefined;
+  // drizzle-orm wraps real driver errors in a DrizzleQueryError whose
+  // `.code` lives on `.cause.code`, not on the error itself.
   return (
-    typeof error === 'object' &&
-    error !== null &&
-    (error as { code?: string }).code === UNIQUE_VIOLATION
+    (error as { code?: string; cause?: { code?: string } }).code ??
+    (error as { cause?: { code?: string } }).cause?.code
   );
+}
+
+function isUniqueViolation(error: unknown): boolean {
+  return pgErrorCode(error) === UNIQUE_VIOLATION;
 }
 
 @Injectable()

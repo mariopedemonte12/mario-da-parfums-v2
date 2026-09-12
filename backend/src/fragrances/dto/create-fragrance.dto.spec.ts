@@ -56,9 +56,14 @@ describe('CreateFragranceDto', () => {
     });
 
     it('rejects a non-string value with NAME_INVALID_TYPE', async () => {
+      // @MaxLen also fails on a non-string value (class-validator's
+      // maxLength() returns false for anything that isn't a string), so
+      // NAME_TOO_LONG surfaces alongside NAME_INVALID_TYPE here.
       expect(
         await codesForField({ ...VALID_PAYLOAD, name: 123 }, 'name'),
-      ).toEqual([ValidationErrorCode.NAME_INVALID_TYPE]);
+      ).toEqual(
+        expect.arrayContaining([ValidationErrorCode.NAME_INVALID_TYPE]),
+      );
     });
   });
 
@@ -77,9 +82,13 @@ describe('CreateFragranceDto', () => {
     });
 
     it('rejects a non-string value with BRAND_INVALID_TYPE', async () => {
+      // See the equivalent NAME_INVALID_TYPE case above: @MaxLen also
+      // fails on a non-string value, so BRAND_TOO_LONG surfaces too.
       expect(
         await codesForField({ ...VALID_PAYLOAD, brand: 456 }, 'brand'),
-      ).toEqual([ValidationErrorCode.BRAND_INVALID_TYPE]);
+      ).toEqual(
+        expect.arrayContaining([ValidationErrorCode.BRAND_INVALID_TYPE]),
+      );
     });
   });
 
@@ -90,12 +99,18 @@ describe('CreateFragranceDto', () => {
     });
 
     it('rejects a non-string value with CONCENTRATION_INVALID_TYPE', async () => {
+      // See the equivalent NAME_INVALID_TYPE case above: @MaxLen also
+      // fails on a non-string value, so CONCENTRATION_TOO_LONG surfaces too.
       expect(
         await codesForField(
           { ...VALID_PAYLOAD, concentration: 789 },
           'concentration',
         ),
-      ).toEqual([ValidationErrorCode.CONCENTRATION_INVALID_TYPE]);
+      ).toEqual(
+        expect.arrayContaining([
+          ValidationErrorCode.CONCENTRATION_INVALID_TYPE,
+        ]),
+      );
     });
   });
 
