@@ -16,12 +16,25 @@ import { BatchResultDto } from './dto/batch-result.dto.js';
 
 const UNIQUE_VIOLATION = '23505';
 
+function getPgErrorCode(error: unknown): string | undefined {
+  if (typeof error !== 'object' || error === null) {
+    return undefined;
+  }
+  const code = (error as { code?: string }).code;
+  if (code !== undefined) {
+    return code;
+  }
+  // drizzle-orm wraps the real driver error in a DrizzleQueryError whose
+  // own `.code` is undefined — the Postgres error code lives on `.cause`.
+  const cause = (error as { cause?: unknown }).cause;
+  if (typeof cause === 'object' && cause !== null) {
+    return (cause as { code?: string }).code;
+  }
+  return undefined;
+}
+
 function isUniqueViolation(error: unknown): boolean {
-  return (
-    typeof error === 'object' &&
-    error !== null &&
-    (error as { code?: string }).code === UNIQUE_VIOLATION
-  );
+  return getPgErrorCode(error) === UNIQUE_VIOLATION;
 }
 
 @Injectable()
