@@ -1,10 +1,11 @@
-import { Type } from 'class-transformer';
+import { Expose, Type } from 'class-transformer';
 import { ArrayMinSize, IsInt } from 'class-validator';
 import { ApiProperty } from '@nestjs/swagger';
 import { UpdateVendorDto } from './update-vendor.dto.js';
 
 export class UpdateVendorItemDto extends UpdateVendorDto {
   @ApiProperty({ description: 'Id of the vendor to update', example: 1 })
+  @Expose()
   @IsInt()
   id: number;
 }

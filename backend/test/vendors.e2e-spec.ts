@@ -497,6 +497,90 @@ describe('Vendors (e2e, real Postgres)', () => {
     });
   });
 
+  // --- Mass-assignment: extra properties must never reach the db -------
+  //
+  // Regression coverage for a real bug found in code review: dropping
+  // @ValidateNested (needed for per-item partial-success, above) also
+  // drops the global pipe's whitelist stripping for these nested items —
+  // without a replacement, a client-supplied `id`/`createdAt`/`updatedAt`
+  // would be written verbatim (confirmed against a raw drizzle insert
+  // during triage: an extra `id` in the payload silently became the row's
+  // real primary key). VendorsService now sanitizes each item via
+  // `plainToInstance(..., { excludeExtraneousValues: true })` against the
+  // DTO's own `@Expose()` allowlist before writing — this is a real e2e
+  // case, not mockable, since the mocked-service unit tests would still
+  // pass an unsanitized item straight to the mocked db without ever
+  // exercising the sanitization step itself.
+  describe('POST/PATCH /vendors/batch — extra properties are stripped before writing', () => {
+    it('ignores a client-supplied id and updatedAt on create — the real serial id and server clock win', async () => {
+      const forcedId = 555555555;
+      const forcedDate = '2000-01-01T00:00:00.000Z';
+
+      const res = await request(app.getHttpServer())
+        .post('/vendors/batch')
+        .set('Authorization', `Bearer ${adminToken}`)
+        .send({
+          items: [
+            validItem({
+              id: forcedId,
+              createdAt: forcedDate,
+              updatedAt: forcedDate,
+            }),
+          ],
+        })
+        .expect(201);
+
+      expect(res.body.results[0].success).toBe(true);
+      const realId = res.body.results[0].id;
+      expect(realId).not.toBe(forcedId);
+      createdVendorIds.push(realId);
+
+      const getRes = await request(app.getHttpServer())
+        .get(`/vendors/${realId}`)
+        .expect(200);
+      expect(new Date(getRes.body.createdAt).getTime()).toBeGreaterThan(
+        new Date(forcedDate).getTime(),
+      );
+
+      // The forced id must never have been used as a real row.
+      await request(app.getHttpServer())
+        .get(`/vendors/${forcedId}`)
+        .expect(404);
+    });
+
+    it('ignores a client-supplied updatedAt/createdAt on update — the server clock wins', async () => {
+      const created = await insertVendor();
+      const forcedDate = '2000-01-01T00:00:00.000Z';
+
+      const res = await request(app.getHttpServer())
+        .patch('/vendors/batch')
+        .set('Authorization', `Bearer ${adminToken}`)
+        .send({
+          items: [
+            {
+              id: created.id,
+              name: uniqueName('mass-assignment'),
+              updatedAt: forcedDate,
+              createdAt: forcedDate,
+            },
+          ],
+        })
+        .expect(200);
+
+      expect(res.body.results[0]).toEqual({ id: created.id, success: true });
+
+      const getRes = await request(app.getHttpServer())
+        .get(`/vendors/${created.id}`)
+        .expect(200);
+      expect(new Date(getRes.body.updatedAt).getTime()).toBeGreaterThan(
+        new Date(forcedDate).getTime(),
+      );
+      expect(new Date(getRes.body.createdAt).getTime()).toBeGreaterThan(
+        new Date(forcedDate).getTime(),
+      );
+    });
+  });
+
   // --- POST /vendors/batch — partial success + real unique constraint -
 
   describe('POST /vendors/batch — partial success against real unique constraint', () => {

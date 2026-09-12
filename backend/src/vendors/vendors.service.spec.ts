@@ -31,6 +31,20 @@ function fkViolation() {
   return Object.assign(new Error('foreign key violation'), { code: '23503' });
 }
 
+// The shape drizzle-orm (0.45.x) actually throws in production: a
+// DrizzleQueryError whose own `.code` is undefined, wrapping the real pg
+// error (which carries `.code`) on `.cause`. describeWriteError() has to
+// unwrap `.cause` to find these — a mock that puts `.code` directly on the
+// top-level error (like uniqueViolation()/fkViolation() above) would pass
+// even if that unwrapping were deleted, since it never exercises it.
+function wrappedUniqueViolation() {
+  return Object.assign(new Error('Failed query'), { cause: uniqueViolation() });
+}
+
+function wrappedFkViolation() {
+  return Object.assign(new Error('Failed query'), { cause: fkViolation() });
+}
+
 // Pinned so a mutant that swaps which pg error code maps to which message
 // (name conflict vs. listing-referenced conflict) is caught — asserting
 // only "some string" would let that swap through unnoticed.
@@ -316,6 +330,25 @@ describe('VendorsService', () => {
       expect(results[0].id).toBeUndefined();
     });
 
+    // Pins the actual DrizzleQueryError.cause unwrapping this PR fixes —
+    // uniqueViolation() alone (used above) wouldn't catch a regression
+    // back to reading err.code directly, since it puts .code on the
+    // top-level error rather than wrapping it.
+    it('fails with the name-conflict message when the db error is wrapped in .cause (real drizzle-orm shape)', async () => {
+      const insert = vi.fn().mockReturnValue({
+        values: vi.fn().mockReturnValue({
+          returning: vi.fn().mockRejectedValue(wrappedUniqueViolation()),
+        }),
+      });
+      await build({ insert });
+
+      const results = await service.createMany([
+        { name: 'Existing Vendor', websiteUrl: 'https://a.example.com' },
+      ]);
+
+      expect(results).toEqual([{ success: false, error: NAME_CONFLICT_ERROR }]);
+    });
+
     it('fails only the later item that collides with an earlier item already committed in the same batch, leaving the rest to succeed', async () => {
       // Sequential for-loop: item[0] "commits" (mock resolves success),
       // item[1] shares its name so the DB unique constraint fires on it,
@@ -416,6 +449,10 @@ describe('VendorsService', () => {
     it.each([
       [undefined as unknown as string, 'a missing websiteUrl'],
       ['not-a-url', 'an invalid websiteUrl format'],
+      // Distinct failure mode from the plain-format case above: this is a
+      // syntactically valid, absolute URL — it only fails because @IsUrl
+      // is configured with protocols: ['http', 'https'].
+      ['ftp://a.example.com', 'a disallowed protocol'],
     ])('fails an item with %s (%s) without calling insert', async (websiteUrl) => {
       const insert = vi.fn();
       await build({ insert });
@@ -479,6 +516,26 @@ describe('VendorsService', () => {
           set: vi.fn().mockReturnValue({
             where: vi.fn().mockReturnValue({
               returning: vi.fn().mockRejectedValue(uniqueViolation()),
+            }),
+          }),
+        }),
+      });
+
+      const results = await service.updateMany([{ id: 1, name: 'Taken' }]);
+
+      expect(results).toEqual([
+        { id: 1, success: false, error: NAME_CONFLICT_ERROR },
+      ]);
+    });
+
+    // Same reasoning as the createMany wrapped-error test above: pins the
+    // real DrizzleQueryError.cause shape, not just a top-level `.code`.
+    it('fails with the name-conflict message when the db error is wrapped in .cause (real drizzle-orm shape)', async () => {
+      await build({
+        update: vi.fn().mockReturnValue({
+          set: vi.fn().mockReturnValue({
+            where: vi.fn().mockReturnValue({
+              returning: vi.fn().mockRejectedValue(wrappedUniqueViolation()),
             }),
           }),
         }),
@@ -590,6 +647,20 @@ describe('VendorsService', () => {
       expect(results[0]).toMatchObject({ success: false });
       expect(update).not.toHaveBeenCalled();
     });
+
+    // Distinct boundary from the non-integer case above: id absent
+    // entirely, not just the wrong type.
+    it('fails an item missing id entirely, without calling update', async () => {
+      const update = vi.fn();
+      await build({ update });
+
+      const results = await service.updateMany([
+        { name: 'No id' } as unknown as { id: number; name: string },
+      ]);
+
+      expect(results[0]).toMatchObject({ success: false, id: undefined });
+      expect(update).not.toHaveBeenCalled();
+    });
   });
 
   describe('removeMany', () => {
@@ -635,6 +706,24 @@ describe('VendorsService', () => {
         delete: vi.fn().mockReturnValue({
           where: vi.fn().mockReturnValue({
             returning: vi.fn().mockRejectedValue(fkViolation()),
+          }),
+        }),
+      });
+
+      const results = await service.removeMany([1]);
+
+      expect(results).toEqual([
+        { id: 1, success: false, error: LISTING_CONFLICT_ERROR },
+      ]);
+    });
+
+    // Same reasoning as the createMany/updateMany wrapped-error tests
+    // above: pins the real DrizzleQueryError.cause shape.
+    it('fails with the listing-conflict message when the db error is wrapped in .cause (real drizzle-orm shape)', async () => {
+      await build({
+        delete: vi.fn().mockReturnValue({
+          where: vi.fn().mockReturnValue({
+            returning: vi.fn().mockRejectedValue(wrappedFkViolation()),
           }),
         }),
       });
