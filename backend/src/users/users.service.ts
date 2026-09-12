@@ -23,6 +23,17 @@ function isPgError(err: unknown): err is PgError {
   return typeof err === 'object' && err !== null && 'code' in err;
 }
 
+// drizzle-orm (this version) wraps every real driver error in a
+// DrizzleQueryError, whose own top-level shape has no `code` — the
+// original pg error (and its `code`, e.g. '23505' for a unique violation)
+// lives on `.cause`. Check both so a real constraint violation is actually
+// recognized instead of falling through to a generic 500.
+function getPgErrorCode(err: unknown): string | undefined {
+  if (isPgError(err) && err.code) return err.code;
+  if (err instanceof Error && isPgError(err.cause)) return err.cause.code;
+  return undefined;
+}
+
 @Injectable()
 export class UsersService {
   constructor(@Inject(DRIZZLE) private readonly db: Database) {}
@@ -72,6 +83,19 @@ export class UsersService {
   }
 
   async update(id: number, dto: UpdateUserDto): Promise<User> {
+    // A dto with nothing to set (a PATCH with no fields, or one whose only
+    // fields were stripped by the validation pipe's whitelist) has no
+    // meaningful updates; Drizzle's `.set({})` builds an invalid empty SQL
+    // SET clause. `Object.keys` alone isn't enough to detect this: with
+    // this project's `target: ES2023`, class field declarations without an
+    // initializer (e.g. `name?: string;`) are still own enumerable
+    // properties set to `undefined`, so an UpdateUserDto instance always
+    // has all its declared keys present. Check values instead.
+    const hasUpdates = Object.values(dto).some((value) => value !== undefined);
+    if (!hasUpdates) {
+      return this.findOne(id);
+    }
+
     try {
       const [user] = await this.db
         .update(users)
@@ -83,7 +107,7 @@ export class UsersService {
       }
       return user;
     } catch (err) {
-      if (isPgError(err) && err.code === '23505') {
+      if (getPgErrorCode(err) === '23505') {
         throw new ConflictException(
           'A user with that name or email already exists',
         );
