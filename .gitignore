@@ -38,12 +38,32 @@ reports/mutation/
 !.vscode/launch.json
 !.vscode/extensions.json
 
-# dotenv environment variable files
+# dotenv environment variable files (any package: backend/frontend/chatbot)
 .env
-.env.development.local
-.env.test.local
-.env.production.local
 .env.local
+.env.development
+.env.development.local
+.env.test
+.env.test.local
+.env.production
+.env.production.local
+.env.*.local
+!.env.example
+!.env.*.example
+
+# credentials / keys / certificates
+*.pem
+*.key
+*.p12
+*.pfx
+*.crt
+*.cer
+credentials.json
+service-account*.json
+gcloud-credentials*.json
+firebase-adminsdk*.json
+secrets/
+credentials/
 
 # temp directory
 .temp
@@ -57,3 +77,6 @@ pids
 
 # Diagnostic reports (https://nodejs.org/api/report.html)
 report.[0-9]*.[0-9]*.[0-9]*.[0-9]*.json
+
+# Claude Code worktrees (see .worktreeinclude)
+.claude/worktrees/

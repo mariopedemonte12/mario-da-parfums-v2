@@ -1,0 +1,34 @@
+# Files copied automatically into every new worktree created with
+# `claude --worktree` (or the EnterWorktree tool), so feature/testing
+# sessions have the secrets needed to run the app and E2E tests.
+#
+# Uses .gitignore syntax. Only files that are BOTH gitignored AND match
+# a pattern here get copied — tracked files (like .env.example) are
+# never duplicated, so it's safe to keep these patterns broad.
+
+# dotenv files, anywhere in the monorepo (backend/frontend/chatbot, and
+# any future package) — covers Vite (.env.development, .env.production,
+# .env.local, .env.*.local), Next.js, NestJS, and plain Node conventions
+**/.env
+**/.env.*
+**/.env.local
+
+# per-package local overrides some frameworks generate (e.g. Vite
+# `vite.config.local.*`, docker compose overrides)
+**/*.local
+**/docker-compose.override.yml
+**/docker-compose.*.local.yml
+
+# credentials / keys / certificates
+**/*.pem
+**/*.key
+**/*.p12
+**/*.pfx
+**/*.crt
+**/*.cer
+**/credentials.json
+**/service-account*.json
+**/gcloud-credentials*.json
+**/firebase-adminsdk*.json
+**/secrets/**
+**/credentials/**
