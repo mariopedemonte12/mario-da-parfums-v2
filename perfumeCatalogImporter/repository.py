@@ -2,19 +2,19 @@
 
 The only module allowed to import psycopg2 or write SQL. Must match
 backend/src/database/schema/fragrance.schema.ts exactly — see
-fragranticaScraper/CLAUDE.md for the column-name gotchas (image_url, uuid id,
-no updated_at trigger).
+perfumeCatalogImporter/CLAUDE.md for the column-name gotchas (image_url, uuid
+id, no updated_at trigger).
 """
 
-from .models import ScrapedFragrance, UpsertResult
+from .models import CatalogFragrance, UpsertResult
 
 
 class FragranceRepository:
-    """Upserts ScrapedFragrance records into the `fragrances` table."""
+    """Upserts CatalogFragrance records into the `fragrances` table."""
 
     def __init__(self, connection) -> None:
         self.connection = connection
 
-    def upsert(self, record: ScrapedFragrance) -> UpsertResult:
+    def upsert(self, record: CatalogFragrance) -> UpsertResult:
         """INSERT ... ON CONFLICT (name) DO UPDATE, bumping updated_at explicitly."""
         raise NotImplementedError
