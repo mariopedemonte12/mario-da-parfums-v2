@@ -97,7 +97,22 @@ de responsabilidades.
 
 ### 4.2 Job diario — precios por vendor (parte más crítica del proyecto)
 
-- **Cadencia**: diaria.
+- **Por ahora no es scraping real de vendors chilenos.** Mismo motivo y mismo
+  patrón que §4.1 con Fragrantica: scraping continuo de precios de retailers
+  reconocidos del país es legalmente complejo y de mala reputación para el
+  proyecto. En esta fase, tanto los vendors como los precios son **inventados
+  y generados de forma determinística** por un script standalone — ver
+  [`specs/price-generator.md`](specs/price-generator.md) para el detalle
+  completo (rango de precios, derivación de ml, disponibilidad, empaquetado
+  como imagen Docker). Todas las reglas de negocio de esta sección (una sola
+  fila por tripleta, actualización in-place, `isAvailable` para delisting sin
+  perder el precio, sin historial) siguen vigentes tal cual y las implementa
+  ese script — lo único que cambia es que el precio no sale de un scraper
+  real. Retomar scraping real de vendors reales es una decisión de negocio
+  nueva, no una continuación de este trabajo.
+- **Cadencia**: diaria (en esta fase, el script anterior se corre bajo
+  demanda — no hay todavía un scheduler que lo dispare automáticamente, ver
+  §9).
 - **Propósito**: por cada `Fragrance` registrada, buscar su precio en cada `Vendor`
   activo y dejar reflejado el precio vigente.
 - **Regla central**: **no se crea una fila nueva de precio cada día.** Existe una

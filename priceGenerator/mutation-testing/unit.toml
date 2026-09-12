@@ -1,0 +1,14 @@
+[cosmic-ray]
+module-path = [
+    "priceGenerator/price_generator.py",
+    "priceGenerator/vendor_catalog.py",
+    "priceGenerator/config.py",
+    "priceGenerator/orchestrator.py",
+    "priceGenerator/main.py",
+]
+timeout = 15.0
+excluded-modules = []
+test-command = "priceGenerator/.venv/bin/python -m pytest priceGenerator/tests -m \"not integration\" -q -x"
+
+[cosmic-ray.distributor]
+name = "local"
