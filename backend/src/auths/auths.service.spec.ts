@@ -94,6 +94,83 @@ describe('AuthsService', () => {
     });
   });
 
+  describe('adminCreate', () => {
+    it('creates the user with the requested role and returns no accessToken', async () => {
+      const adminMadeUser = { ...sampleUser, role: Role.ADMIN };
+      usersService.findByEmail.mockResolvedValue(undefined);
+      passwordsService.hash.mockResolvedValue('hashed-password');
+      usersService.create.mockResolvedValue(adminMadeUser);
+
+      const result = await service.adminCreate({
+        name: 'Jane Doe',
+        email: 'jane@example.com',
+        password: 'Str0ng!Pass',
+        role: Role.ADMIN,
+      });
+
+      expect(usersService.create).toHaveBeenCalledWith({
+        name: 'Jane Doe',
+        email: 'jane@example.com',
+        passwordHash: 'hashed-password',
+        role: Role.ADMIN,
+      });
+      expect(jwtService.sign).not.toHaveBeenCalled();
+      expect(result).not.toHaveProperty('accessToken');
+      expect(result).toMatchObject({ email: 'jane@example.com' });
+      expect(result).not.toHaveProperty('passwordHash');
+    });
+
+    it('hashes the plain-text password server-side rather than persisting it as-is', async () => {
+      usersService.findByEmail.mockResolvedValue(undefined);
+      passwordsService.hash.mockResolvedValue('hashed-password');
+      usersService.create.mockResolvedValue(sampleUser);
+
+      await service.adminCreate({
+        name: 'Jane Doe',
+        email: 'jane@example.com',
+        password: 'Str0ng!Pass',
+        role: Role.USER,
+      });
+
+      expect(passwordsService.hash).toHaveBeenCalledWith('Str0ng!Pass');
+      expect(usersService.create).toHaveBeenCalledWith(
+        expect.objectContaining({ passwordHash: 'hashed-password' }),
+      );
+    });
+
+    it('throws a conflict when the email is already registered (optimistic check)', async () => {
+      usersService.findByEmail.mockResolvedValue(sampleUser);
+
+      await expect(
+        service.adminCreate({
+          name: 'Jane Doe',
+          email: 'jane@example.com',
+          password: 'Str0ng!Pass',
+          role: Role.USER,
+        }),
+      ).rejects.toBeInstanceOf(ConflictException);
+      expect(usersService.create).not.toHaveBeenCalled();
+    });
+
+    it('throws a conflict on a duplicate name that only the db catches (23505)', async () => {
+      // findByEmail only checks email, so a duplicate *name* with a fresh
+      // email passes the optimistic check and is caught by the db instead —
+      // same double-check pattern as register().
+      usersService.findByEmail.mockResolvedValue(undefined);
+      passwordsService.hash.mockResolvedValue('hashed-password');
+      usersService.create.mockRejectedValue({ code: '23505' });
+
+      await expect(
+        service.adminCreate({
+          name: 'Jane Doe',
+          email: 'fresh@example.com',
+          password: 'Str0ng!Pass',
+          role: Role.USER,
+        }),
+      ).rejects.toBeInstanceOf(ConflictException);
+    });
+  });
+
   describe('login', () => {
     it('returns an access token for valid credentials', async () => {
       usersService.findByEmail.mockResolvedValue(sampleUser);

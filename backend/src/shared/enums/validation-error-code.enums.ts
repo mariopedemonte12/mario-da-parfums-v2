@@ -26,6 +26,8 @@ export enum ValidationErrorCode {
 
   // photoS3Key
   PHOTO_S3_KEY_INVALID_TYPE = 'PHOTO_S3_KEY_INVALID_TYPE',
+  PHOTO_S3_KEY_INVALID_FORMAT = 'PHOTO_S3_KEY_INVALID_FORMAT',
+  PHOTO_S3_KEY_TOO_LONG = 'PHOTO_S3_KEY_TOO_LONG',
 
   // password: presencia/tipo. Para las reglas de fortaleza ver PasswordErrorCode.
   PASSWORD_REQUIRED = 'PASSWORD_REQUIRED',
@@ -77,4 +79,11 @@ export enum ValidationErrorCode {
 
   // listing.inStock
   LISTING_IN_STOCK_INVALID_TYPE = 'LISTING_IN_STOCK_INVALID_TYPE',
+
+  // favorite.fragranceId
+  FRAGRANCE_ID_REQUIRED = 'FRAGRANCE_ID_REQUIRED',
+  FRAGRANCE_ID_INVALID_FORMAT = 'FRAGRANCE_ID_INVALID_FORMAT',
+
+  // favorite batch fragranceIds
+  FRAGRANCE_IDS_REQUIRED = 'FRAGRANCE_IDS_REQUIRED',
 }

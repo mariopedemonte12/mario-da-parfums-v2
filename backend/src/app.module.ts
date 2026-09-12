@@ -10,6 +10,7 @@ import { ListingsModule } from './listings/listings.module.js';
 import { PasswordsModule } from './passwords/passwords.module.js';
 import { AuthsModule } from './auths/auths.module.js';
 import { JwtConfigModule } from './auths/jwt-config.module.js';
+import { FavoritesModule } from './favorites/favorites.module.js';
 
 @Module({
   imports: [
@@ -22,6 +23,7 @@ import { JwtConfigModule } from './auths/jwt-config.module.js';
     ListingsModule,
     PasswordsModule,
     AuthsModule,
+    FavoritesModule,
   ],
   controllers: [AppController],
   providers: [AppService],
