@@ -67,9 +67,11 @@ No son nombres de tabla obligatorios, son las entidades que el negocio necesita:
 - **Listing**: el precio vigente de **una fragancia en un vendor puntual**. Es la
   entidad central del job diario — ver §4.2 para sus reglas, que son la parte más
   crítica de todo el sistema.
-- **User**: una cuenta de usuario final de la plataforma (no un admin, no un
-  vendor). Se autentica (registro/login) para poder tener favoritos. Es un modelo
-  de cuenta separado del admin (roles `ADMIN` / `USER`), no el mismo actor.
+- **User**: una única cuenta con un campo `role` que puede ser `ADMIN` o `USER`
+  (no dos modelos de cuenta separados, un admin es un `User` con `role = ADMIN`).
+  Todo `User` se autentica (registro/login); lo que cambia según el rol es qué
+  puede hacer, no el tipo de entidad. Los favoritos existen para cualquier `User`
+  autenticado, sin distinción de rol (un `ADMIN` también puede tener favoritos).
 - **Favorite**: relación N:N entre `User` y `Fragrance`.
 
 ## 4. Jobs de scraping
@@ -164,8 +166,11 @@ correspondiente cuando se construya):
 
 ### 5.4 Cuentas de usuario y favoritos
 
-- Los usuarios finales son un tipo de cuenta separado del admin (`Role.USER`),
-  con su propio registro/login (JWT), independiente del acceso admin.
+- Hay un único modelo de cuenta (`User`) con un campo `role` (`ADMIN` / `USER`) y
+  un solo flujo de registro/login (JWT) para ambos — no hay una cuenta de admin
+  separada de la de un usuario normal. El rol determina qué endpoints puede usar
+  (p.ej. mutaciones de vendors/fragancias son admin-only), no a qué sistema de
+  autenticación pertenece.
 - Un usuario autenticado puede marcar/desmarcar una `Fragrance` como favorita y
   listar sus favoritos.
 - El listado de favoritos debe poder combinarse con la info de precios (para que
