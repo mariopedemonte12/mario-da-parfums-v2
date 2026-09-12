@@ -319,72 +319,23 @@ describe('VendorsController (HTTP, real guards + validation pipe)', () => {
     });
   });
 
-  describe('POST /vendors/batch — CreateVendorDto validation (BVA)', () => {
+  describe('POST /vendors/batch — BatchCreateVendorsDto envelope validation', () => {
     const authed = () =>
       request(app.getHttpServer())
         .post('/vendors/batch')
         .set('Authorization', `Bearer ${ADMIN_TOKEN}`);
 
+    // Per-item CreateVendorDto content (name/websiteUrl length, format,
+    // type) is deliberately NOT validated by the global pipe anymore — see
+    // batch-create-vendors.dto.ts. A bad item must only fail that item
+    // (partial-success), which VendorsService enforces by validating each
+    // item itself; that can't be observed here since this block mocks
+    // VendorsService entirely. That BVA now lives in vendors.service.spec.ts
+    // (real per-item validation, mocked db) and in test/vendors.e2e-spec.ts
+    // (real HTTP + real db). Only the envelope-level constraint below
+    // (items must be non-empty) is still enforced by the global pipe.
     it('rejects an empty items array', async () => {
       await authed().send({ items: [] }).expect(400);
-    });
-
-    it('rejects a missing name', async () => {
-      await authed()
-        .send({ items: [{ websiteUrl: 'https://a.example.com' }] })
-        .expect(400);
-    });
-
-    it('accepts name at the 128-char boundary', async () => {
-      await authed()
-        .send({
-          items: [
-            { name: 'a'.repeat(128), websiteUrl: 'https://a.example.com' },
-          ],
-        })
-        .expect(201);
-    });
-
-    it('rejects name one character past the 128-char boundary', async () => {
-      await authed()
-        .send({
-          items: [
-            { name: 'a'.repeat(129), websiteUrl: 'https://a.example.com' },
-          ],
-        })
-        .expect(400);
-    });
-
-    it('rejects an invalid websiteUrl', async () => {
-      await authed()
-        .send({ items: [{ name: 'A', websiteUrl: 'not-a-url' }] })
-        .expect(400);
-    });
-
-    it('rejects a websiteUrl with a disallowed protocol', async () => {
-      await authed()
-        .send({ items: [{ name: 'A', websiteUrl: 'ftp://a.example.com' }] })
-        .expect(400);
-    });
-
-    it('accepts websiteUrl at the 255-char boundary', async () => {
-      const base = 'https://a.example.com/';
-      const websiteUrl = base + 'x'.repeat(255 - base.length);
-      expect(websiteUrl).toHaveLength(255);
-
-      await authed()
-        .send({ items: [{ name: 'A', websiteUrl }] })
-        .expect(201);
-    });
-
-    it('rejects websiteUrl one character past the 255-char boundary', async () => {
-      const base = 'https://a.example.com/';
-      const websiteUrl = base + 'x'.repeat(256 - base.length);
-      expect(websiteUrl).toHaveLength(256);
-
-      await authed()
-        .send({ items: [{ name: 'A', websiteUrl }] })
-        .expect(400);
     });
   });
 
@@ -405,13 +356,8 @@ describe('VendorsController (HTTP, real guards + validation pipe)', () => {
     });
   });
 
-  describe('PATCH /vendors/batch — BatchUpdateVendorsDto validation', () => {
-    it('rejects an item missing id', async () => {
-      await request(app.getHttpServer())
-        .patch('/vendors/batch')
-        .set('Authorization', `Bearer ${ADMIN_TOKEN}`)
-        .send({ items: [{ name: 'No id' }] })
-        .expect(400);
-    });
-  });
+  // An item missing `id` (or any other per-item schema issue on
+  // UpdateVendorItemDto) is, likewise, no longer a global-pipe rejection —
+  // see the note on the POST block above. Covered in vendors.service.spec.ts
+  // and test/vendors.e2e-spec.ts instead.
 });

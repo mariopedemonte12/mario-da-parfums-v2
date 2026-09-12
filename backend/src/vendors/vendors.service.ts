@@ -1,8 +1,11 @@
 import { Inject, Injectable, NotFoundException } from '@nestjs/common';
+import { plainToInstance, type ClassConstructor } from 'class-transformer';
+import { validate } from 'class-validator';
 import { and, count, eq, ilike } from 'drizzle-orm';
 import { DRIZZLE } from '../database/database.module.js';
 import type { Database } from '../database/database.module.js';
 import { vendors } from '../database/schema/vendor.schema.js';
+import { parseConstraintMessage } from '../validators/helpers/parse-constraint-message.js';
 import type { Vendor } from './entities/vendor.entity.js';
 import { CreateVendorDto } from './dto/create-vendor.dto.js';
 import { UpdateVendorItemDto } from './dto/batch-update-vendors.dto.js';
@@ -17,13 +20,64 @@ function isPgError(err: unknown): err is PgError {
   return typeof err === 'object' && err !== null && 'code' in err;
 }
 
-function describeWriteError(err: unknown): string {
-  if (isPgError(err)) {
-    if (err.code === '23505') return 'A vendor with that name already exists';
-    if (err.code === '23503')
-      return 'Vendor is referenced by existing listings';
+// drizzle-orm (0.45.x) wraps every real driver error in a DrizzleQueryError
+// whose own `.code` is undefined — the pg error (with the actual SQLSTATE)
+// lives on `.cause`. Unwrap both shapes so real unique/FK violations are
+// recognized instead of always falling through to "Unexpected error".
+function getPgErrorCode(err: unknown): string | undefined {
+  if (isPgError(err) && err.code) return err.code;
+  if (err && typeof err === 'object' && 'cause' in err) {
+    const cause = (err as { cause?: unknown }).cause;
+    if (isPgError(cause)) return cause.code;
   }
+  return undefined;
+}
+
+function describeWriteError(err: unknown): string {
+  const code = getPgErrorCode(err);
+  if (code === '23505') return 'A vendor with that name already exists';
+  if (code === '23503') return 'Vendor is referenced by existing listings';
   return 'Unexpected error';
+}
+
+type SanitizeResult<T> = { error: string } | { error?: undefined; value: T };
+
+// Per-item schema validation AND sanitization, run manually instead of via
+// the global ValidationPipe: a batch item that fails class-validator (e.g.
+// an empty name) must only fail that item, per the spec's partial-success
+// semantics — the pipe validating the whole `items` array up front would
+// otherwise reject the entire batch for one bad item (see
+// batch-create-vendors.dto.ts / batch-update-vendors.dto.ts, which
+// deliberately drop @ValidateNested for this reason).
+//
+// Dropping @ValidateNested also drops the global pipe's whitelist
+// stripping for these nested items (whitelist stripping is driven by
+// class-validator walking into @ValidateNested children — an array it
+// never validates, it never sanitizes either). Without some replacement, a
+// client could set `id`, `updatedAt`, etc. directly and have them written
+// verbatim (drizzle's `.values()`/`.set()` writes whatever keys are
+// present, keyed by schema property name, with no allowlist of its own).
+// `plainToInstance(cls, item, { excludeExtraneousValues: true })` closes
+// that gap independently of class-validator's whitelist: it keeps only
+// the properties the DTO marks `@Expose()` (see create-vendor.dto.ts /
+// batch-update-vendors.dto.ts), so the DTO stays the single source of
+// truth for "what's writable" instead of a second, hand-picked field list
+// living here. The sanitized instance (not the raw item) is what callers
+// must write to the db.
+async function sanitizeAndValidate<T extends object>(
+  cls: ClassConstructor<T>,
+  item: object,
+): Promise<SanitizeResult<T>> {
+  const value = plainToInstance(cls, item, { excludeExtraneousValues: true });
+  const errors = await validate(value);
+  if (errors.length === 0) return { value };
+
+  const codes = errors.flatMap((error) =>
+    Object.values(error.constraints ?? {}).flatMap((message) =>
+      parseConstraintMessage(message).map((item) => item.code),
+    ),
+  );
+  return { error: `Validation failed: ${codes.join(', ')}` };
 }
 
 @Injectable()
@@ -69,8 +123,17 @@ export class VendorsService {
     const results: BatchItemResultDto[] = [];
 
     for (const item of items) {
+      const sanitized = await sanitizeAndValidate(CreateVendorDto, item);
+      if (sanitized.error) {
+        results.push({ success: false, error: sanitized.error });
+        continue;
+      }
+
       try {
-        const [vendor] = await this.db.insert(vendors).values(item).returning();
+        const [vendor] = await this.db
+          .insert(vendors)
+          .values(sanitized.value)
+          .returning();
         results.push({ id: vendor.id, success: true });
       } catch (err) {
         results.push({ success: false, error: describeWriteError(err) });
@@ -85,7 +148,32 @@ export class VendorsService {
   ): Promise<BatchItemResultDto[]> {
     const results: BatchItemResultDto[] = [];
 
-    for (const { id, ...changes } of items) {
+    for (const item of items) {
+      // Kept only for reporting which item failed a validation error —
+      // the actual write always goes through the sanitized value below,
+      // never this raw id (which could itself be the wrong type).
+      const rawId = (item as { id?: unknown }).id;
+
+      const sanitized = await sanitizeAndValidate(UpdateVendorItemDto, item);
+      if (sanitized.error) {
+        results.push({
+          id: typeof rawId === 'number' ? rawId : undefined,
+          success: false,
+          error: sanitized.error,
+        });
+        continue;
+      }
+
+      const { id, ...rest } = sanitized.value;
+      // plainToInstance leaves an @Expose()'d field present but `undefined`
+      // when the client didn't send it (PartialType makes name/websiteUrl
+      // optional) — drop those so `.set()` only ever receives fields that
+      // were actually provided, same as the original `{ id, ...changes }`
+      // destructure did.
+      const changes = Object.fromEntries(
+        Object.entries(rest).filter(([, value]) => value !== undefined),
+      );
+
       try {
         const [vendor] = await this.db
           .update(vendors)

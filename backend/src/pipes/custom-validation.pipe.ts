@@ -4,18 +4,8 @@ import {
   ValidationError,
   BadRequestException,
 } from '@nestjs/common';
-import { FieldError, ValidationErrorItem } from '../shared/validation-codes.js';
-
-function parseConstraintMessage(message: string): ValidationErrorItem[] {
-  try {
-    const parsed = JSON.parse(message);
-    return Array.isArray(parsed) ? parsed : [parsed];
-  } catch {
-    // Fallback: decoradores nativos de class-validator (@IsEmail, @IsNotEmpty, etc.)
-    // que no fueron migrados a código todavía -> se envía el mensaje tal cual como "code"
-    return [{ code: message }];
-  }
-}
+import { FieldError } from '../shared/validation-codes.js';
+import { parseConstraintMessage } from '../validators/helpers/parse-constraint-message.js';
 
 function flattenErrors(
   errors: ValidationError[],
