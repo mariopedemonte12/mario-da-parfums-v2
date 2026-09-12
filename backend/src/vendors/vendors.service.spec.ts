@@ -371,6 +371,62 @@ describe('VendorsService', () => {
       expect(results[0]).toEqual({ success: false, error: UNEXPECTED_ERROR });
       expect(results[1]).toEqual({ id: 7, success: true });
     });
+
+    // Per-item schema validation (BVA on CreateVendorDto), run for real:
+    // items are plain objects here (as everywhere else in this file), and
+    // describeValidationError() runs them through plainToInstance before
+    // validate(), so class-validator's decorators actually fire. A bad item
+    // must fail only itself and never reach `insert` — asserted via the
+    // insert spy never being called for it.
+    it('fails an item with an empty name without calling insert, and does not abort the batch', async () => {
+      const values = vi.fn().mockReturnValue({
+        returning: vi.fn().mockResolvedValue([makeVendor({ id: 9 })]),
+      });
+      const insert = vi.fn().mockReturnValue({ values });
+      await build({ insert });
+
+      const results = await service.createMany([
+        { name: '', websiteUrl: 'https://a.example.com' },
+        { name: 'Valid', websiteUrl: 'https://b.example.com' },
+      ]);
+
+      expect(results[0].success).toBe(false);
+      expect(results[0].id).toBeUndefined();
+      expect(results[1]).toEqual({ id: 9, success: true });
+      expect(values).toHaveBeenCalledTimes(1);
+    });
+
+    it.each([
+      ['a'.repeat(129), 'name one char past the 128 boundary'],
+      [12345 as unknown as string, 'a non-string name'],
+    ])('fails an item with %s (%s) without calling insert', async (name) => {
+      const insert = vi.fn();
+      await build({ insert });
+
+      const results = await service.createMany([
+        { name, websiteUrl: 'https://a.example.com' },
+      ]);
+
+      expect(results).toEqual([
+        { success: false, error: expect.any(String) },
+      ]);
+      expect(insert).not.toHaveBeenCalled();
+    });
+
+    it.each([
+      [undefined as unknown as string, 'a missing websiteUrl'],
+      ['not-a-url', 'an invalid websiteUrl format'],
+    ])('fails an item with %s (%s) without calling insert', async (websiteUrl) => {
+      const insert = vi.fn();
+      await build({ insert });
+
+      const results = await service.createMany([{ name: 'A', websiteUrl }]);
+
+      expect(results).toEqual([
+        { success: false, error: expect.any(String) },
+      ]);
+      expect(insert).not.toHaveBeenCalled();
+    });
   });
 
   describe('updateMany', () => {
@@ -496,6 +552,44 @@ describe('VendorsService', () => {
         expect(setSpy).toHaveBeenCalledWith(expectedChanges);
       },
     );
+
+    // Per-item schema validation (BVA on UpdateVendorItemDto), run for
+    // real — same reasoning as createMany's validation block above.
+    it('fails an item whose name is one char past the 128 boundary without calling update, and does not abort the batch', async () => {
+      const update = vi.fn().mockReturnValue({
+        set: vi.fn().mockReturnValue({
+          where: vi.fn().mockReturnValue({
+            returning: vi.fn().mockResolvedValue([makeVendor({ id: 2 })]),
+          }),
+        }),
+      });
+      await build({ update });
+
+      const results = await service.updateMany([
+        { id: 1, name: 'a'.repeat(129) },
+        { id: 2, name: 'Valid rename' },
+      ]);
+
+      expect(results[0]).toEqual({
+        id: 1,
+        success: false,
+        error: expect.any(String),
+      });
+      expect(results[1]).toEqual({ id: 2, success: true });
+      expect(update).toHaveBeenCalledTimes(1);
+    });
+
+    it('fails an item with a non-integer id without calling update', async () => {
+      const update = vi.fn();
+      await build({ update });
+
+      const results = await service.updateMany([
+        { id: 1.5, name: 'Whatever' },
+      ]);
+
+      expect(results[0]).toMatchObject({ success: false });
+      expect(update).not.toHaveBeenCalled();
+    });
   });
 
   describe('removeMany', () => {

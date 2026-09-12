@@ -1,4 +1,6 @@
 import { Inject, Injectable, NotFoundException } from '@nestjs/common';
+import { plainToInstance, type ClassConstructor } from 'class-transformer';
+import { validate } from 'class-validator';
 import { and, count, eq, ilike } from 'drizzle-orm';
 import { DRIZZLE } from '../database/database.module.js';
 import type { Database } from '../database/database.module.js';
@@ -17,13 +19,55 @@ function isPgError(err: unknown): err is PgError {
   return typeof err === 'object' && err !== null && 'code' in err;
 }
 
-function describeWriteError(err: unknown): string {
-  if (isPgError(err)) {
-    if (err.code === '23505') return 'A vendor with that name already exists';
-    if (err.code === '23503')
-      return 'Vendor is referenced by existing listings';
+// drizzle-orm (0.45.x) wraps every real driver error in a DrizzleQueryError
+// whose own `.code` is undefined — the pg error (with the actual SQLSTATE)
+// lives on `.cause`. Unwrap both shapes so real unique/FK violations are
+// recognized instead of always falling through to "Unexpected error".
+function getPgErrorCode(err: unknown): string | undefined {
+  if (isPgError(err) && err.code) return err.code;
+  if (err && typeof err === 'object' && 'cause' in err) {
+    const cause = (err as { cause?: unknown }).cause;
+    if (isPgError(cause)) return cause.code;
   }
+  return undefined;
+}
+
+function describeWriteError(err: unknown): string {
+  const code = getPgErrorCode(err);
+  if (code === '23505') return 'A vendor with that name already exists';
+  if (code === '23503') return 'Vendor is referenced by existing listings';
   return 'Unexpected error';
+}
+
+// Per-item schema validation, run manually instead of via the global
+// ValidationPipe: a batch item that fails class-validator (e.g. an empty
+// name) must only fail that item, per the spec's partial-success
+// semantics — the pipe validating the whole `items` array up front would
+// otherwise reject the entire batch for one bad item. class-validator's
+// `validate()` refuses anything that isn't an instance of a decorated
+// class, so the item (a plain object in this service's unit tests; already
+// a class instance in production, via the pipe's @Type()) is always run
+// through `plainToInstance` first to get real class-validator metadata.
+async function describeValidationError<T extends object>(
+  cls: ClassConstructor<T>,
+  item: T,
+): Promise<string | undefined> {
+  const errors = await validate(plainToInstance(cls, item));
+  if (errors.length === 0) return undefined;
+
+  const codes = errors.flatMap((error) =>
+    Object.values(error.constraints ?? {}).flatMap((message) => {
+      try {
+        const parsed = JSON.parse(message);
+        return (Array.isArray(parsed) ? parsed : [parsed]).map(
+          (item: { code: string }) => item.code,
+        );
+      } catch {
+        return [message];
+      }
+    }),
+  );
+  return `Validation failed: ${codes.join(', ')}`;
 }
 
 @Injectable()
@@ -69,6 +113,15 @@ export class VendorsService {
     const results: BatchItemResultDto[] = [];
 
     for (const item of items) {
+      const validationError = await describeValidationError(
+        CreateVendorDto,
+        item,
+      );
+      if (validationError) {
+        results.push({ success: false, error: validationError });
+        continue;
+      }
+
       try {
         const [vendor] = await this.db.insert(vendors).values(item).returning();
         results.push({ id: vendor.id, success: true });
@@ -85,7 +138,18 @@ export class VendorsService {
   ): Promise<BatchItemResultDto[]> {
     const results: BatchItemResultDto[] = [];
 
-    for (const { id, ...changes } of items) {
+    for (const item of items) {
+      const { id, ...changes } = item;
+
+      const validationError = await describeValidationError(
+        UpdateVendorItemDto,
+        item,
+      );
+      if (validationError) {
+        results.push({ id, success: false, error: validationError });
+        continue;
+      }
+
       try {
         const [vendor] = await this.db
           .update(vendors)
