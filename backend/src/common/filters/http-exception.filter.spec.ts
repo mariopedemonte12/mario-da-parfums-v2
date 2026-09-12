@@ -1,4 +1,8 @@
-import { ArgumentsHost, BadRequestException, ConflictException } from '@nestjs/common';
+import {
+  ArgumentsHost,
+  BadRequestException,
+  ConflictException,
+} from '@nestjs/common';
 import { vi } from 'vitest';
 import { AllExceptionsFilter } from './http-exception.filter.js';
 
@@ -27,7 +31,10 @@ describe('AllExceptionsFilter', () => {
 
     expect(status).toHaveBeenCalledWith(409);
     expect(json).toHaveBeenCalledWith(
-      expect.objectContaining({ statusCode: 409, message: 'Email already registered' }),
+      expect.objectContaining({
+        statusCode: 409,
+        message: 'Email already registered',
+      }),
     );
     expect(json.mock.calls[0][0]).not.toHaveProperty('errors');
   });
@@ -35,13 +42,22 @@ describe('AllExceptionsFilter', () => {
   it('preserves the validation pipe errors array', () => {
     const json = vi.fn();
     const { host, status } = createHost(json);
-    const errors = [{ field: 'email', errors: [{ code: 'EMAIL_INVALID_FORMAT' }] }];
+    const errors = [
+      { field: 'email', errors: [{ code: 'EMAIL_INVALID_FORMAT' }] },
+    ];
 
-    filter.catch(new BadRequestException({ message: 'Validation failed', errors }), host);
+    filter.catch(
+      new BadRequestException({ message: 'Validation failed', errors }),
+      host,
+    );
 
     expect(status).toHaveBeenCalledWith(400);
     expect(json).toHaveBeenCalledWith(
-      expect.objectContaining({ statusCode: 400, message: 'Validation failed', errors }),
+      expect.objectContaining({
+        statusCode: 400,
+        message: 'Validation failed',
+        errors,
+      }),
     );
   });
 
@@ -53,9 +69,14 @@ describe('AllExceptionsFilter', () => {
 
     expect(status).toHaveBeenCalledWith(500);
     expect(json).toHaveBeenCalledWith(
-      expect.objectContaining({ statusCode: 500, message: 'Internal server error' }),
+      expect.objectContaining({
+        statusCode: 500,
+        message: 'Internal server error',
+      }),
     );
     const body = json.mock.calls[0][0];
-    expect(JSON.stringify(body)).not.toContain('db connection string leaked here');
+    expect(JSON.stringify(body)).not.toContain(
+      'db connection string leaked here',
+    );
   });
 });
