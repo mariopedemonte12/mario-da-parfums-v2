@@ -118,17 +118,21 @@ describe('Fragrances (e2e, real Postgres)', () => {
   // GET /fragrances/:id
   // ---------------------------------------------------------------------
   describe('GET /fragrances/:id', () => {
-    it('rejects without a token (401) and rejects a non-admin token (403)', async () => {
+    // Spec (amended, "Alcance del CRUD"): GET /fragrances/:id is completely
+    // public — no JwtAuthGuard/RolesGuard. Verified here against the real
+    // guard stack (no Authorization header at all, and a non-admin token),
+    // not just the absence of guard metadata on the handler.
+    it('is public: returns 200 with no token and with a non-admin token', async () => {
       const [created] = await createViaApi([validCreateItem()]);
 
       await request(app.getHttpServer())
         .get(`/fragrances/${created.id}`)
-        .expect(401);
+        .expect(200);
 
       await request(app.getHttpServer())
         .get(`/fragrances/${created.id}`)
         .set('Authorization', `Bearer ${userToken}`)
-        .expect(403);
+        .expect(200);
     });
 
     it('returns the real row for an admin, shaped per ResponseFragranceDto', async () => {
@@ -198,13 +202,16 @@ describe('Fragrances (e2e, real Postgres)', () => {
   // ---------------------------------------------------------------------
   // GET /fragrances — filters + pagination against real rows
   // ---------------------------------------------------------------------
-  describe('GET /fragrances — admin-only, filters, pagination', () => {
-    it('rejects without a token (401) and rejects a non-admin token (403)', async () => {
-      await request(app.getHttpServer()).get('/fragrances').expect(401);
+  describe('GET /fragrances — public, filters, pagination', () => {
+    // Spec (amended, "Alcance del CRUD"): GET /fragrances is completely
+    // public — no JwtAuthGuard/RolesGuard. Verified against the real guard
+    // stack, not just guard metadata.
+    it('is public: returns 200 with no token and with a non-admin token', async () => {
+      await request(app.getHttpServer()).get('/fragrances').expect(200);
       await request(app.getHttpServer())
         .get('/fragrances')
         .set('Authorization', `Bearer ${userToken}`)
-        .expect(403);
+        .expect(200);
     });
 
     describe('filters and pagination', () => {
@@ -906,13 +913,18 @@ describe('Fragrances (e2e, real Postgres)', () => {
   });
 
   // ---------------------------------------------------------------------
-  // Decision table: role x batch operation
+  // Decision table: role x endpoint (all 5 endpoints from
+  // specs/fragrances-crud.md's "Alcance del CRUD")
   // ---------------------------------------------------------------------
-  // Full combinatorial coverage (3 roles x 3 operations = 9 cells) per the
-  // testing skill's "<=4 conditions -> full coverage" rule. Guard order is
-  // JwtAuthGuard then RolesGuard, so "no token" always yields 401 and
-  // "wrong role" always yields 403, before the service/DB ever runs.
-  describe('role x batch-operation decision table', () => {
+  // Full combinatorial coverage (3 roles x 5 endpoints = 15 cells) per the
+  // testing skill's "<=4 conditions -> full coverage" rule (role and
+  // endpoint are the two independent conditions here). Guard order for the
+  // batch endpoints is JwtAuthGuard then RolesGuard, so "no token" always
+  // yields 401 and "wrong role" always yields 403 there, before the
+  // service/DB ever runs. The two GET endpoints carry no guards at all
+  // (per the amended spec), so every role — including no token — reaches
+  // the service and gets the same success status.
+  describe('role x endpoint decision table', () => {
     let target: { id: string };
 
     beforeEach(async () => {
@@ -921,6 +933,24 @@ describe('Fragrances (e2e, real Postgres)', () => {
 
     const operations = [
       {
+        name: 'list',
+        run: (token: string | null) =>
+          request(app.getHttpServer())
+            .get('/fragrances')
+            .set(...authHeader(token)),
+        successStatus: 200,
+        public: true,
+      },
+      {
+        name: 'getById',
+        run: (token: string | null) =>
+          request(app.getHttpServer())
+            .get(`/fragrances/${target.id}`)
+            .set(...authHeader(token)),
+        successStatus: 200,
+        public: true,
+      },
+      {
         name: 'create',
         run: (token: string | null) =>
           request(app.getHttpServer())
@@ -928,6 +958,7 @@ describe('Fragrances (e2e, real Postgres)', () => {
             .set(...authHeader(token))
             .send({ items: [validCreateItemForTable()] }),
         successStatus: 201,
+        public: false,
       },
       {
         name: 'update',
@@ -937,6 +968,7 @@ describe('Fragrances (e2e, real Postgres)', () => {
             .set(...authHeader(token))
             .send({ items: [{ id: target.id, brand: 'Updated' }] }),
         successStatus: 200,
+        public: false,
       },
       {
         name: 'delete',
@@ -946,6 +978,7 @@ describe('Fragrances (e2e, real Postgres)', () => {
             .set(...authHeader(token))
             .send({ ids: [target.id] }),
         successStatus: 200,
+        public: false,
       },
     ];
 
@@ -967,8 +1000,9 @@ describe('Fragrances (e2e, real Postgres)', () => {
 
     for (const op of operations) {
       for (const [roleLabel, getToken, fixedStatus] of roles) {
-        const expected = roleLabel === 'admin role' ? op.successStatus : fixedStatus;
-        it(`${op.name} batch as ${roleLabel} -> ${expected}`, async () => {
+        const expected =
+          op.public || roleLabel === 'admin role' ? op.successStatus : fixedStatus;
+        it(`${op.name} as ${roleLabel} -> ${expected}`, async () => {
           await op.run(getToken()).expect(expected);
         });
       }

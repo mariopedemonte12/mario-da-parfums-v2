@@ -17,7 +17,7 @@ import {
 // Runs the MCP catalog server against a real Postgres (docker-compose.yml —
 // container must already be up), over the real HTTP transport, per the
 // testing skill's scope gate: the things that matter here (does the MCP
-// endpoint really require no auth while the equivalent REST endpoint does,
+// endpoint really require no auth, same as the now-public REST endpoint,
 // does a real DB outage produce an error result instead of crashing the
 // connection/process, does get_cheapest_listing really pick the cheapest
 // real row) only surface against the real stack — a mocked-service unit
@@ -177,10 +177,15 @@ describe('MCP catalog server (e2e, real Postgres, real HTTP)', () => {
     expect(res.body.error.message).toMatch(/method not allowed/i);
   });
 
-  // --- no authentication required, unlike the equivalent REST routes -----
+  // --- no authentication required, same as the equivalent REST route -----
+  // (specs/fragrances-crud.md, "Alcance del CRUD": GET /fragrances is now
+  // public, so this is no longer a MCP-vs-REST inconsistency to sanity
+  // check — both are anonymous-accessible. Kept as a same-behavior smoke
+  // test rather than deleted, so a future guard regression on either side
+  // still surfaces here.)
 
-  it('the equivalent REST route requires auth (sanity check for the next test)', async () => {
-    await request(app.getHttpServer()).get('/fragrances').expect(401);
+  it('the equivalent REST route is also public, no token needed', async () => {
+    await request(app.getHttpServer()).get('/fragrances').expect(200);
   });
 
   it('search_fragrances works over MCP with no Authorization header at all', async () => {
