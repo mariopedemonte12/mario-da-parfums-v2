@@ -1,0 +1,1 @@
+Stub MCP desechable con datos fijos, solo para ejercitar el loop de tool calling de `chatbot-server` en desarrollo local — **no** es el servidor MCP real de fragancias/vendors/precios (eso es una dependencia externa, ver `specs/chatbot-server.md` § "Fuera de alcance"); no lo uses en la sesión de testing como si fuera datos reales.
