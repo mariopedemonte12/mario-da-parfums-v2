@@ -1,11 +1,13 @@
 import { cn } from "@/lib/utils"
 
-type WindLinesVariant = "wind" | "sw"
+type WindLinesVariant = "wind" | "sw" | "divider"
 
-type WindPath = { d: string; strokeWidth: string }
+type WindPath = { d: string; strokeWidth: string; opacity?: number }
 
 const VARIANTS: Record<WindLinesVariant, { viewBox: string; paths: WindPath[] }> = {
-  // ambient texture — hero backgrounds, wide nav/footer dividers (mock's .wind, 4-path hero instance)
+  // ambient texture — hero backgrounds only (mock's .wind, 4-path hero instance). Do NOT use
+  // for thin bars (nav/footer) — squashing this tall viewBox via preserveAspectRatio="none"
+  // into a short height mangles the curves. Use "divider" for that instead.
   wind: {
     viewBox: "0 0 1280 600",
     paths: [
@@ -24,10 +26,22 @@ const VARIANTS: Record<WindLinesVariant, { viewBox: string; paths: WindPath[] }>
       { d: "M200 48 C150 44,100 52,50 46 S20 44,0 50", strokeWidth: ".6" },
     ],
   },
+  // thin full-width bar — nav/footer dividers (mock's .wind, artboard 1a nav-divider instance,
+  // viewBox 0 0 1280 14, per-path opacity baked in rather than a single svg-level opacity).
+  // Stroke widths bumped up from the mock's .8/.6 and given a slower "wind-lines--divider"
+  // timing (see globals.css) — at this bar's small on-screen height, the mock's literal
+  // values read as too thin/fast to register as the intended "brisa" motif.
+  divider: {
+    viewBox: "0 0 1280 14",
+    paths: [
+      { d: "M1280 7 C1000 2,800 12,560 7 S200 3,0 8", strokeWidth: "1.6", opacity: 0.55 },
+      { d: "M1280 10 C900 12,700 4,420 9 S120 8,0 4", strokeWidth: "1.3", opacity: 0.35 },
+    ],
+  },
 }
 
 interface WindLinesProps {
-  /** "wind" = ambient texture (hero/section backgrounds, wide dividers). "sw" = short local flourish. */
+  /** "wind" = ambient hero/section background texture. "sw" = short local flourish. "divider" = thin full-width nav/footer bar. */
   variant?: WindLinesVariant
   /** Stroke color for every path. Defaults to the design system's secondary token. */
   color?: string
@@ -42,7 +56,7 @@ interface WindLinesProps {
 export default function WindLines({
   variant = "wind",
   color = "var(--color-secondary)",
-  opacity = variant === "wind" ? 0.55 : 1,
+  opacity = variant === "wind" ? 0.55 : undefined,
   width,
   height,
   viewBox,
@@ -54,7 +68,12 @@ export default function WindLines({
     <svg
       aria-hidden="true"
       focusable="false"
-      className={cn("wind-lines", variant === "sw" && "wind-lines--sw", className)}
+      className={cn(
+        "wind-lines",
+        variant === "sw" && "wind-lines--sw",
+        variant === "divider" && "wind-lines--divider",
+        className,
+      )}
       viewBox={viewBox ?? preset.viewBox}
       preserveAspectRatio="none"
       width={width}
@@ -62,7 +81,13 @@ export default function WindLines({
       opacity={opacity}
     >
       {preset.paths.map((path) => (
-        <path key={path.d} d={path.d} stroke={color} strokeWidth={path.strokeWidth} />
+        <path
+          key={path.d}
+          d={path.d}
+          stroke={color}
+          strokeWidth={path.strokeWidth}
+          opacity={path.opacity}
+        />
       ))}
     </svg>
   )
