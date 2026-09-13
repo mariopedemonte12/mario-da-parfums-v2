@@ -16,6 +16,7 @@ from dotenv import load_dotenv
 
 DEFAULT_EMBEDDINGS_PATH = Path(__file__).parent / "embeddings.npz"
 DEFAULT_MODEL_NAME = "paraphrase-multilingual-MiniLM-L12-v2"
+DEFAULT_MCP_MOUNT_PATH = "/mcp"
 
 
 @dataclass
@@ -33,9 +34,24 @@ def load_server_config() -> ServerConfig:
 
     return ServerConfig(
         database_url=os.environ["DATABASE_URL"],
-        embeddings_path=Path(os.environ.get("EMBEDDINGS_PATH", DEFAULT_EMBEDDINGS_PATH)),
+        embeddings_path=Path(
+            os.environ.get("EMBEDDINGS_PATH", DEFAULT_EMBEDDINGS_PATH)
+        ),
         model_name=os.environ.get("SIMILARITY_MODEL_NAME", DEFAULT_MODEL_NAME),
         host=os.environ.get("HOST", "0.0.0.0"),
         port=int(os.environ.get("PORT", "8001")),
         log_level=os.environ.get("LOG_LEVEL", "info"),
     )
+
+
+def load_mcp_mount_path() -> str:
+    """Where the MCP sub-app is mounted on the FastAPI app.
+
+    Read on its own, separate from load_server_config(): the mount happens at
+    app.py's module scope (before the app starts, so the route exists from the
+    first request), and load_server_config() requires DATABASE_URL -- forcing
+    that at import time would break app.py's existing test seam (lifespan
+    skipped/overridden, DB never touched).
+    """
+    load_dotenv(Path(__file__).parent / ".env")
+    return os.environ.get("MCP_MOUNT_PATH", DEFAULT_MCP_MOUNT_PATH)

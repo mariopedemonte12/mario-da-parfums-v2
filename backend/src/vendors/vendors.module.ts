@@ -5,5 +5,6 @@ import { VendorsController } from './vendors.controller.js';
 @Module({
   controllers: [VendorsController],
   providers: [VendorsService],
+  exports: [VendorsService],
 })
 export class VendorsModule {}

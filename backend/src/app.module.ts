@@ -11,6 +11,7 @@ import { PasswordsModule } from './passwords/passwords.module.js';
 import { AuthsModule } from './auths/auths.module.js';
 import { JwtConfigModule } from './auths/jwt-config.module.js';
 import { FavoritesModule } from './favorites/favorites.module.js';
+import { McpModule } from './mcp/mcp.module.js';
 
 @Module({
   imports: [
@@ -24,6 +25,7 @@ import { FavoritesModule } from './favorites/favorites.module.js';
     PasswordsModule,
     AuthsModule,
     FavoritesModule,
+    McpModule,
   ],
   controllers: [AppController],
   providers: [AppService],

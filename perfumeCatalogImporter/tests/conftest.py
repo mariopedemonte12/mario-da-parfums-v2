@@ -48,3 +48,9 @@ class RecordingEncoder:
 @pytest.fixture
 def fake_encoder() -> RecordingEncoder:
     return RecordingEncoder()
+
+
+@pytest.fixture
+def anyio_backend() -> str:
+    """Pin anyio's pytest plugin to asyncio -- trio isn't a project dependency."""
+    return "asyncio"
