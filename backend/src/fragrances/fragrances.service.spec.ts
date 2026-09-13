@@ -35,6 +35,9 @@ describe('FragrancesService', () => {
     concentration: 'Eau de Parfum',
     description: 'A woody aromatic fragrance.',
     imageUrl: 'https://example.com/images/bleu-de-chanel.jpg',
+    olfactoryFamily: 'Woody Spicy',
+    targetAudience: 'Male',
+    longevity: 'Medium-Strong',
     createdAt: new Date('2026-01-01T00:00:00Z'),
     updatedAt: new Date('2026-01-01T00:00:00Z'),
   };
@@ -106,6 +109,9 @@ describe('FragrancesService', () => {
           concentration: sampleRow.concentration,
           description: sampleRow.description,
           imageUrl: sampleRow.imageUrl,
+          olfactoryFamily: sampleRow.olfactoryFamily,
+          targetAudience: sampleRow.targetAudience,
+          longevity: sampleRow.longevity,
           createdAt: sampleRow.createdAt,
           updatedAt: sampleRow.updatedAt,
         },
@@ -171,6 +177,9 @@ describe('FragrancesService', () => {
       ['name', { name: 'Chanel' }],
       ['brand', { brand: 'Chanel' }],
       ['concentration', { concentration: 'EDP' }],
+      ['olfactoryFamily', { olfactoryFamily: 'Woody Spicy' }],
+      ['targetAudience', { targetAudience: 'Male' }],
+      ['longevity', { longevity: 'Medium-Strong' }],
     ])(
       'builds a defined filter condition when %s is given',
       async (_label, filter) => {
@@ -195,6 +204,9 @@ describe('FragrancesService', () => {
     it.each([
       ['brand', 'brand' as const],
       ['concentration', 'concentration' as const],
+      ['olfactoryFamily', 'olfactoryFamily' as const],
+      ['targetAudience', 'targetAudience' as const],
+      ['longevity', 'longevity' as const],
     ])('filters %s as an exact match', async (_label, field) => {
       mockSelectChain([], 0);
 
