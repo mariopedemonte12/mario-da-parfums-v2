@@ -1,0 +1,361 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet data-dc-atomics><meta name="design_doc_mode" content="canvas">
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,500;0,600;1,400;1,500&family=Jost:wght@300;400;500&display=swap" rel="stylesheet">
+<style>body{margin:0;background:#efe9da;font-family:Jost,system-ui,sans-serif;color:#272829}a{color:#272829}a:hover{color:#61677a}.dv-turn{padding:40px 44px 32px;border-bottom:1px solid rgba(0,0,0,.08);scroll-margin-top:16px}.dv-thd{display:flex;align-items:baseline;gap:10px;margin:0 0 20px}.dv-tid{font:600 10px ui-monospace,Menlo,monospace;padding:3px 7px;background:#272829;color:#fff;border-radius:4px;text-decoration:none}.dv-tname{font:600 13px/1.2 Jost,sans-serif;color:#272829}.dv-opts{display:flex;flex-wrap:wrap;gap:28px;align-items:flex-start}.dv-opt{flex:none;display:flex;flex-direction:column;gap:9px;scroll-margin-top:16px}.dv-oid{font:600 10.5px ui-monospace,Menlo,monospace;padding:3px 7px;background:rgba(0,0,0,.08);color:#272829;border-radius:5px;text-decoration:none}.dv-olabel{display:flex;align-items:baseline;gap:8px;font:400 11px/1.3 Jost,sans-serif;color:rgba(0,0,0,.55)}.dv-card{max-width:100%;background:#fff6e0;border:1px solid rgba(0,0,0,.08);border-radius:8px;box-shadow:0 1px 3px rgba(0,0,0,.06);overflow:hidden;position:relative}.dv-opt:target .dv-oid{background:#61677a;color:#fff}.dv-next{margin:22px 0 0;font:12px/1.5 Jost,sans-serif;color:rgba(0,0,0,.5)}.dv-note{max-width:760px;font:14px/1.6 Jost,sans-serif;color:#61677a;margin:0 0 24px}
+@keyframes wind{to{stroke-dashoffset:-600}}@keyframes windslow{to{stroke-dashoffset:-900}}@keyframes drift{0%{transform:translateX(0);opacity:0}15%{opacity:1}85%{opacity:1}100%{transform:translateX(-220px);opacity:0}}@keyframes emerge{from{opacity:0;transform:translateX(120px)}to{opacity:1;transform:translateX(0)}}@keyframes breathe{0%,100%{transform:translateY(0)}50%{transform:translateY(-4px)}}@keyframes blink{0%,100%{opacity:.35}50%{opacity:.9}}
+.wind path{fill:none;stroke:#61677a;stroke-linecap:round;stroke-dasharray:90 220;animation:wind 7s linear infinite}.wind path:nth-child(2){animation-duration:9s;animation-delay:-3s}.wind path:nth-child(3){animation-duration:11s;animation-delay:-6s}.wind path:nth-child(4){animation-duration:8s;animation-delay:-2s}
+.sw path{fill:none;stroke:#61677a;stroke-linecap:round;stroke-dasharray:60 160;animation:windslow 6s linear infinite}.sw path:nth-child(2){animation-delay:-2s;animation-duration:8s}.sw path:nth-child(3){animation-delay:-4s;animation-duration:7s}
+.emerge>*{animation:emerge 1.2s cubic-bezier(.2,.7,.2,1) both}.emerge>*:nth-child(2){animation-delay:.25s}.emerge>*:nth-child(3){animation-delay:.45s}.emerge>*:nth-child(4){animation-delay:.65s}
+.sensei{animation:breathe 4s ease-in-out infinite}.dot{animation:blink 1.4s ease-in-out infinite}.dot:nth-child(2){animation-delay:.2s}.dot:nth-child(3){animation-delay:.4s}
+input::placeholder{color:#61677a;font-style:italic}input{outline:none}</style></helmet>
+
+<section class="dv-turn" id="t1">
+<div class="dv-thd"><a class="dv-tid" href="#t1">1</a><span class="dv-tname">mario-da-parfumsv2 — sistema de viento</span></div>
+<p class="dv-note">Supuestos: paleta exacta (#fff6e0 fondo, #d8d9da superficie, #61677a secundario, #272829 primario). Cormorant Garamond para títulos, Jost para UI. Viento = trazos finos en #61677a con guiones que fluyen de derecha a izquierda; sutil, nunca compite con el producto. Frascos son placeholders hasta recibir fotografía. Sensei en trazos sumi-e como boceto de dirección. Desktop 1280 salvo la versión móvil.</p>
+<div class="dv-opts">
+
+<!-- 1a Landing Brisa -->
+<div class="dv-opt" id="1a"><div class="dv-olabel"><a class="dv-oid" href="#1a">1a</a>Landing “Brisa” — búsqueda central, viento al acercarse</div>
+<div class="dv-card" style="width:1280px;height:820px;display:flex;flex-direction:column">
+  <nav style="position:relative;display:flex;align-items:center;justify-content:space-between;padding:26px 56px 18px;font-size:13px;letter-spacing:.14em;text-transform:uppercase;font-weight:400">
+    <div style="font:italic 500 24px/1 'Cormorant Garamond',serif;letter-spacing:0;text-transform:none">mario-da-parfumsv2</div>
+    <div style="display:flex;gap:40px"><span>Inicio</span><span>Perfumes</span><span>Notas</span><span>Sensei</span></div>
+    <div style="display:flex;gap:28px;align-items:center"><span>Entrar</span><span style="width:26px;height:26px;border:1px solid #272829;border-radius:50%;display:inline-block"></span></div>
+    <svg class="wind" style="position:absolute;left:0;right:0;bottom:0;width:100%;height:14px" viewBox="0 0 1280 14" preserveAspectRatio="none"><path d="M1280 7 C1000 2,800 12,560 7 S200 3,0 8" stroke-width=".8" opacity=".55"></path><path d="M1280 10 C900 12,700 4,420 9 S120 8,0 4" stroke-width=".6" opacity=".35"></path></svg>
+  </nav>
+  <main style="flex:1;position:relative;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:34px;padding:0 56px">
+    <svg class="wind" style="position:absolute;inset:0;width:100%;height:100%" viewBox="0 0 1280 600" preserveAspectRatio="none" opacity="{{ windOpacity }}"><path d="M1280 250 C1050 235,950 285,760 300 S460 300,300 290 S80 270,-20 285" stroke-width="1"></path><path d="M1280 330 C1120 340,980 300,820 318 S520 345,360 330 S60 320,-20 330" stroke-width=".8"></path><path d="M1280 290 C1000 300,880 265,700 282 S400 300,220 280 S40 280,-20 300" stroke-width=".6"></path><path d="M1280 372 C1060 360,900 385,740 375 S420 358,240 372 S40 380,-20 365" stroke-width=".7"></path></svg>
+    <p style="margin:0;font:300 13px/1 Jost,sans-serif;letter-spacing:.28em;text-transform:uppercase;color:#61677a;position:relative">Perfumería guiada por lo que sientes</p>
+    <h1 style="margin:0;font:400 76px/1.05 'Cormorant Garamond',serif;text-align:center;max-width:820px;text-wrap:balance;position:relative">Cuéntanos la escena. <em style="font-weight:400;color:#61677a">El viento</em> trae el perfume.</h1>
+    <div style="position:relative;width:720px;margin-top:10px">
+      <svg class="sw" style="position:absolute;right:-140px;top:50%;transform:translateY(-50%);width:200px;height:60px;pointer-events:none" viewBox="0 0 200 60"><path d="M200 18 C150 14,110 26,60 22 S20 18,0 26" stroke-width="1"></path><path d="M200 34 C160 40,120 28,70 34 S30 40,0 34" stroke-width=".8"></path><path d="M200 48 C150 44,100 52,50 46 S20 44,0 50" stroke-width=".6"></path></svg>
+      <div style="display:flex;align-items:center;gap:16px;height:68px;padding:0 10px 0 28px;border:1px solid #d8d9da;border-radius:999px;background:#fff6e0;box-shadow:0 12px 40px -24px rgba(39,40,41,.35)">
+        <input value="" placeholder="Describe lo que buscas" style="flex:1;border:0;background:transparent;font:italic 400 24px/1 'Cormorant Garamond',serif;color:#272829">
+        <button style="height:48px;padding:0 26px;border:0;border-radius:999px;background:#272829;color:#fff6e0;font:400 13px/1 Jost,sans-serif;letter-spacing:.12em;text-transform:uppercase;cursor:pointer">Buscar</button>
+      </div>
+      <div style="display:flex;gap:10px;justify-content:center;margin-top:18px;font-size:12px;color:#61677a">
+        <span style="padding:6px 14px;border:1px solid #d8d9da;border-radius:999px">una tarde de lluvia en Kioto</span>
+        <span style="padding:6px 14px;border:1px solid #d8d9da;border-radius:999px">cuero y biblioteca</span>
+        <span style="padding:6px 14px;border:1px solid #d8d9da;border-radius:999px">higo fresco, mar</span>
+      </div>
+    </div>
+  </main>
+  <footer style="position:relative;display:flex;justify-content:space-between;align-items:flex-end;padding:22px 56px 26px;font-size:12px;color:#61677a;letter-spacing:.06em">
+    <svg class="wind" style="position:absolute;left:0;right:0;top:0;width:100%;height:16px" viewBox="0 0 1280 16" preserveAspectRatio="none"><path d="M1280 8 C1040 4,820 13,600 8 S240 4,0 9" stroke-width=".8" opacity=".5"></path><path d="M1280 12 C960 14,760 6,500 11 S200 12,0 6" stroke-width=".6" opacity=".3"></path></svg>
+    <span>© 2026 mario-da-parfumsv2</span>
+    <div style="display:flex;gap:28px"><span>Envíos</span><span>Notas olfativas</span><span>Contacto</span><span>Instagram</span></div>
+  </footer>
+  <!-- chat bubble -->
+  <div style="position:absolute;right:32px;bottom:30px;display:flex;align-items:center;gap:12px">
+    <svg class="sw" style="width:110px;height:40px" viewBox="0 0 110 40"><path d="M110 12 C80 8,60 18,30 14 S10 12,0 18" stroke-width=".9"></path><path d="M110 24 C85 28,55 20,25 24 S8 28,0 26" stroke-width=".7"></path><path d="M110 34 C80 30,50 36,20 32 S6 32,0 36" stroke-width=".5"></path></svg>
+    <div style="width:64px;height:64px;border-radius:50%;background:#272829;display:flex;align-items:center;justify-content:center;box-shadow:0 14px 34px -18px rgba(39,40,41,.7)">
+      <svg width="34" height="38" viewBox="0 0 34 38"><circle cx="17" cy="10" r="7" fill="#fff6e0"></circle><path d="M6 36 C8 24,12 20,17 20 S26 24,28 36" fill="none" stroke="#fff6e0" stroke-width="6" stroke-linecap="round"></path></svg>
+    </div>
+  </div>
+</div></div>
+
+<!-- 1b Landing Corriente -->
+<div class="dv-opt" id="1b"><div class="dv-olabel"><a class="dv-oid" href="#1b">1b</a>Landing “Corriente” — tipografía grande, búsqueda como línea de horizonte</div>
+<div class="dv-card" style="width:1280px;height:820px;display:flex;flex-direction:column;background:#272829;color:#fff6e0">
+  <nav style="position:relative;display:grid;grid-template-columns:1fr auto 1fr;align-items:center;padding:26px 56px 18px;font-size:13px;letter-spacing:.14em;text-transform:uppercase">
+    <div style="display:flex;gap:40px"><span>Perfumes</span><span>Notas</span><span>Sensei</span></div>
+    <div style="font:italic 500 24px/1 'Cormorant Garamond',serif;letter-spacing:0;text-transform:none;text-align:center">mario-da-parfumsv2</div>
+    <div style="display:flex;gap:28px;justify-content:flex-end"><span>Entrar</span><span>ES</span></div>
+    <svg class="wind" style="position:absolute;left:0;right:0;bottom:0;width:100%;height:14px" viewBox="0 0 1280 14" preserveAspectRatio="none"><path d="M1280 7 C1000 2,800 12,560 7 S200 3,0 8" stroke-width=".8" opacity=".5" stroke="#d8d9da"></path><path d="M1280 10 C900 12,700 4,420 9 S120 8,0 4" stroke-width=".6" opacity=".3" stroke="#d8d9da"></path></svg>
+  </nav>
+  <main style="flex:1;position:relative;padding:60px 56px 40px;display:grid;grid-template-rows:1fr auto;gap:40px">
+    <svg class="wind" style="position:absolute;inset:0;width:100%;height:100%" viewBox="0 0 1280 600" preserveAspectRatio="none" opacity="{{ windOpacity }}"><path d="M1280 120 C1050 105,950 155,760 170 S460 170,300 160 S80 140,-20 155" stroke-width="1" stroke="#d8d9da"></path><path d="M1280 200 C1120 210,980 170,820 188 S520 215,360 200 S60 190,-20 200" stroke-width=".8" stroke="#d8d9da"></path><path d="M1280 160 C1000 170,880 135,700 152 S400 170,220 150 S40 150,-20 170" stroke-width=".6" stroke="#d8d9da"></path></svg>
+    <div style="position:relative;display:grid;grid-template-columns:1fr 360px;gap:40px;align-items:end">
+      <h1 style="margin:0;font:400 128px/.95 'Cormorant Garamond',serif;letter-spacing:-.02em;text-wrap:balance">Lo que<br>buscas ya<br><em style="font-weight:400;color:#d8d9da">está en el aire.</em></h1>
+      <p style="margin:0 0 14px;font:300 17px/1.6 Jost,sans-serif;color:#d8d9da;max-width:320px">Describe un lugar, una hora, una persona. Nuestro sensei interpreta la escena y el viento trae los perfumes que la componen.</p>
+    </div>
+    <div style="position:relative">
+      <svg class="sw" style="position:absolute;right:0;top:-46px;width:320px;height:60px;pointer-events:none" viewBox="0 0 320 60"><path d="M320 18 C250 14,180 26,100 22 S40 18,0 26" stroke-width="1" stroke="#d8d9da"></path><path d="M320 34 C260 40,190 28,110 34 S50 40,0 34" stroke-width=".8" stroke="#d8d9da"></path><path d="M320 48 C240 44,160 52,80 46 S30 44,0 50" stroke-width=".6" stroke="#d8d9da"></path></svg>
+      <div style="display:flex;align-items:center;gap:24px;border-bottom:1px solid #d8d9da;padding:0 0 18px">
+        <span style="font:300 12px/1 Jost,sans-serif;letter-spacing:.28em;text-transform:uppercase;color:#d8d9da">01</span>
+        <input value="" placeholder="Describe lo que buscas" style="flex:1;border:0;background:transparent;font:italic 400 40px/1 'Cormorant Garamond',serif;color:#fff6e0">
+        <span style="font:400 13px/1 Jost,sans-serif;letter-spacing:.14em;text-transform:uppercase;border:1px solid #d8d9da;padding:14px 22px;border-radius:999px">Buscar →</span>
+      </div>
+    </div>
+  </main>
+  <footer style="position:relative;display:flex;justify-content:space-between;padding:22px 56px 26px;font-size:12px;color:#d8d9da;letter-spacing:.06em">
+    <svg class="wind" style="position:absolute;left:0;right:0;top:0;width:100%;height:16px" viewBox="0 0 1280 16" preserveAspectRatio="none"><path d="M1280 8 C1040 4,820 13,600 8 S240 4,0 9" stroke-width=".8" opacity=".45" stroke="#d8d9da"></path></svg>
+    <span>© 2026 mario-da-parfumsv2</span>
+    <div style="display:flex;gap:28px"><span>Envíos</span><span>Notas olfativas</span><span>Contacto</span></div>
+  </footer>
+  <div style="position:absolute;right:32px;bottom:30px;width:64px;height:64px;border-radius:50%;background:#fff6e0;display:flex;align-items:center;justify-content:center"><svg width="34" height="38" viewBox="0 0 34 38"><circle cx="17" cy="10" r="7" fill="#272829"></circle><path d="M6 36 C8 24,12 20,17 20 S26 24,28 36" fill="none" stroke="#272829" stroke-width="6" stroke-linecap="round"></path></svg></div>
+</div></div>
+
+<!-- 1c Resultados -->
+<div class="dv-opt" id="1c"><div class="dv-olabel"><a class="dv-oid" href="#1c">1c</a>Estado de resultados — protagonista + secundarios emergen de la estela (sobre <a class="dv-oid" href="#1a">1a</a>)</div>
+<div class="dv-card" style="width:1280px;height:820px;display:flex;flex-direction:column">
+  <nav style="position:relative;display:flex;align-items:center;justify-content:space-between;padding:26px 56px 18px;font-size:13px;letter-spacing:.14em;text-transform:uppercase">
+    <div style="font:italic 500 24px/1 'Cormorant Garamond',serif;letter-spacing:0;text-transform:none">mario-da-parfumsv2</div>
+    <div style="display:flex;gap:40px"><span>Inicio</span><span>Perfumes</span><span>Notas</span><span>Sensei</span></div>
+    <div style="display:flex;gap:28px"><span>Entrar</span></div>
+    <svg class="wind" style="position:absolute;left:0;right:0;bottom:0;width:100%;height:14px" viewBox="0 0 1280 14" preserveAspectRatio="none"><path d="M1280 7 C1000 2,800 12,560 7 S200 3,0 8" stroke-width=".8" opacity=".55"></path></svg>
+  </nav>
+  <div style="display:flex;justify-content:space-between;align-items:center;padding:26px 56px 0">
+    <p style="margin:0;font:italic 400 26px/1.2 'Cormorant Garamond',serif;color:#61677a">“una tarde de lluvia en Kioto, té y madera húmeda”</p>
+    <button style="height:44px;padding:0 22px;border:1px solid #272829;border-radius:999px;background:transparent;font:400 12px/1 Jost,sans-serif;letter-spacing:.14em;text-transform:uppercase;cursor:pointer">← Otra búsqueda</button>
+  </div>
+  <main style="flex:1;position:relative;padding:20px 56px 30px;display:grid;grid-template-columns:1.2fr 1fr;gap:48px;align-items:center">
+    <svg class="wind" style="position:absolute;inset:0;width:100%;height:100%" viewBox="0 0 1280 560" preserveAspectRatio="none" opacity="{{ windOpacity }}"><path d="M1280 200 C1100 190,980 240,860 250 S700 240,560 260" stroke-width="1"></path><path d="M1280 280 C1120 290,1000 250,880 268 S720 300,600 300" stroke-width=".8"></path><path d="M1280 350 C1080 340,960 380,840 372 S680 350,560 372" stroke-width=".7"></path><path d="M1280 240 C1060 250,940 215,820 232 S660 250,580 240" stroke-width=".5"></path></svg>
+    <div class="emerge" style="position:relative;display:grid;grid-template-columns:260px 1fr;gap:36px;align-items:center">
+      <div style="height:420px;border-radius:130px 130px 18px 18px;background:repeating-linear-gradient(135deg,#d8d9da 0 6px,#e6e4dc 6px 12px);display:flex;align-items:flex-end;justify-content:center;padding-bottom:20px;font:11px ui-monospace,monospace;color:#61677a">frasco · protagonista</div>
+      <div>
+        <p style="margin:0 0 10px;font:300 12px/1 Jost,sans-serif;letter-spacing:.28em;text-transform:uppercase;color:#61677a">Afinidad 96%</p>
+        <h2 style="margin:0 0 14px;font:400 60px/1 'Cormorant Garamond',serif">Té Ahumado</h2>
+        <p style="margin:0 0 22px;font:300 16px/1.6 Jost,sans-serif;color:#61677a">Hojicha, cedro mojado, incienso frío. Una lluvia que empieza cuando ya ibas a irte.</p>
+        <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:26px;font-size:12px;color:#61677a"><span style="padding:5px 12px;border:1px solid #d8d9da;border-radius:999px">té verde</span><span style="padding:5px 12px;border:1px solid #d8d9da;border-radius:999px">cedro</span><span style="padding:5px 12px;border:1px solid #d8d9da;border-radius:999px">incienso</span><span style="padding:5px 12px;border:1px solid #d8d9da;border-radius:999px">vetiver</span></div>
+        <div style="display:flex;gap:14px;align-items:center"><button style="height:48px;padding:0 26px;border:0;border-radius:999px;background:#272829;color:#fff6e0;font:400 13px/1 Jost,sans-serif;letter-spacing:.12em;text-transform:uppercase">Ver perfume</button><span style="font:400 20px/1 'Cormorant Garamond',serif">$ 89.000 · 50 ml</span></div>
+      </div>
+    </div>
+    <div class="emerge" style="position:relative;display:grid;gap:18px">
+      <sc-for list="{{ secundarios }}" as="p" hint-placeholder-count="3">
+        <div style="display:grid;grid-template-columns:64px 1fr auto;gap:18px;align-items:center;padding:14px 18px 14px 14px;border:1px solid #d8d9da;border-radius:14px;background:rgba(255,246,224,.7)">
+          <div style="height:96px;border-radius:32px 32px 6px 6px;background:repeating-linear-gradient(135deg,#d8d9da 0 5px,#e6e4dc 5px 10px)"></div>
+          <div><div style="font:400 26px/1.1 'Cormorant Garamond',serif">{{ p.nombre }}</div><div style="font:300 13px/1.4 Jost,sans-serif;color:#61677a;margin-top:4px">{{ p.notas }}</div></div>
+          <div style="font:300 12px/1 Jost,sans-serif;letter-spacing:.1em;color:#61677a">{{ p.afinidad }}</div>
+        </div>
+      </sc-for>
+    </div>
+  </main>
+  <footer style="position:relative;display:flex;justify-content:space-between;padding:22px 56px 26px;font-size:12px;color:#61677a;letter-spacing:.06em">
+    <svg class="wind" style="position:absolute;left:0;right:0;top:0;width:100%;height:16px" viewBox="0 0 1280 16" preserveAspectRatio="none"><path d="M1280 8 C1040 4,820 13,600 8 S240 4,0 9" stroke-width=".8" opacity=".5"></path></svg>
+    <span>© 2026 mario-da-parfumsv2</span><div style="display:flex;gap:28px"><span>Envíos</span><span>Notas olfativas</span><span>Contacto</span></div>
+  </footer>
+</div></div>
+
+<!-- 1d Chatbot + sensei -->
+<div class="dv-opt" id="1d"><div class="dv-olabel"><a class="dv-oid" href="#1d">1d</a>Chatbot “Sensei” — panel abierto + personaje sumi-e (boceto de dirección)</div>
+<div style="display:flex;gap:28px;align-items:flex-start">
+<div class="dv-card" style="width:380px;height:620px;display:flex;flex-direction:column;border-radius:22px;background:#fff6e0">
+  <div style="position:relative;display:flex;align-items:center;gap:14px;padding:18px 20px;border-bottom:1px solid #d8d9da">
+    <div style="width:44px;height:44px;border-radius:50%;background:#272829;display:flex;align-items:center;justify-content:center"><svg width="24" height="27" viewBox="0 0 34 38"><circle cx="17" cy="10" r="7" fill="#fff6e0"></circle><path d="M6 36 C8 24,12 20,17 20 S26 24,28 36" fill="none" stroke="#fff6e0" stroke-width="6" stroke-linecap="round"></path></svg></div>
+    <div><div style="font:500 20px/1 'Cormorant Garamond',serif">Sensei</div><div style="font:300 11px/1 Jost,sans-serif;letter-spacing:.14em;text-transform:uppercase;color:#61677a;margin-top:5px">maestro de perfumes · en línea</div></div>
+    <span style="margin-left:auto;color:#61677a;font-size:18px">×</span>
+    <svg class="wind" style="position:absolute;left:0;right:0;bottom:-1px;width:100%;height:10px" viewBox="0 0 380 10" preserveAspectRatio="none"><path d="M380 5 C300 2,220 8,140 5 S40 3,0 6" stroke-width=".7" opacity=".6"></path></svg>
+  </div>
+  <div style="flex:1;padding:20px;display:flex;flex-direction:column;gap:14px;font:300 14px/1.5 Jost,sans-serif;overflow:hidden">
+    <div style="align-self:flex-start;max-width:82%;padding:12px 16px;background:#d8d9da;border-radius:16px 16px 16px 4px">Bienvenido. El viento ya sopla a tu favor. ¿Qué momento quieres llevar contigo?</div>
+    <div style="align-self:flex-end;max-width:82%;padding:12px 16px;background:#272829;color:#fff6e0;border-radius:16px 16px 4px 16px">Algo para una boda al atardecer, junto al mar</div>
+    <div style="align-self:flex-start;max-width:82%;padding:12px 16px;background:#d8d9da;border-radius:16px 16px 16px 4px">Sal, flor de naranjo y una madera tibia. Te propongo <em style="font:italic 500 17px 'Cormorant Garamond',serif">Bruma de Neroli</em>. ¿Prefieres más fresco o más envolvente?</div>
+    <div style="align-self:flex-start;display:flex;gap:6px;padding:12px 16px"><span class="dot" style="width:6px;height:6px;border-radius:50%;background:#61677a;display:block"></span><span class="dot" style="width:6px;height:6px;border-radius:50%;background:#61677a;display:block"></span><span class="dot" style="width:6px;height:6px;border-radius:50%;background:#61677a;display:block"></span></div>
+    <div style="display:flex;gap:8px;flex-wrap:wrap;font-size:12px;color:#61677a;margin-top:auto"><span style="padding:6px 12px;border:1px solid #d8d9da;border-radius:999px">más fresco</span><span style="padding:6px 12px;border:1px solid #d8d9da;border-radius:999px">más envolvente</span><span style="padding:6px 12px;border:1px solid #d8d9da;border-radius:999px">ver notas</span></div>
+  </div>
+  <div style="display:flex;gap:10px;align-items:center;padding:14px 16px 18px;border-top:1px solid #d8d9da"><input value="" placeholder="Escribe al sensei…" style="flex:1;border:0;background:transparent;font:italic 400 18px/1 'Cormorant Garamond',serif;color:#272829"><span style="width:40px;height:40px;border-radius:50%;background:#272829;color:#fff6e0;display:flex;align-items:center;justify-content:center;font-size:16px">↑</span></div>
+</div>
+<div class="dv-card" style="width:420px;height:620px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:22px;background:#fff6e0">
+  <svg class="sensei" width="260" height="330" viewBox="0 0 260 330">
+    <g class="sw"><path d="M260 90 C210 84,170 100,120 94 S50 88,0 98" stroke-width="1" opacity=".5"></path><path d="M260 120 C200 128,160 108,100 118 S40 128,0 116" stroke-width=".7" opacity=".4"></path><path d="M260 150 C220 144,170 158,110 150 S50 146,0 156" stroke-width=".5" opacity=".3"></path></g>
+    <circle cx="150" cy="70" r="30" fill="#272829"></circle>
+    <path d="M150 42 C140 30,160 22,168 34" fill="none" stroke="#272829" stroke-width="7" stroke-linecap="round"></path>
+    <path d="M90 300 C96 200,118 150,150 120 S200 190,208 300" fill="none" stroke="#272829" stroke-width="44" stroke-linecap="round" opacity=".92"></path>
+    <path d="M118 165 C90 190,70 215,60 250" fill="none" stroke="#272829" stroke-width="18" stroke-linecap="round" opacity=".85"></path>
+    <path d="M186 160 C205 175,220 190,236 198" fill="none" stroke="#272829" stroke-width="16" stroke-linecap="round" opacity=".85"></path>
+    <rect x="228" y="176" width="20" height="30" rx="6" fill="#61677a"></rect><rect x="234" y="168" width="8" height="10" rx="2" fill="#61677a"></rect>
+    <path d="M60 250 C70 262,90 265,110 258" fill="none" stroke="#272829" stroke-width="5" stroke-linecap="round" opacity=".5"></path>
+    <path d="M80 318 C130 306,180 306,222 318" fill="none" stroke="#272829" stroke-width="3" stroke-linecap="round" opacity=".35"></path>
+  </svg>
+  <div style="text-align:center"><div style="font:500 26px/1 'Cormorant Garamond',serif">El Sensei</div><div style="font:300 11px/1.6 Jost,sans-serif;letter-spacing:.14em;text-transform:uppercase;color:#61677a;margin-top:8px">tinta sumi-e · respira en reposo<br>al abrir el chat, sostiene el frasco hacia ti</div></div>
+  <div style="font:11px ui-monospace,monospace;color:#61677a;padding:6px 12px;border:1px dashed #d8d9da;border-radius:6px">boceto · ilustración final por encargo</div>
+</div>
+</div></div>
+
+<!-- 1e Catálogo -->
+<div class="dv-opt" id="1e"><div class="dv-olabel"><a class="dv-oid" href="#1e">1e</a>Catálogo — filtros laterales, búsqueda con viento, cuadrícula</div>
+<div class="dv-card" style="width:1280px;height:900px;display:flex;flex-direction:column">
+  <nav style="position:relative;display:flex;align-items:center;justify-content:space-between;padding:26px 56px 18px;font-size:13px;letter-spacing:.14em;text-transform:uppercase">
+    <div style="font:italic 500 24px/1 'Cormorant Garamond',serif;letter-spacing:0;text-transform:none">mario-da-parfumsv2</div>
+    <div style="display:flex;gap:40px"><span>Inicio</span><span style="border-bottom:1px solid #272829;padding-bottom:4px">Perfumes</span><span>Notas</span><span>Sensei</span></div>
+    <div style="display:flex;gap:28px"><span>Entrar</span></div>
+    <svg class="wind" style="position:absolute;left:0;right:0;bottom:0;width:100%;height:14px" viewBox="0 0 1280 14" preserveAspectRatio="none"><path d="M1280 7 C1000 2,800 12,560 7 S200 3,0 8" stroke-width=".8" opacity=".55"></path></svg>
+  </nav>
+  <div style="display:flex;align-items:flex-end;justify-content:space-between;padding:40px 56px 24px">
+    <h1 style="margin:0;font:400 64px/1 'Cormorant Garamond',serif">Todos los perfumes <span style="font:300 14px Jost,sans-serif;color:#61677a;letter-spacing:.14em;vertical-align:middle;margin-left:14px">48</span></h1>
+    <div style="position:relative;width:420px">
+      <svg class="sw" style="position:absolute;right:-90px;top:50%;transform:translateY(-50%);width:130px;height:40px" viewBox="0 0 130 40"><path d="M130 12 C100 8,70 18,35 14 S10 12,0 18" stroke-width=".9"></path><path d="M130 24 C95 28,65 20,30 24 S8 28,0 26" stroke-width=".7"></path></svg>
+      <div style="display:flex;align-items:center;height:50px;padding:0 22px;border:1px solid #d8d9da;border-radius:999px"><input value="" placeholder="Describe lo que buscas" style="flex:1;border:0;background:transparent;font:italic 400 19px/1 'Cormorant Garamond',serif"></div>
+    </div>
+  </div>
+  <main style="flex:1;display:grid;grid-template-columns:220px 1fr;gap:48px;padding:0 56px 40px">
+    <aside style="display:flex;flex-direction:column;gap:28px;font:300 14px/1.6 Jost,sans-serif">
+      <div><div style="font:400 11px/1 Jost,sans-serif;letter-spacing:.22em;text-transform:uppercase;color:#61677a;padding-bottom:10px;border-bottom:1px solid #d8d9da;margin-bottom:12px">Familia</div><div style="display:flex;flex-direction:column;gap:6px"><span>■ Amaderados</span><span style="color:#61677a">□ Cítricos</span><span style="color:#61677a">□ Florales</span><span style="color:#61677a">□ Orientales</span><span style="color:#61677a">□ Acuáticos</span></div></div>
+      <div><div style="font:400 11px/1 Jost,sans-serif;letter-spacing:.22em;text-transform:uppercase;color:#61677a;padding-bottom:10px;border-bottom:1px solid #d8d9da;margin-bottom:12px">Momento</div><div style="display:flex;gap:6px;flex-wrap:wrap;font-size:12px"><span style="padding:5px 12px;border-radius:999px;background:#272829;color:#fff6e0">Noche</span><span style="padding:5px 12px;border:1px solid #d8d9da;border-radius:999px">Día</span><span style="padding:5px 12px;border:1px solid #d8d9da;border-radius:999px">Oficina</span><span style="padding:5px 12px;border:1px solid #d8d9da;border-radius:999px">Verano</span></div></div>
+      <div><div style="font:400 11px/1 Jost,sans-serif;letter-spacing:.22em;text-transform:uppercase;color:#61677a;padding-bottom:10px;border-bottom:1px solid #d8d9da;margin-bottom:12px">Precio</div><div style="position:relative;height:2px;background:#d8d9da;margin:18px 6px 8px"><span style="position:absolute;left:20%;top:-5px;width:12px;height:12px;border-radius:50%;background:#272829"></span><span style="position:absolute;left:70%;top:-5px;width:12px;height:12px;border-radius:50%;background:#272829"></span><span style="position:absolute;left:20%;width:50%;height:2px;background:#272829"></span></div><div style="display:flex;justify-content:space-between;font-size:12px;color:#61677a"><span>$ 40.000</span><span>$ 180.000</span></div></div>
+      <div><div style="font:400 11px/1 Jost,sans-serif;letter-spacing:.22em;text-transform:uppercase;color:#61677a;padding-bottom:10px;border-bottom:1px solid #d8d9da;margin-bottom:12px">Intensidad</div><div style="display:flex;flex-direction:column;gap:6px;color:#61677a"><span>○ Ligera</span><span style="color:#272829">● Media</span><span>○ Profunda</span></div></div>
+    </aside>
+    <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:22px 20px;align-content:start">
+      <sc-for list="{{ catalogo }}" as="p" hint-placeholder-count="8">
+        <div style="display:flex;flex-direction:column;gap:12px">
+          <div style="height:250px;border-radius:14px;background:#e9e4d6;display:flex;align-items:center;justify-content:center;position:relative;overflow:hidden">
+            <div style="width:86px;height:170px;border-radius:40px 40px 8px 8px;background:repeating-linear-gradient(135deg,#d8d9da 0 5px,#e6e4dc 5px 10px)"></div>
+            <svg class="sw" style="position:absolute;left:0;bottom:16px;width:100%;height:24px" viewBox="0 0 240 24" preserveAspectRatio="none"><path d="M240 8 C180 4,120 14,60 9 S20 6,0 12" stroke-width=".7" opacity=".4"></path><path d="M240 18 C170 22,110 12,50 17 S15 20,0 16" stroke-width=".5" opacity=".3"></path></svg>
+          </div>
+          <div><div style="font:400 24px/1.1 'Cormorant Garamond',serif">{{ p.nombre }}</div><div style="display:flex;justify-content:space-between;font:300 13px/1.4 Jost,sans-serif;color:#61677a;margin-top:3px"><span>{{ p.notas }}</span><span>{{ p.precio }}</span></div></div>
+        </div>
+      </sc-for>
+    </div>
+  </main>
+</div></div>
+
+<!-- 1f Detalle -->
+<div class="dv-opt" id="1f"><div class="dv-olabel"><a class="dv-oid" href="#1f">1f</a>Detalle de perfume — pirámide olfativa como corrientes</div>
+<div class="dv-card" style="width:1280px;height:820px;display:flex;flex-direction:column">
+  <nav style="position:relative;display:flex;align-items:center;justify-content:space-between;padding:26px 56px 18px;font-size:13px;letter-spacing:.14em;text-transform:uppercase">
+    <div style="font:italic 500 24px/1 'Cormorant Garamond',serif;letter-spacing:0;text-transform:none">mario-da-parfumsv2</div>
+    <div style="display:flex;gap:40px"><span>Inicio</span><span>Perfumes</span><span>Notas</span><span>Sensei</span></div>
+    <div style="display:flex;gap:28px"><span>Entrar</span></div>
+    <svg class="wind" style="position:absolute;left:0;right:0;bottom:0;width:100%;height:14px" viewBox="0 0 1280 14" preserveAspectRatio="none"><path d="M1280 7 C1000 2,800 12,560 7 S200 3,0 8" stroke-width=".8" opacity=".55"></path></svg>
+  </nav>
+  <main style="flex:1;display:grid;grid-template-columns:520px 1fr;gap:64px;padding:40px 56px 50px;position:relative">
+    <div style="position:relative;border-radius:20px;background:#e9e4d6;display:flex;align-items:center;justify-content:center;overflow:hidden">
+      <svg class="wind" style="position:absolute;inset:0;width:100%;height:100%" viewBox="0 0 520 640" preserveAspectRatio="none" opacity="{{ windOpacity }}"><path d="M520 300 C420 290,340 330,240 320 S80 300,-10 320" stroke-width="1"></path><path d="M520 360 C440 370,340 340,240 356 S100 380,-10 360" stroke-width=".7"></path><path d="M520 420 C430 410,330 440,230 430 S80 420,-10 440" stroke-width=".5"></path></svg>
+      <div style="width:200px;height:400px;border-radius:100px 100px 16px 16px;background:repeating-linear-gradient(135deg,#d8d9da 0 6px,#e6e4dc 6px 12px);display:flex;align-items:flex-end;justify-content:center;padding-bottom:18px;font:11px ui-monospace,monospace;color:#61677a;position:relative">fotografía · frasco</div>
+      <div style="position:absolute;left:24px;bottom:22px;display:flex;gap:8px"><span style="width:44px;height:44px;border-radius:8px;border:1px solid #272829"></span><span style="width:44px;height:44px;border-radius:8px;border:1px solid #d8d9da"></span><span style="width:44px;height:44px;border-radius:8px;border:1px solid #d8d9da"></span></div>
+    </div>
+    <div style="display:flex;flex-direction:column;justify-content:center">
+      <p style="margin:0 0 12px;font:300 12px/1 Jost,sans-serif;letter-spacing:.28em;text-transform:uppercase;color:#61677a">Amaderado · Eau de Parfum</p>
+      <h1 style="margin:0 0 18px;font:400 72px/1 'Cormorant Garamond',serif">Cedro Blanco</h1>
+      <p style="margin:0 0 30px;font:300 17px/1.6 Jost,sans-serif;color:#61677a;max-width:520px">Una tabla recién cortada, aire de montaña y un fondo de almizcle limpio. Se abre seco y termina cálido, sin dulzor.</p>
+      <div style="display:grid;grid-template-columns:110px 1fr;row-gap:16px;column-gap:20px;font:300 15px/1.5 Jost,sans-serif;margin-bottom:34px;position:relative">
+        <span style="font:400 11px/2.2 Jost,sans-serif;letter-spacing:.22em;text-transform:uppercase;color:#61677a">Salida</span><span style="border-bottom:1px solid #d8d9da;padding-bottom:10px">Bergamota, pimienta rosa, hoja de higuera</span>
+        <span style="font:400 11px/2.2 Jost,sans-serif;letter-spacing:.22em;text-transform:uppercase;color:#61677a">Corazón</span><span style="border-bottom:1px solid #d8d9da;padding-bottom:10px">Cedro del Atlas, iris, cardamomo</span>
+        <span style="font:400 11px/2.2 Jost,sans-serif;letter-spacing:.22em;text-transform:uppercase;color:#61677a">Fondo</span><span style="border-bottom:1px solid #d8d9da;padding-bottom:10px">Almizcle blanco, ámbar gris, vetiver</span>
+      </div>
+      <div style="display:flex;gap:10px;margin-bottom:26px;font:400 13px/1 Jost,sans-serif"><span style="padding:12px 20px;border-radius:999px;background:#272829;color:#fff6e0">50 ml · $ 89.000</span><span style="padding:12px 20px;border-radius:999px;border:1px solid #d8d9da;color:#61677a">100 ml · $ 139.000</span><span style="padding:12px 20px;border-radius:999px;border:1px solid #d8d9da;color:#61677a">Muestra 2 ml</span></div>
+      <div style="display:flex;gap:16px;align-items:center"><button style="height:52px;padding:0 34px;border:0;border-radius:999px;background:#272829;color:#fff6e0;font:400 13px/1 Jost,sans-serif;letter-spacing:.14em;text-transform:uppercase">Añadir</button><span style="font:300 13px/1 Jost,sans-serif;color:#61677a;letter-spacing:.06em">Duración 8 h · Estela moderada</span></div>
+    </div>
+  </main>
+</div></div>
+
+<!-- 1g Perfil -->
+<div class="dv-opt" id="1g"><div class="dv-olabel"><a class="dv-oid" href="#1g">1g</a>Perfil de usuario — tu perfil olfativo como estela</div>
+<div class="dv-card" style="width:1280px;height:820px;display:flex;flex-direction:column">
+  <nav style="position:relative;display:flex;align-items:center;justify-content:space-between;padding:26px 56px 18px;font-size:13px;letter-spacing:.14em;text-transform:uppercase">
+    <div style="font:italic 500 24px/1 'Cormorant Garamond',serif;letter-spacing:0;text-transform:none">mario-da-parfumsv2</div>
+    <div style="display:flex;gap:40px"><span>Inicio</span><span>Perfumes</span><span>Notas</span><span>Sensei</span></div>
+    <div style="display:flex;gap:12px;align-items:center;text-transform:none;letter-spacing:0;font-size:14px"><span>Valentina</span><span style="width:30px;height:30px;border-radius:50%;background:#61677a;display:inline-block"></span></div>
+    <svg class="wind" style="position:absolute;left:0;right:0;bottom:0;width:100%;height:14px" viewBox="0 0 1280 14" preserveAspectRatio="none"><path d="M1280 7 C1000 2,800 12,560 7 S200 3,0 8" stroke-width=".8" opacity=".55"></path></svg>
+  </nav>
+  <main style="flex:1;display:grid;grid-template-columns:300px 1fr;gap:56px;padding:44px 56px 48px">
+    <aside style="display:flex;flex-direction:column;gap:22px">
+      <div style="width:120px;height:120px;border-radius:50%;background:repeating-linear-gradient(135deg,#d8d9da 0 5px,#e6e4dc 5px 10px);display:flex;align-items:center;justify-content:center;font:10px ui-monospace,monospace;color:#61677a">foto</div>
+      <div><div style="font:400 40px/1 'Cormorant Garamond',serif">Valentina Ruiz</div><div style="font:300 13px/1.6 Jost,sans-serif;color:#61677a;margin-top:6px">Miembro desde marzo 2026 · Santiago</div></div>
+      <div style="display:flex;flex-direction:column;font:300 15px/1 Jost,sans-serif"><span style="padding:14px 0;border-bottom:1px solid #272829">Perfil olfativo</span><span style="padding:14px 0;border-bottom:1px solid #d8d9da;color:#61677a">Pedidos</span><span style="padding:14px 0;border-bottom:1px solid #d8d9da;color:#61677a">Guardados</span><span style="padding:14px 0;border-bottom:1px solid #d8d9da;color:#61677a">Conversaciones con el sensei</span><span style="padding:14px 0;border-bottom:1px solid #d8d9da;color:#61677a">Cuenta</span></div>
+    </aside>
+    <div style="display:flex;flex-direction:column;gap:36px">
+      <div style="position:relative;padding:34px 40px;border:1px solid #d8d9da;border-radius:20px;overflow:hidden">
+        <svg class="wind" style="position:absolute;inset:0;width:100%;height:100%" viewBox="0 0 860 220" preserveAspectRatio="none" opacity="{{ windOpacity }}"><path d="M860 90 C700 80,600 120,460 110 S200 100,-10 120" stroke-width="1"></path><path d="M860 140 C720 150,580 120,440 136 S180 160,-10 140" stroke-width=".7"></path><path d="M860 60 C680 70,560 40,420 56 S160 60,-10 70" stroke-width=".5"></path></svg>
+        <p style="margin:0 0 10px;font:300 12px/1 Jost,sans-serif;letter-spacing:.28em;text-transform:uppercase;color:#61677a;position:relative">Tu estela</p>
+        <h2 style="margin:0 0 16px;font:400 44px/1.1 'Cormorant Garamond',serif;position:relative">Amaderada, con una brisa cítrica</h2>
+        <div style="display:flex;gap:8px;flex-wrap:wrap;font-size:12px;color:#61677a;position:relative"><span style="padding:6px 14px;border:1px solid #61677a;border-radius:999px">cedro 82%</span><span style="padding:6px 14px;border:1px solid #d8d9da;border-radius:999px">bergamota 64%</span><span style="padding:6px 14px;border:1px solid #d8d9da;border-radius:999px">vetiver 58%</span><span style="padding:6px 14px;border:1px solid #d8d9da;border-radius:999px">iris 41%</span><span style="padding:6px 14px;border:1px solid #d8d9da;border-radius:999px">incienso 33%</span></div>
+      </div>
+      <div>
+        <div style="display:flex;justify-content:space-between;align-items:baseline;margin-bottom:18px"><h3 style="margin:0;font:400 30px/1 'Cormorant Garamond',serif">Guardados</h3><span style="font:300 12px/1 Jost,sans-serif;letter-spacing:.14em;text-transform:uppercase;color:#61677a">Ver todos →</span></div>
+        <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:18px">
+          <sc-for list="{{ guardados }}" as="p" hint-placeholder-count="4">
+            <div style="display:flex;flex-direction:column;gap:10px"><div style="height:150px;border-radius:12px;background:#e9e4d6;display:flex;align-items:center;justify-content:center"><div style="width:52px;height:100px;border-radius:24px 24px 6px 6px;background:repeating-linear-gradient(135deg,#d8d9da 0 5px,#e6e4dc 5px 10px)"></div></div><div style="font:400 20px/1.1 'Cormorant Garamond',serif">{{ p.nombre }}</div><div style="font:300 12px/1.3 Jost,sans-serif;color:#61677a">{{ p.notas }}</div></div>
+          </sc-for>
+        </div>
+      </div>
+      <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:18px;font:300 13px/1.5 Jost,sans-serif;color:#61677a">
+        <div style="padding:18px 20px;border:1px solid #d8d9da;border-radius:14px"><div style="font:400 30px/1 'Cormorant Garamond',serif;color:#272829">12</div>búsquedas con el sensei</div>
+        <div style="padding:18px 20px;border:1px solid #d8d9da;border-radius:14px"><div style="font:400 30px/1 'Cormorant Garamond',serif;color:#272829">3</div>pedidos entregados</div>
+        <div style="padding:18px 20px;border:1px solid #d8d9da;border-radius:14px"><div style="font:400 30px/1 'Cormorant Garamond',serif;color:#272829">Cedro Blanco</div>tu perfume más buscado</div>
+      </div>
+    </div>
+  </main>
+</div></div>
+
+<!-- 1h Login -->
+<div class="dv-opt" id="1h"><div class="dv-olabel"><a class="dv-oid" href="#1h">1h</a>Login / Register — panel dividido, viento cruza el pliegue</div>
+<div class="dv-card" style="width:1280px;height:820px;display:grid;grid-template-columns:1fr 1fr;position:relative">
+  <div style="position:relative;background:#272829;color:#fff6e0;padding:56px;display:flex;flex-direction:column;justify-content:space-between;overflow:hidden">
+    <svg class="wind" style="position:absolute;inset:0;width:100%;height:100%" viewBox="0 0 640 820" preserveAspectRatio="none" opacity="{{ windOpacity }}"><path d="M640 380 C520 370,420 420,300 410 S100 390,-10 410" stroke-width="1" stroke="#d8d9da"></path><path d="M640 440 C540 450,420 410,300 428 S120 460,-10 440" stroke-width=".7" stroke="#d8d9da"></path><path d="M640 500 C520 490,400 520,280 510 S100 500,-10 520" stroke-width=".5" stroke="#d8d9da"></path><path d="M640 340 C500 350,400 315,260 332 S80 340,-10 350" stroke-width=".6" stroke="#d8d9da"></path></svg>
+    <div style="font:italic 500 24px/1 'Cormorant Garamond',serif;position:relative">mario-da-parfumsv2</div>
+    <h1 style="margin:0;font:400 84px/1 'Cormorant Garamond',serif;position:relative;text-wrap:balance">Vuelve a<br>tu <em style="font-weight:400;color:#d8d9da">estela.</em></h1>
+    <p style="margin:0;font:300 14px/1.6 Jost,sans-serif;color:#d8d9da;max-width:380px;position:relative">Tus búsquedas, tus guardados y las conversaciones con el sensei te esperan donde las dejaste.</p>
+  </div>
+  <div style="padding:56px 96px;display:flex;flex-direction:column;justify-content:center;gap:28px">
+    <div style="display:flex;gap:32px;font:400 13px/1 Jost,sans-serif;letter-spacing:.14em;text-transform:uppercase"><span style="padding-bottom:10px;border-bottom:1px solid #272829">Entrar</span><span style="padding-bottom:10px;color:#61677a">Crear cuenta</span></div>
+    <h2 style="margin:0;font:400 44px/1 'Cormorant Garamond',serif">Bienvenida de vuelta</h2>
+    <div style="display:flex;flex-direction:column;gap:22px;font:300 15px/1 Jost,sans-serif">
+      <label style="display:flex;flex-direction:column;gap:8px"><span style="font:400 11px/1 Jost,sans-serif;letter-spacing:.22em;text-transform:uppercase;color:#61677a">Correo</span><input value="valentina@correo.cl" style="border:0;border-bottom:1px solid #272829;background:transparent;padding:10px 0;font:400 20px/1 'Cormorant Garamond',serif;color:#272829"></label>
+      <label style="display:flex;flex-direction:column;gap:8px"><span style="font:400 11px/1 Jost,sans-serif;letter-spacing:.22em;text-transform:uppercase;color:#61677a">Contraseña</span><input type="password" value="••••••••••" style="border:0;border-bottom:1px solid #d8d9da;background:transparent;padding:10px 0;font:400 20px/1 'Cormorant Garamond',serif;color:#272829;letter-spacing:.2em"></label>
+    </div>
+    <div style="display:flex;justify-content:space-between;align-items:center;font:300 13px/1 Jost,sans-serif;color:#61677a"><span>☐ Recordarme</span><span style="text-decoration:underline">Olvidé mi contraseña</span></div>
+    <button style="height:54px;border:0;border-radius:999px;background:#272829;color:#fff6e0;font:400 13px/1 Jost,sans-serif;letter-spacing:.14em;text-transform:uppercase;position:relative;overflow:hidden">Entrar<svg class="sw" style="position:absolute;right:16px;top:0;height:100%;width:120px" viewBox="0 0 120 54"><path d="M120 20 C90 16,60 26,30 22 S10 18,0 24" stroke-width=".8" stroke="#d8d9da" opacity=".7"></path><path d="M120 34 C95 38,60 30,30 34 S8 38,0 36" stroke-width=".6" stroke="#d8d9da" opacity=".5"></path></svg></button>
+    <div style="display:flex;align-items:center;gap:14px;font:300 12px/1 Jost,sans-serif;color:#61677a"><span style="flex:1;height:1px;background:#d8d9da"></span>o continúa con<span style="flex:1;height:1px;background:#d8d9da"></span></div>
+    <div style="display:flex;gap:12px"><span style="flex:1;height:48px;border:1px solid #d8d9da;border-radius:999px;display:flex;align-items:center;justify-content:center;font:400 13px/1 Jost,sans-serif">Google</span><span style="flex:1;height:48px;border:1px solid #d8d9da;border-radius:999px;display:flex;align-items:center;justify-content:center;font:400 13px/1 Jost,sans-serif">Apple</span></div>
+  </div>
+</div></div>
+
+<!-- 1i Móvil -->
+<div class="dv-opt" id="1i"><div class="dv-olabel"><a class="dv-oid" href="#1i">1i</a>Landing móvil — navbar colapsada, viento y chat conservados</div>
+<div class="dv-card" style="width:390px;height:844px;display:flex;flex-direction:column;border-radius:40px">
+  <div style="display:flex;justify-content:space-between;padding:16px 28px 0;font:500 13px Jost,sans-serif"><span>9:41</span><span>●●●</span></div>
+  <nav style="position:relative;display:flex;align-items:center;justify-content:space-between;padding:18px 24px 14px">
+    <span style="display:flex;flex-direction:column;gap:5px;width:24px"><span style="height:1px;background:#272829;display:block"></span><span style="height:1px;background:#272829;display:block;width:16px"></span></span>
+    <div style="font:italic 500 20px/1 'Cormorant Garamond',serif">mario-da-parfumsv2</div>
+    <span style="width:24px;height:24px;border:1px solid #272829;border-radius:50%;display:inline-block"></span>
+    <svg class="wind" style="position:absolute;left:0;right:0;bottom:0;width:100%;height:10px" viewBox="0 0 390 10" preserveAspectRatio="none"><path d="M390 5 C300 2,220 8,140 5 S40 3,0 6" stroke-width=".7" opacity=".55"></path></svg>
+  </nav>
+  <main style="flex:1;position:relative;display:flex;flex-direction:column;justify-content:center;gap:26px;padding:0 24px 60px">
+    <svg class="wind" style="position:absolute;inset:0;width:100%;height:100%" viewBox="0 0 390 600" preserveAspectRatio="none" opacity="{{ windOpacity }}"><path d="M390 280 C320 275,260 300,190 305 S60 300,-10 310" stroke-width="1"></path><path d="M390 330 C330 336,250 310,180 322 S60 340,-10 330" stroke-width=".7"></path><path d="M390 370 C310 362,240 385,170 378 S60 370,-10 385" stroke-width=".5"></path></svg>
+    <p style="margin:0;font:300 11px/1 Jost,sans-serif;letter-spacing:.28em;text-transform:uppercase;color:#61677a;position:relative">Perfumería guiada por lo que sientes</p>
+    <h1 style="margin:0;font:400 48px/1.02 'Cormorant Garamond',serif;position:relative;text-wrap:balance">Cuéntanos la escena. <em style="font-weight:400;color:#61677a">El viento</em> trae el perfume.</h1>
+    <div style="position:relative;margin-top:8px">
+      <div style="display:flex;align-items:center;gap:10px;height:58px;padding:0 8px 0 22px;border:1px solid #d8d9da;border-radius:999px;background:#fff6e0"><input value="" placeholder="Describe lo que buscas" style="flex:1;border:0;background:transparent;font:italic 400 19px/1 'Cormorant Garamond',serif;min-width:0"><span style="width:42px;height:42px;border-radius:50%;background:#272829;color:#fff6e0;display:flex;align-items:center;justify-content:center;flex:none">→</span></div>
+      <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:14px;font-size:11px;color:#61677a"><span style="padding:5px 12px;border:1px solid #d8d9da;border-radius:999px">lluvia en Kioto</span><span style="padding:5px 12px;border:1px solid #d8d9da;border-radius:999px">cuero y biblioteca</span><span style="padding:5px 12px;border:1px solid #d8d9da;border-radius:999px">higo, mar</span></div>
+    </div>
+  </main>
+  <footer style="position:relative;padding:18px 24px 30px;font:300 11px/1.6 Jost,sans-serif;color:#61677a;display:flex;justify-content:space-between"><svg class="wind" style="position:absolute;left:0;right:0;top:0;width:100%;height:10px" viewBox="0 0 390 10" preserveAspectRatio="none"><path d="M390 5 C300 2,220 8,140 5 S40 3,0 6" stroke-width=".7" opacity=".5"></path></svg><span>© 2026</span><span>Envíos · Notas · Contacto</span></footer>
+  <div style="position:absolute;right:20px;bottom:88px;width:56px;height:56px;border-radius:50%;background:#272829;display:flex;align-items:center;justify-content:center;box-shadow:0 14px 34px -18px rgba(39,40,41,.7)"><svg width="28" height="32" viewBox="0 0 34 38"><circle cx="17" cy="10" r="7" fill="#fff6e0"></circle><path d="M6 36 C8 24,12 20,17 20 S26 24,28 36" fill="none" stroke="#fff6e0" stroke-width="6" stroke-linecap="round"></path></svg></div>
+</div></div>
+
+</div>
+<p class="dv-next">Prueba: "combina el hero de <a class="dv-oid" href="#1b">1b</a> con la búsqueda de <a class="dv-oid" href="#1a">1a</a>" · "haz el viento más presente en <a class="dv-oid" href="#1e">1e</a>" · "prototipo interactivo de la búsqueda (<a class="dv-oid" href="#1a">1a</a> → <a class="dv-oid" href="#1c">1c</a>)"</p>
+</section>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;windOpacity&quot;:{&quot;editor&quot;:&quot;range&quot;,&quot;default&quot;:0.55,&quot;min&quot;:0.15,&quot;max&quot;:1,&quot;step&quot;:0.05,&quot;tsType&quot;:&quot;number&quot;,&quot;section&quot;:&quot;Viento&quot;}}">
+class Component extends DCLogic {
+  renderVals() {
+    return {
+      windOpacity: this.props.windOpacity ?? 0.55,
+      secundarios: [
+        { nombre: 'Noche de Higo', notas: 'higo verde, leche de coco, cedro', afinidad: '88%' },
+        { nombre: 'Iris de Sal', notas: 'iris, sal marina, almizcle', afinidad: '81%' },
+        { nombre: 'Cedro Blanco', notas: 'cedro del Atlas, bergamota', afinidad: '74%' }
+      ],
+      catalogo: [
+        { nombre: 'Cedro Blanco', notas: 'cedro, bergamota', precio: '$ 89.000' },
+        { nombre: 'Té Ahumado', notas: 'hojicha, incienso', precio: '$ 94.000' },
+        { nombre: 'Noche de Higo', notas: 'higo, coco', precio: '$ 79.000' },
+        { nombre: 'Iris de Sal', notas: 'iris, sal marina', precio: '$ 99.000' },
+        { nombre: "Vent d'Ambre", notas: 'ámbar, labdanum', precio: '$ 119.000' },
+        { nombre: 'Bruma de Neroli', notas: 'neroli, flor de sal', precio: '$ 84.000' },
+        { nombre: 'Cuero de Lluvia', notas: 'cuero, violeta', precio: '$ 129.000' },
+        { nombre: 'Jardín de Piedra', notas: 'musgo, vetiver', precio: '$ 91.000' }
+      ],
+      guardados: [
+        { nombre: 'Cedro Blanco', notas: 'cedro, bergamota' },
+        { nombre: 'Té Ahumado', notas: 'hojicha, incienso' },
+        { nombre: "Vent d'Ambre", notas: 'ámbar, labdanum' },
+        { nombre: 'Bruma de Neroli', notas: 'neroli, flor de sal' }
+      ]
+    };
+  }
+}
+</script>
+</body>
+</html>

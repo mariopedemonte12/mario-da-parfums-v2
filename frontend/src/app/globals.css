@@ -1,0 +1,121 @@
+@import "tailwindcss";
+@import "tw-animate-css";
+
+:root {
+  --color-background: #fff6e0;
+  --color-surface: #d8d9da;
+  --color-secondary: #61677a;
+  --color-primary: #272829;
+
+  --color-text: #272829;
+  --color-text-muted: #61677a;
+  --color-border: #d8d9da;
+
+  /* shadcn/ui component slots, derived from the tokens above rather than new hex values */
+  --primary-foreground: var(--color-background);
+  --secondary-foreground: var(--color-background);
+  --muted: var(--color-surface);
+  --card: var(--color-background);
+  --card-foreground: var(--color-text);
+  --popover: var(--color-background);
+  --popover-foreground: var(--color-text);
+  --destructive: oklch(0.577 0.245 27.325);
+  --input: var(--color-border);
+  --ring: var(--color-secondary);
+  --radius: 0.75rem;
+}
+
+@theme inline {
+  --color-background: var(--color-background);
+  --color-foreground: var(--color-text);
+  --color-surface: var(--color-surface);
+  --color-secondary: var(--color-secondary);
+  --color-primary: var(--color-primary);
+  --color-text: var(--color-text);
+  --color-text-muted: var(--color-text-muted);
+  --color-border: var(--color-border);
+
+  --color-primary-foreground: var(--primary-foreground);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--color-text-muted);
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+  --color-popover: var(--popover);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-destructive: var(--destructive);
+  --color-input: var(--input);
+  --color-ring: var(--ring);
+
+  --font-sans: var(--font-jost);
+  --font-serif: var(--font-cormorant);
+  --font-heading: var(--font-cormorant);
+
+  --radius-sm: calc(var(--radius) * 0.6);
+  --radius-md: calc(var(--radius) * 0.8);
+  --radius-lg: var(--radius);
+  --radius-xl: calc(var(--radius) * 1.4);
+}
+
+@layer base {
+  * {
+    @apply border-border outline-ring/50;
+  }
+  body {
+    @apply bg-background text-foreground;
+  }
+  html {
+    @apply font-sans;
+  }
+}
+
+/* "Viento" motif (WindLines component) — timings/stagger match the mock's .wind/.sw/@keyframes wind/windslow */
+@keyframes wind-flow {
+  to {
+    stroke-dashoffset: -600;
+  }
+}
+@keyframes wind-flow-slow {
+  to {
+    stroke-dashoffset: -900;
+  }
+}
+
+.wind-lines path {
+  fill: none;
+  stroke-linecap: round;
+  stroke-dasharray: 90 220;
+  animation: wind-flow 7s linear infinite;
+}
+.wind-lines path:nth-child(2) {
+  animation-duration: 9s;
+  animation-delay: -3s;
+}
+.wind-lines path:nth-child(3) {
+  animation-duration: 11s;
+  animation-delay: -6s;
+}
+.wind-lines path:nth-child(4) {
+  animation-duration: 8s;
+  animation-delay: -2s;
+}
+
+.wind-lines--sw path {
+  stroke-dasharray: 60 160;
+  animation-name: wind-flow-slow;
+  animation-duration: 6s;
+}
+.wind-lines--sw path:nth-child(2) {
+  animation-delay: -2s;
+  animation-duration: 8s;
+}
+.wind-lines--sw path:nth-child(3) {
+  animation-delay: -4s;
+  animation-duration: 7s;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .wind-lines path {
+    animation: none;
+  }
+}
