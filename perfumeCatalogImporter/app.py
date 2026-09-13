@@ -14,6 +14,11 @@ Two responsibilities (see specs/perfume-similarity-search.md):
 The backend NestJS API never loads this model or talks to Postgres for
 embeddings — it calls this service over HTTP instead (explicit decision,
 see the spec).
+
+This process also mounts an MCP server (streamable HTTP) as a second surface
+over the same in-memory index -- see specs/similarity-search-mcp.md. Same
+process, same index, no new capability: just another transport for the same
+search the chatbot can use as an MCP tool instead of plain HTTP.
 """
 
 import logging
@@ -25,8 +30,9 @@ from fastapi import FastAPI, HTTPException, Query
 from pydantic import BaseModel
 
 from .index_sync import IndexSyncService
+from .mcp_server import create_mcp_server
 from .repository import FragranceRepository
-from .server_config import load_server_config
+from .server_config import load_mcp_mount_path, load_server_config
 from .similarity import PerfumeSimilarityIndex, default_encoder
 
 logger = logging.getLogger(__name__)
@@ -50,15 +56,25 @@ async def lifespan(app: FastAPI) -> AsyncIterator[None]:
 
     connection = psycopg2.connect(config.database_url)
     try:
-        IndexSyncService(FragranceRepository(connection), index, config.embeddings_path).ensure_up_to_date()
+        IndexSyncService(
+            FragranceRepository(connection), index, config.embeddings_path
+        ).ensure_up_to_date()
     finally:
         connection.close()
 
     app.state.index = index
-    yield
+
+    async with mcp_server.session_manager.run():
+        yield
 
 
 app = FastAPI(title="Perfume similarity search", lifespan=lifespan)
+
+# get_index is a closure over app.state, not a snapshot: app.state.index is
+# only populated once the lifespan above finishes its startup sync, but this
+# server (and the mount below) is built at import time, before that happens.
+mcp_server = create_mcp_server(get_index=lambda: app.state.index)
+app.mount(load_mcp_mount_path(), mcp_server.streamable_http_app())
 
 
 @app.get("/health")
@@ -68,7 +84,9 @@ def health() -> dict[str, str]:
 
 @app.get("/search", response_model=SearchResponse)
 def search(
-    q: str = Query(..., min_length=1, description="Free-text description of the desired scent"),
+    q: str = Query(
+        ..., min_length=1, description="Free-text description of the desired scent"
+    ),
     top_k: int = Query(5, ge=1, le=50),
 ) -> SearchResponse:
     index: PerfumeSimilarityIndex = app.state.index
@@ -76,7 +94,9 @@ def search(
         results = index.search(q, top_k=top_k)
     except RuntimeError as exc:
         raise HTTPException(status_code=503, detail=str(exc)) from exc
-    return SearchResponse(results=[SearchResult(name=name, score=score) for name, score in results])
+    return SearchResponse(
+        results=[SearchResult(name=name, score=score) for name, score in results]
+    )
 
 
 if __name__ == "__main__":
