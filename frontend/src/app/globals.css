@@ -69,15 +69,22 @@
   }
 }
 
-/* "Viento" motif (WindLines component) — timings/stagger match the mock's .wind/.sw/@keyframes wind/windslow */
+/* "Viento" motif (WindLines component). Constant-velocity linear drift — a sine-modulated
+   "gust" version was tried and rejected (it read as visibly accelerating/decelerating instead
+   of a steady breeze). Net drift is a multiple of the path's stroke-dasharray period (dash+gap)
+   so the `infinite` loop restart is seamless: wind-flow's dasharray "90 220" sums to 310, drift
+   -620 = 2x that; wind-flow-slow's dasharray "60 160" sums to 220, drift -880 = 4x that. The
+   mock's own -600/-900 were NOT multiples of their periods, so its dash phase at 0%/100% didn't
+   match and every loop restart snapped the pattern visibly — keep drift == n * period for any
+   future tuning of these numbers. */
 @keyframes wind-flow {
   to {
-    stroke-dashoffset: -600;
+    stroke-dashoffset: -620px;
   }
 }
 @keyframes wind-flow-slow {
   to {
-    stroke-dashoffset: -900;
+    stroke-dashoffset: -880px;
   }
 }
 
@@ -114,8 +121,46 @@
   animation-duration: 7s;
 }
 
+.wind-lines--divider path {
+  animation-duration: 16s;
+}
+.wind-lines--divider path:nth-child(2) {
+  animation-duration: 20s;
+  animation-delay: -6s;
+}
+
 @media (prefers-reduced-motion: reduce) {
   .wind-lines path {
     animation: none;
+  }
+}
+
+/* Nav-link hover gust (Navbar's NavLink) — deliberately NOT WindLines' continuous flow.
+   pathLength="1" on each <path> normalizes stroke-dasharray/stroke-dashoffset to a 0..1 scale
+   regardless of the path's actual geometry, so "dashoffset: 1" hides the whole stroke and
+   "dashoffset: 0" reveals it end-to-end — a gust drawing itself in from nothing, and retracting
+   the same way on hover-out. */
+.nav-gust path {
+  fill: none;
+  stroke: var(--color-secondary);
+  stroke-linecap: round;
+  stroke-dasharray: 1;
+  stroke-dashoffset: 1;
+  opacity: 0;
+  transition:
+    stroke-dashoffset 0.55s cubic-bezier(0.2, 0.7, 0.2, 1),
+    opacity 0.3s ease-out;
+}
+.nav-gust path:nth-child(2) {
+  transition-delay: 60ms;
+}
+.nav-link:hover .nav-gust path {
+  stroke-dashoffset: 0;
+  opacity: 1;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .nav-gust path {
+    transition: none;
   }
 }
