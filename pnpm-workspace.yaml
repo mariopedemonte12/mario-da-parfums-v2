@@ -7,3 +7,5 @@ allowBuilds:
   argon2: false
   esbuild: false
   "@scarf/scarf": false
+  '@google/genai': true
+  protobufjs: true

@@ -1,0 +1,8 @@
+[
+  {
+    "id": "stub",
+    "transport": "stdio",
+    "command": "npx",
+    "args": ["tsx", "dev-mcp-stub/server.ts"]
+  }
+]

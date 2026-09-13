@@ -1,0 +1,39 @@
+{
+  "name": "chatbot",
+  "version": "0.0.1",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "start": "node dist/main.js",
+    "dev": "tsx watch src/main.ts",
+    "dev:mcp-stub": "tsx watch dev-mcp-stub/server.ts",
+    "typecheck": "tsc --noEmit",
+    "lint": "oxlint src/ dev-mcp-stub/",
+    "format": "prettier --write \"src/**/*.ts\" \"dev-mcp-stub/**/*.ts\"",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "test:cov": "vitest run --coverage",
+    "test:e2e": "vitest run --config ./vitest.config.e2e.ts",
+    "test:mutation": "stryker run"
+  },
+  "dependencies": {
+    "@google/genai": "^2.22.0",
+    "@modelcontextprotocol/sdk": "^1.30.0",
+    "dotenv": "^17.4.2",
+    "ws": "^8.21.3",
+    "zod": "^4.6.2"
+  },
+  "devDependencies": {
+    "@stryker-mutator/core": "^10.0.0",
+    "@stryker-mutator/vitest-runner": "^10.0.0",
+    "@types/node": "^24.0.0",
+    "@types/ws": "^8.18.1",
+    "@vitest/coverage-v8": "^4.1.2",
+    "oxlint": "^1.58.0",
+    "prettier": "^3.4.2",
+    "tsx": "^4.23.13",
+    "typescript": "^6.0.2",
+    "vitest": "^4.1.2"
+  }
+}
