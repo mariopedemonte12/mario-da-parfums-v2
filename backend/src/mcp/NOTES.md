@@ -13,12 +13,17 @@ no business logic beyond `get_cheapest_listing`'s sort, which lives in
   reason to pay for session bookkeeping across requests.
 - **Input validation is zod-only**, not the REST DTOs' `class-validator`
   pipeline: the MCP tool boundary never goes through Nest's HTTP layer
-  (global `ValidationPipe`/`customValidationPipe`), so a schema-shape error
-  (bad UUID, wrong type) is reported as a normal MCP/JSON-RPC error for that
-  call — not a crash of the connection, and not a `CallToolResult`
-  `isError`. Only failures *inside* a tool handler (not-found, DB failure)
-  return `isError: true` results, per `specs/backend-mcp-server.md`'s error
-  table.
+  (global `ValidationPipe`/`customValidationPipe`). A schema-shape error (bad
+  UUID, wrong type) is reported as a normal `CallToolResult` with
+  `isError: true` — the MCP SDK's own `McpServer.callTool` handler
+  (`server/mcp.js`) catches the `McpError` thrown by its zod validation step
+  and wraps it via `createToolError` before it ever reaches the JSON-RPC
+  transport layer, so it never surfaces as a protocol-level error or a
+  crash of the connection. Confirmed by testing directly against the
+  installed SDK (`@modelcontextprotocol/sdk@1.30.0`) — see
+  `tools/register-catalog-tools.spec.ts`. Failures *inside* a tool handler
+  (not-found, DB failure) return `isError: true` results the same way, per
+  `specs/backend-mcp-server.md`'s error table.
 - Tools call `FragrancesService`/`VendorsService`/`ListingsService` directly,
   bypassing `FragrancesController`'s admin-only guard (guards attach to
   controllers, not services) — intentional: the MCP catalog reads are public,
