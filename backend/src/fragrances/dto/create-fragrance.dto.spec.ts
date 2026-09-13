@@ -9,6 +9,9 @@ const VALID_PAYLOAD = {
   concentration: 'Eau de Parfum',
   description: 'A woody aromatic fragrance.',
   imageUrl: 'https://example.com/images/bleu-de-chanel.jpg',
+  olfactoryFamily: 'Woody Spicy',
+  targetAudience: 'Male',
+  longevity: 'Medium-Strong',
 };
 
 async function codesForField(
@@ -149,6 +152,70 @@ describe('CreateFragranceDto', () => {
           'imageUrl',
         ),
       ).toEqual([ValidationErrorCode.IMAGE_URL_INVALID_FORMAT]);
+    });
+  });
+
+  describe('olfactoryFamily (optional)', () => {
+    it('passes when omitted', async () => {
+      const { olfactoryFamily: _olfactoryFamily, ...rest } = VALID_PAYLOAD;
+      expect(await codesForField(rest, 'olfactoryFamily')).toEqual([]);
+    });
+
+    it('rejects a non-string value with OLFACTORY_FAMILY_INVALID_TYPE', async () => {
+      // See the equivalent NAME_INVALID_TYPE case above: @MaxLen also
+      // fails on a non-string value, so OLFACTORY_FAMILY_TOO_LONG surfaces too.
+      expect(
+        await codesForField(
+          { ...VALID_PAYLOAD, olfactoryFamily: 789 },
+          'olfactoryFamily',
+        ),
+      ).toEqual(
+        expect.arrayContaining([
+          ValidationErrorCode.OLFACTORY_FAMILY_INVALID_TYPE,
+        ]),
+      );
+    });
+  });
+
+  describe('targetAudience (optional)', () => {
+    it('passes when omitted', async () => {
+      const { targetAudience: _targetAudience, ...rest } = VALID_PAYLOAD;
+      expect(await codesForField(rest, 'targetAudience')).toEqual([]);
+    });
+
+    it('rejects a non-string value with TARGET_AUDIENCE_INVALID_TYPE', async () => {
+      // See the equivalent NAME_INVALID_TYPE case above: @MaxLen also
+      // fails on a non-string value, so TARGET_AUDIENCE_TOO_LONG surfaces too.
+      expect(
+        await codesForField(
+          { ...VALID_PAYLOAD, targetAudience: 789 },
+          'targetAudience',
+        ),
+      ).toEqual(
+        expect.arrayContaining([
+          ValidationErrorCode.TARGET_AUDIENCE_INVALID_TYPE,
+        ]),
+      );
+    });
+  });
+
+  describe('longevity (optional)', () => {
+    it('passes when omitted', async () => {
+      const { longevity: _longevity, ...rest } = VALID_PAYLOAD;
+      expect(await codesForField(rest, 'longevity')).toEqual([]);
+    });
+
+    it('rejects a non-string value with LONGEVITY_INVALID_TYPE', async () => {
+      // See the equivalent NAME_INVALID_TYPE case above: @MaxLen also
+      // fails on a non-string value, so LONGEVITY_TOO_LONG surfaces too.
+      expect(
+        await codesForField(
+          { ...VALID_PAYLOAD, longevity: 789 },
+          'longevity',
+        ),
+      ).toEqual(
+        expect.arrayContaining([ValidationErrorCode.LONGEVITY_INVALID_TYPE]),
+      );
     });
   });
 });

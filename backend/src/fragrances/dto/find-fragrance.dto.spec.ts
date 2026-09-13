@@ -20,11 +20,14 @@ describe('FindFragranceDto', () => {
     expect(dto.limit).toBe(DEFAULT_LIMIT);
   });
 
-  it('accepts name/brand/concentration filters and no pagination override', async () => {
+  it('accepts name/brand/concentration/olfactoryFamily/targetAudience/longevity filters and no pagination override', async () => {
     const dto = build({
       name: 'Chanel',
       brand: 'Chanel',
       concentration: 'EDP',
+      olfactoryFamily: 'Woody Spicy',
+      targetAudience: 'Male',
+      longevity: 'Medium-Strong',
     });
     expect(await validate(dto)).toHaveLength(0);
   });

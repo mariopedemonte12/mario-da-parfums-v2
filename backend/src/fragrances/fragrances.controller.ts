@@ -30,7 +30,7 @@ import { RolesGuard } from '../common/guards/roles.guard.js';
 import { Roles } from '../common/decorators/roles.decorator.js';
 import { Role } from '../shared/enums/role.enums.js';
 
-// Owns: CRUD for the fragrance catalog (name/brand/concentration/description/imageUrl).
+// Owns: CRUD for the fragrance catalog (name/brand/concentration/description/imageUrl/olfactoryFamily/targetAudience/longevity).
 // Does not own: obtaining imageUrl (external webscraper) or verifying it serves a real image (separate job).
 // Access: reads (GET) are public; batch mutations (POST/PATCH/DELETE) are admin-only, guarded per-method.
 @ApiTags('fragrances')

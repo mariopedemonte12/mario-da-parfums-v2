@@ -39,12 +39,28 @@ export class FragrancesService {
   constructor(@Inject(DRIZZLE) private readonly db: Database) {}
 
   async findAll(query: FindFragranceDto): Promise<PaginatedFragranceDto> {
-    const { name, brand, concentration, page = 1, limit = 20 } = query;
+    const {
+      name,
+      brand,
+      concentration,
+      olfactoryFamily,
+      targetAudience,
+      longevity,
+      page = 1,
+      limit = 20,
+    } = query;
 
     const conditions = [
       name ? ilike(fragrances.name, `%${name}%`) : undefined,
       brand ? eq(fragrances.brand, brand) : undefined,
       concentration ? eq(fragrances.concentration, concentration) : undefined,
+      olfactoryFamily
+        ? eq(fragrances.olfactoryFamily, olfactoryFamily)
+        : undefined,
+      targetAudience
+        ? eq(fragrances.targetAudience, targetAudience)
+        : undefined,
+      longevity ? eq(fragrances.longevity, longevity) : undefined,
     ].filter(
       (condition): condition is NonNullable<typeof condition> =>
         condition !== undefined,
