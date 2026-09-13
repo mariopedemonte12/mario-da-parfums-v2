@@ -124,7 +124,7 @@ export class VendorsService {
 
     for (const item of items) {
       const sanitized = await sanitizeAndValidate(CreateVendorDto, item);
-      if (sanitized.error) {
+      if ('error' in sanitized) {
         results.push({ success: false, error: sanitized.error });
         continue;
       }
@@ -155,7 +155,7 @@ export class VendorsService {
       const rawId = (item as { id?: unknown }).id;
 
       const sanitized = await sanitizeAndValidate(UpdateVendorItemDto, item);
-      if (sanitized.error) {
+      if ('error' in sanitized) {
         results.push({
           id: typeof rawId === 'number' ? rawId : undefined,
           success: false,
