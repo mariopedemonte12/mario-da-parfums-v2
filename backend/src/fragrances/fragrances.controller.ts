@@ -32,11 +32,9 @@ import { Role } from '../shared/enums/role.enums.js';
 
 // Owns: CRUD for the fragrance catalog (name/brand/concentration/description/imageUrl).
 // Does not own: obtaining imageUrl (external webscraper) or verifying it serves a real image (separate job).
+// Access: reads (GET) are public; batch mutations (POST/PATCH/DELETE) are admin-only, guarded per-method.
 @ApiTags('fragrances')
-@ApiBearerAuth()
 @Controller('fragrances')
-@UseGuards(JwtAuthGuard, RolesGuard)
-@Roles(Role.ADMIN)
 export class FragrancesController {
   constructor(private readonly fragrancesService: FragrancesService) {}
 
@@ -46,8 +44,6 @@ export class FragrancesController {
   })
   @ApiResponse({ status: 200, type: PaginatedFragranceDto })
   @ApiResponse({ status: 400, description: 'Validation failed' })
-  @ApiResponse({ status: 401, description: 'Missing or invalid token' })
-  @ApiResponse({ status: 403, description: 'Caller is not an admin' })
   findAll(@Query() query: FindFragranceDto): Promise<PaginatedFragranceDto> {
     return this.fragrancesService.findAll(query);
   }
@@ -55,8 +51,6 @@ export class FragrancesController {
   @Get(':id')
   @ApiOperation({ summary: 'Get a fragrance by id' })
   @ApiResponse({ status: 200, type: ResponseFragranceDto })
-  @ApiResponse({ status: 401, description: 'Missing or invalid token' })
-  @ApiResponse({ status: 403, description: 'Caller is not an admin' })
   @ApiResponse({ status: 404, description: 'Fragrance not found' })
   findOne(
     @Param('id', ParseUUIDPipe) id: string,
@@ -65,6 +59,9 @@ export class FragrancesController {
   }
 
   @Post('batch')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(Role.ADMIN)
+  @ApiBearerAuth()
   @ApiOperation({ summary: 'Create fragrances in batch (partial success)' })
   @ApiResponse({ status: 201, type: [CreateBatchResultDto] })
   @ApiResponse({ status: 400, description: 'Validation failed' })
@@ -77,6 +74,9 @@ export class FragrancesController {
   }
 
   @Patch('batch')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(Role.ADMIN)
+  @ApiBearerAuth()
   @ApiOperation({ summary: 'Update fragrances in batch (partial success)' })
   @ApiResponse({ status: 200, type: [BatchResultDto] })
   @ApiResponse({ status: 400, description: 'Validation failed' })
@@ -87,6 +87,9 @@ export class FragrancesController {
   }
 
   @Delete('batch')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(Role.ADMIN)
+  @ApiBearerAuth()
   @ApiOperation({ summary: 'Delete fragrances in batch (partial success)' })
   @ApiResponse({ status: 200, type: [BatchResultDto] })
   @ApiResponse({ status: 400, description: 'Validation failed' })

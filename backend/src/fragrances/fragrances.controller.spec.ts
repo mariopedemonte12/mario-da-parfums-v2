@@ -45,30 +45,19 @@ describe('FragrancesController', () => {
     expect(controller).toBeDefined();
   });
 
-  // Spec: "todo el módulo es admin-only (JwtAuthGuard + RolesGuard +
-  // @Roles(Role.ADMIN)) a nivel de controller, todas las rutas incluidas las
-  // de lectura." Verified via decorator metadata since this is the entire
-  // module-wide access contract and there are no per-route overrides to
-  // exercise individually.
-  describe('admin-only access, applied at the controller level', () => {
-    it('guards the whole controller with JwtAuthGuard and RolesGuard', () => {
+  // Spec (amended): reads (GET /fragrances, GET /fragrances/:id) are public;
+  // batch mutations (POST/PATCH/DELETE /fragrances/batch) stay admin-only,
+  // guarded per-method instead of at the controller level.
+  describe('access control', () => {
+    it('does not guard the controller itself', () => {
       const guards = Reflect.getMetadata(GUARDS_METADATA, FragrancesController);
-      expect(guards).toEqual([JwtAuthGuard, RolesGuard]);
-    });
-
-    it('requires the ADMIN role for the whole controller', () => {
       const roles = Reflect.getMetadata(ROLES_KEY, FragrancesController);
-      expect(roles).toEqual([Role.ADMIN]);
+      expect(guards).toBeUndefined();
+      expect(roles).toBeUndefined();
     });
 
-    it.each([
-      'findAll',
-      'findOne',
-      'createBatch',
-      'updateBatch',
-      'removeBatch',
-    ] as const)(
-      'does not override guards/roles on %s (read routes included)',
+    it.each(['findAll', 'findOne'] as const)(
+      'leaves %s without guards/roles (public read)',
       (method) => {
         const guards = Reflect.getMetadata(
           GUARDS_METADATA,
@@ -80,6 +69,22 @@ describe('FragrancesController', () => {
         );
         expect(guards).toBeUndefined();
         expect(roles).toBeUndefined();
+      },
+    );
+
+    it.each(['createBatch', 'updateBatch', 'removeBatch'] as const)(
+      'guards %s with JwtAuthGuard, RolesGuard and Role.ADMIN',
+      (method) => {
+        const guards = Reflect.getMetadata(
+          GUARDS_METADATA,
+          FragrancesController.prototype[method],
+        );
+        const roles = Reflect.getMetadata(
+          ROLES_KEY,
+          FragrancesController.prototype[method],
+        );
+        expect(guards).toEqual([JwtAuthGuard, RolesGuard]);
+        expect(roles).toEqual([Role.ADMIN]);
       },
     );
   });

@@ -12,7 +12,7 @@ El módulo `fragrances` existe hoy solo como scaffold de `nest g resource` (cont
 
 ## Alcance del CRUD
 
-Acceso: **todo el módulo es admin-only** (`JwtAuthGuard` + `RolesGuard` + `@Roles(Role.ADMIN)` a nivel de controller, todas las rutas incluidas las de lectura).
+Acceso: **enmienda** — ya no todo el módulo es admin-only. `GET /fragrances` y `GET /fragrances/:id` son completamente públicos (sin `JwtAuthGuard`/`RolesGuard`), para permitir que el frontend público muestre el catálogo. `POST/PATCH/DELETE /fragrances/batch` siguen admin-only (`JwtAuthGuard` + `RolesGuard` + `@Roles(Role.ADMIN)`), aplicados ahora por método en vez de a nivel de controller.
 
 Endpoints (según `module-standards`: create/update/delete son batch-only, no se mantienen los de un solo ítem):
 
@@ -57,6 +57,6 @@ Se discutió si conviene que un `class-validator` custom haga una request HTTP r
 
 ## Errores
 
-Sigue el esquema global (`docs/error-handling.md`) para lo que no es batch: validación de DTO → 400 con `FieldError[]` vía `ValidationErrorCode` (se agregan códigos nuevos para `brand`, `concentration`, `description`, `imageUrl`; `name` reutiliza `NAME_REQUIRED`/`NAME_INVALID_TYPE` ya existentes). `GET /fragrances/:id` no encontrado → `NotFoundException` (404). Sin rol admin → `ForbiddenException` (403, vía `RolesGuard`). Sin token → `UnauthorizedException` (401, vía `JwtAuthGuard`).
+Sigue el esquema global (`docs/error-handling.md`) para lo que no es batch: validación de DTO → 400 con `FieldError[]` vía `ValidationErrorCode` (se agregan códigos nuevos para `brand`, `concentration`, `description`, `imageUrl`; `name` reutiliza `NAME_REQUIRED`/`NAME_INVALID_TYPE` ya existentes). `GET /fragrances/:id` no encontrado → `NotFoundException` (404). Los `GET` son públicos (ver "Alcance del CRUD"), por lo que no producen 401/403. Sin rol admin en `POST/PATCH/DELETE /fragrances/batch` → `ForbiddenException` (403, vía `RolesGuard`). Sin token en esas mismas rutas → `UnauthorizedException` (401, vía `JwtAuthGuard`).
 
 `name` duplicado **no** es un `ConflictException` (409): como las mutaciones son batch-only (ver "Alcance del CRUD"), un `name` duplicado en `POST/PATCH /fragrances/batch` se reporta como fallo por-ítem (`{ success: false, error: 'Fragrance "X" already exists' }`) dentro de una respuesta 200/201, igual que cualquier otro error de escritura — nunca aborta el batch entero con un 409. Esta corrección reemplaza una versión anterior de este documento que mencionaba 409, contradiciendo la regla de partial-success ya establecida arriba.
