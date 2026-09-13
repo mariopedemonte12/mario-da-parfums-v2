@@ -26,6 +26,21 @@ export class FindFragranceDto {
   @IsStringField(ValidationErrorCode.CONCENTRATION_INVALID_TYPE)
   concentration?: string;
 
+  @ApiPropertyOptional({ description: 'Filter by exact olfactory family' })
+  @IsOptional()
+  @IsStringField(ValidationErrorCode.OLFACTORY_FAMILY_INVALID_TYPE)
+  olfactoryFamily?: string;
+
+  @ApiPropertyOptional({ description: 'Filter by exact target audience' })
+  @IsOptional()
+  @IsStringField(ValidationErrorCode.TARGET_AUDIENCE_INVALID_TYPE)
+  targetAudience?: string;
+
+  @ApiPropertyOptional({ description: 'Filter by exact longevity' })
+  @IsOptional()
+  @IsStringField(ValidationErrorCode.LONGEVITY_INVALID_TYPE)
+  longevity?: string;
+
   @ApiPropertyOptional({ default: DEFAULT_PAGE, minimum: 1 })
   @IsOptional()
   @Type(() => Number)

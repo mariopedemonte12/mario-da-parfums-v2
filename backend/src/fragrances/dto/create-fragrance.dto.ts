@@ -13,6 +13,9 @@ const NAME_MAX_LENGTH = 255;
 const BRAND_MAX_LENGTH = 128;
 const CONCENTRATION_MAX_LENGTH = 128;
 const IMAGE_URL_MAX_LENGTH = 500;
+const OLFACTORY_FAMILY_MAX_LENGTH = 128;
+const TARGET_AUDIENCE_MAX_LENGTH = 32;
+const LONGEVITY_MAX_LENGTH = 32;
 
 export class CreateFragranceDto {
   @ApiProperty({
@@ -60,4 +63,40 @@ export class CreateFragranceDto {
   @IsImageUrl()
   @MaxLen(IMAGE_URL_MAX_LENGTH, ValidationErrorCode.IMAGE_URL_TOO_LONG)
   imageUrl?: string;
+
+  @ApiPropertyOptional({
+    example: 'Woody Spicy',
+    description: 'Olfactory family/category',
+    maxLength: OLFACTORY_FAMILY_MAX_LENGTH,
+  })
+  @IsOptional()
+  @IsStringField(ValidationErrorCode.OLFACTORY_FAMILY_INVALID_TYPE)
+  @MaxLen(
+    OLFACTORY_FAMILY_MAX_LENGTH,
+    ValidationErrorCode.OLFACTORY_FAMILY_TOO_LONG,
+  )
+  olfactoryFamily?: string;
+
+  @ApiPropertyOptional({
+    example: 'Male',
+    description: 'Target audience (e.g. Male, Female, Unisex)',
+    maxLength: TARGET_AUDIENCE_MAX_LENGTH,
+  })
+  @IsOptional()
+  @IsStringField(ValidationErrorCode.TARGET_AUDIENCE_INVALID_TYPE)
+  @MaxLen(
+    TARGET_AUDIENCE_MAX_LENGTH,
+    ValidationErrorCode.TARGET_AUDIENCE_TOO_LONG,
+  )
+  targetAudience?: string;
+
+  @ApiPropertyOptional({
+    example: 'Medium-Strong',
+    description: 'Longevity/intensity (e.g. Light, Medium, Very Strong)',
+    maxLength: LONGEVITY_MAX_LENGTH,
+  })
+  @IsOptional()
+  @IsStringField(ValidationErrorCode.LONGEVITY_INVALID_TYPE)
+  @MaxLen(LONGEVITY_MAX_LENGTH, ValidationErrorCode.LONGEVITY_TOO_LONG)
+  longevity?: string;
 }

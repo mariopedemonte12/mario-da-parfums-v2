@@ -30,6 +30,18 @@ export class ResponseFragranceDto {
   @Expose()
   imageUrl: string | null;
 
+  @ApiPropertyOptional({ example: 'Woody Spicy', nullable: true })
+  @Expose()
+  olfactoryFamily: string | null;
+
+  @ApiPropertyOptional({ example: 'Male', nullable: true })
+  @Expose()
+  targetAudience: string | null;
+
+  @ApiPropertyOptional({ example: 'Medium-Strong', nullable: true })
+  @Expose()
+  longevity: string | null;
+
   @ApiProperty()
   @Expose()
   createdAt: Date;
