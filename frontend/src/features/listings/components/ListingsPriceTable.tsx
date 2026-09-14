@@ -16,18 +16,6 @@ type ListingsPriceTableProps = {
 
 type SortDirection = "asc" | "desc";
 
-function pickDefaultListing(list: Listing[]): Listing | null {
-  if (list.length === 0) return null;
-
-  const inStock = list.filter((listing) => listing.inStock);
-  const pool = inStock.length > 0 ? inStock : list;
-
-  return pool.reduce(
-    (cheapest, listing) => (listing.price < cheapest.price ? listing : cheapest),
-    pool[0]
-  );
-}
-
 export default function ListingsPriceTable({
   listings,
   vendors,
@@ -57,12 +45,12 @@ export default function ListingsPriceTable({
 
   useEffect(() => {
     const stillVisible =
-      selectedListingId !== null && filtered.some((listing) => listing.id === selectedListingId);
+      selectedListingId !== null && sorted.some((listing) => listing.id === selectedListingId);
 
     if (!stillVisible) {
-      onSelectListing(pickDefaultListing(filtered));
+      onSelectListing(sorted[0] ?? null);
     }
-  }, [filtered, selectedListingId, onSelectListing]);
+  }, [sorted, selectedListingId, onSelectListing]);
 
   if (listings.length === 0) {
     return (

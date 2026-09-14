@@ -44,7 +44,10 @@ export async function getFragranceById(id: string): Promise<FragranceDetail | nu
   try {
     return await backendApi.get<FragranceDetail>(`/fragrances/${id}`);
   } catch (error) {
-    if (error instanceof ApiError && error.statusCode === 404) {
+    // 400 happens when `id` isn't a well-formed uuid (backend's ParseUUIDPipe rejects it
+    // before ever querying) — from the user's perspective that's the same "this perfume
+    // doesn't exist" outcome as a real 404, not a transient network problem worth retrying.
+    if (error instanceof ApiError && (error.statusCode === 404 || error.statusCode === 400)) {
       return null;
     }
     throw error;

@@ -46,11 +46,16 @@ no se vuelve a pedir al backend por cada cambio de filtro.
    vacío ("Todavía no tenemos precios para este perfume") y el botón "Ver
    en tienda" queda deshabilitado (no hay `url` a la cual abrir).
 5. **Selección de listing**: existe un listing "con foco" en todo momento
-   que haya al menos un listing visible en la tabla (tras filtros) — por
-   defecto, el más barato entre los disponibles (`inStock: true`); si
-   ninguno está disponible, el más barato en general. Click en una fila de
-   la tabla cambia el foco. Si el listing con foco queda oculto por un
-   filtro, el foco pasa al primer listing visible; si ningún listing queda
+   que haya al menos un listing visible en la tabla (tras filtros) — el
+   foco es siempre **el primer listing de la tabla tal como está ordenada y
+   filtrada en ese momento** (`sorted[0]`), sin preferencia por
+   disponibilidad: si el más barato (o el más caro, bajo sort descendente)
+   está agotado, igual queda con foco por defecto — no se busca el primero
+   disponible. Por defecto la tabla arranca ordenada por precio ascendente.
+   Click en una fila cambia el foco; reordenar la tabla no lo cambia por sí
+   solo (solo se recalcula si el foco actual deja de estar visible). Si el
+   listing con foco queda oculto por un filtro, el foco pasa al nuevo primer
+   listing según el orden vigente en ese momento; si ningún listing queda
    visible, no hay foco y el botón se deshabilita.
 6. **"Ver en tienda"**: abre `listing.url` del listing con foco en una
    pestaña nueva (`target="_blank"`, `rel="noopener noreferrer"`). No hay
