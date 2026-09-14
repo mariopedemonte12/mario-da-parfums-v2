@@ -1,26 +1,44 @@
 "use client";
 
-import { useState } from "react";
-import type {Fragrance} from "@/features/fragrances/types/fragrance.types"
+import Link from "next/link";
+import type { Ref } from "react";
+import { motion } from "motion/react";
+import WindLines from "@/components/ui/WindLines";
+import { emergeItem } from "@/lib/motion";
+import type { Fragrance } from "@/features/fragrances/types/fragrance.types";
 
 type FragranceCardProps = {
-    fragrance: Fragrance;
-}
+  fragrance: Fragrance;
+  ref?: Ref<HTMLLIElement>;
+};
 
+export default function FragranceCard({ fragrance, ref }: FragranceCardProps) {
+  return (
+    <motion.li ref={ref} layout variants={emergeItem} exit="exit">
+      <Link href={`/fragrances/${fragrance.id}`} className="flex flex-col gap-3">
+        <div className="relative flex h-[250px] items-center justify-center overflow-hidden rounded-2xl bg-surface/60">
+          <div
+            className="h-[170px] w-[86px] rounded-t-[40px] rounded-b-lg"
+            style={{
+              background:
+                "repeating-linear-gradient(135deg, var(--color-border) 0 5px, var(--color-background) 5px 10px)",
+            }}
+          />
+          <WindLines
+            variant="sw"
+            className="pointer-events-none absolute inset-x-0 bottom-4 h-6 w-full opacity-40"
+          />
+        </div>
 
-export default function FragranceCard({fragrance}: FragranceCardProps) {
-    const [count, setCount] = useState(0)
-    return (
-        <li>
-            <h2>{fragrance.name}</h2>
-            <p>${fragrance.price}</p>
-            <p> Cantidad: {count}</p>
-            <button onClick={() => setCount(count + 1)}>
-                +
-            </button>
-            <button onClick={() => (count > 0 ? setCount(count - 1) : setCount(0))}>
-                -
-            </button>
-        </li>
-    )
+        <div>
+          <h2 className="font-serif text-2xl leading-tight">
+            {fragrance.name}
+          </h2>
+          <p className="mt-0.5 font-sans text-[13px] font-light text-text-muted">
+            {fragrance.brand}
+          </p>
+        </div>
+      </Link>
+    </motion.li>
+  );
 }
