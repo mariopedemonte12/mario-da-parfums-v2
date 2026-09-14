@@ -1,4 +1,12 @@
+export class ApiError extends Error {
+  status: number;
 
+  constructor(status: number) {
+    super(`API error: ${status}`);
+    this.name = "ApiError";
+    this.status = status;
+  }
+}
 
 export function createApiClient(baseUrl: string) {
   return {
@@ -6,7 +14,7 @@ export function createApiClient(baseUrl: string) {
       const response = await fetch(`${baseUrl}${endpoint}`);
 
       if (!response.ok) {
-        throw new Error(`API error: ${response.status}`);
+        throw new ApiError(response.status);
       }
 
       return response.json();
@@ -22,7 +30,7 @@ export function createApiClient(baseUrl: string) {
       });
 
       if (!response.ok) {
-        throw new Error(`API error: ${response.status}`);
+        throw new ApiError(response.status);
       }
 
       return response.json();
