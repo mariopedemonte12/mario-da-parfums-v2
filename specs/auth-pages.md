@@ -137,6 +137,13 @@ ships on the backend** — a testing session should flag a "successful" logout
 that leaves the cookie live as the expected/known gap described here, not as
 a newly-discovered bug, and should re-verify once the endpoint exists.
 
+**Resolved 2026-09-14**: `POST /auths/logout` now exists — see
+`specs/auth-logout-conflict-messages.md` and `backend/src/auths/NOTES.md`.
+The gap this section describes (404, cookie stays live) is closed; a
+testing session exercising `logout()`/"Salir" from here on should verify it
+as a real logout (session cookie actually cleared, `204` from the backend),
+not wave it through as this known limitation.
+
 No UI in this feature calls `logout()` — see "Navbar" below.
 
 ## Scope: `/login` and `/register`
@@ -290,6 +297,9 @@ was explicitly not bundled into this work. A testing session should treat a
 "successful" Salir that leaves the cookie live as this known gap, not a new
 bug — same caveat as the main handoff's `logout()` section.
 
+**Resolved 2026-09-14** — see the addendum on the main handoff's `logout()`
+section above; "Salir" now performs a real server-side logout.
+
 ## Screens
 
 Both screens share `AuthSplitPanel`: a fixed-width two-column layout on
@@ -390,7 +400,9 @@ consumer of both):
 
 - `GET /auths/me` or any real session-verification endpoint — not requested,
   see "Session hydration" above for the v1 substitute.
-- `POST /auths/logout` — backend gap, see dedicated section above.
+- `POST /auths/logout` — backend gap, see dedicated section above (resolved
+  2026-09-14 in `specs/auth-logout-conflict-messages.md`; out of scope for
+  *this* feature's own implementation, not unresolved anymore overall).
 - Password reset / "forgot password" flow.
 - Social login (Google/Apple) — decorative only per mock.
 - "Remember me" — decorative only, no backend concept for it.
