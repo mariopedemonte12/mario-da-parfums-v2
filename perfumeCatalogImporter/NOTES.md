@@ -1,5 +1,30 @@
 # perfumeCatalogImporter — notes
 
+## How `FragranceRepository.upsert()` tells INSERT apart from UPDATE
+
+`CatalogSyncOrchestrator.run()`'s created/updated tally needs to know, per
+call, which branch of the single `INSERT ... ON CONFLICT (name) DO UPDATE`
+statement fired — but Postgres's `RETURNING` clause only ever returns the
+resulting row, not which branch produced it, and the tempting shortcut
+(`RETURNING (xmax = 0)`, a trick that shows up in Postgres upsert blog posts)
+doesn't actually work here: the tuple returned by an `ON CONFLICT DO UPDATE`
+also has `xmax = 0` at RETURNING time (the *old* row version is what gets
+`xmax` set to the current transaction, not the new one) — it can't
+distinguish the two branches.
+
+Instead, `upsert()` returns `RETURNING (created_at = updated_at) AS
+was_insert`. This works because the `ON CONFLICT DO UPDATE` clause only sets
+`updated_at = now()` on the update branch; on a fresh insert neither column
+is set explicitly, so both fall back to the schema's `defaultNow()` and
+evaluate to the same transaction timestamp (`now()` is stable within one
+Postgres transaction). A row that has ever been updated has `updated_at` from
+a *different* (later) transaction than its `created_at`, so the two only
+match on insert. This is why `upsert()` commits its own transaction per call
+(one `now()` per fragrance) rather than batching multiple fragrances into one
+transaction — batching would make every fragrance in that transaction share
+the same `now()`, and a freshly-inserted-then-updated-in-the-same-transaction
+row would falsely read as an insert.
+
 ## Why the embeddings index is a flat `.npz` file, not pgvector
 
 Considered and rejected `pgvector` for storing the embedding matrix: it adds
@@ -161,3 +186,88 @@ like real gaps:
   that matters (`default_encoder()`'s call site); if a second real caller
   with a different encoder is ever added, that change is what should carry
   its own validation, not something to pre-build speculatively now.
+
+## Testing session: repository.upsert()/orchestrator.run()/config/main (persistence pipeline)
+
+Covers the four modules that were `NotImplementedError` stubs before this
+feature (`repository.upsert()`, `orchestrator.run()`, `config.load_config()`,
+`main.main()`) plus `dataset_source.py`'s new `olfactory_family`/
+`target_audience`/`longevity` fields. New test files: `test_dataset_source.py`,
+`test_orchestrator.py`, `test_config.py`, `test_main.py`,
+`tests/integration/test_repository_upsert_integration.py`.
+
+- **Local Postgres was missing migration `0002_famous_colonel_america.sql`**
+  (the `olfactory_family`/`target_audience`/`longevity` columns) — the
+  `backend-postgres-1` container was already running via
+  `backend/docker-compose.yml`, but nothing had run `pnpm db:migrate` against
+  it since that migration was authored. Applied it
+  (`DATABASE_URL=... pnpm db:migrate` from `backend/`) before any of
+  `FragranceRepository`'s integration tests, or the real end-to-end
+  `python -m perfumeCatalogImporter.main` run, could work at all — every
+  `upsert()` call would otherwise fail with "column does not exist". Worth
+  knowing for the next fresh environment: bringing the container up isn't
+  enough, the schema migration is a separate step.
+
+- **Confirmed spec violation, and a mid-review spec correction it exposed.**
+  Original finding: running the real importer against an empty local DB gave
+  `created=930 updated=73 discarded=0 failed=0` against 1003 parsed rows —
+  every one of those 73 "updates" on a *fresh empty table* is really an
+  intra-run `name` collision silently overwriting, not a legitimate
+  re-import. Two were genuine different fragrances sharing a `name` across
+  brands (`"Theoreme"` — Rue Broca vs. Afnan; `"Pour Homme EDT"` — Dolce &
+  Gabbana vs. Azzaro), which is what the user flagged when this was
+  reported: `name` alone was never meant to be the matching key, it should
+  always have been (`brand`, `name`). **Confirmed with the user and now
+  reflected in `specs/perfume-catalog-import.md`'s "Reglas de negocio"
+  section (2026-09-13)** — the DB-level fix (composite `uniqueIndex` on
+  `fragrances`, a new Drizzle migration, `repository.py`'s `ON CONFLICT`
+  clause) is out of scope for this Python-only testing session and belongs
+  to a fresh implementation session.
+
+  That correction alone doesn't fully close the gap, though: checking the
+  live dataset for `(brand, name)`-level duplicates (not just `name`) turned
+  up **8 pairs that collide on the composite key too**, with genuinely
+  different data in the other columns (e.g. `Al Haramain` /
+  `"Amber Oud Aqua Dubai"` appears twice with different
+  `category`/`target_audience`/`longevity`) — a real, still-unresolved
+  ambiguity the spec's *"una colisión de (`brand`, `name`) entre dos filas
+  del dataset se loguea como fallo puntual"* rule is meant to cover.
+  `CatalogSyncOrchestrator.run()` has no collision detection at all today
+  (on either key) — every record with `name`+`brand` present reaches
+  `FragranceRepository.upsert()` unconditionally, so these 8 pairs still
+  silently overwrite via `ON CONFLICT DO UPDATE` with no failure recorded,
+  even after the DB-level composite-key fix lands. Captured as two tests in
+  `test_orchestrator.py::TestMatchingKeyCollisionWithinRun`:
+  - `test_second_row_with_a_colliding_brand_and_name_is_not_silently_upserted_over_the_first`
+    — deliberately left **red**, documenting the still-open gap (application-level
+    collision tracking, independent of the DB unique index).
+  - `test_same_name_different_brand_is_not_treated_as_a_collision` — green today
+    (nothing currently discriminates on either key, so it passes vacuously), kept
+    as a guard so a future fix keys collision detection on the composite
+    (`brand`, `name`) and not `name` alone, which would wrongly reject the
+    Theoreme/Pour Homme EDT case the spec correction above says must succeed.
+
+  Fixing either belongs to a future implementation session, not this testing
+  session.
+
+- **Mutation testing** (`cosmic-ray`, same process as `similarity.py` above,
+  two separate configs since `cosmic-ray`'s `module-path` only takes one
+  target):
+  - `orchestrator.py` (`cosmic-ray-orchestrator.toml` →
+    `tests/test_orchestrator.py`, baselined with the known-failing collision
+    test deselected via `-k 'not colliding_brand_and_name'` so the baseline
+    itself stays green): **19 mutants, 19 killed, 0 survivors.**
+  - `repository.py` (`cosmic-ray-repository.toml` → both
+    `tests/integration/test_repository_integration.py` and
+    `tests/integration/test_repository_upsert_integration.py`, against real
+    Postgres): **1 mutant, 1 killed** (`except Exception` →
+    `except CosmicRayTestingException`, i.e. the exception type itself).
+    Only one mutant exists at all because almost everything else in this
+    file is either the multi-line SQL string (cosmic-ray's default operators
+    don't mutate string literal contents) or a single `with`/`try` block with
+    no comparisons/arithmetic/booleans for the standard operator set to
+    target — not a gap in the test suite, a ceiling on what this particular
+    file structure gives a mutation tool to work with. The SQL itself is
+    exercised for real by the integration tests (insert, update, null
+    columns, rollback-then-reusable-connection), just not through mutation
+    coverage.
