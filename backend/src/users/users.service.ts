@@ -14,25 +14,7 @@ import {
 } from '../database/schema/user.schema.js';
 import { UpdateUserDto } from './dto/update-user.dto.js';
 import { FindUsersDto } from './dto/find-users.dto.js';
-
-interface PgError {
-  code?: string;
-}
-
-function isPgError(err: unknown): err is PgError {
-  return typeof err === 'object' && err !== null && 'code' in err;
-}
-
-// drizzle-orm (this version) wraps every real driver error in a
-// DrizzleQueryError, whose own top-level shape has no `code` — the
-// original pg error (and its `code`, e.g. '23505' for a unique violation)
-// lives on `.cause`. Check both so a real constraint violation is actually
-// recognized instead of falling through to a generic 500.
-function getPgErrorCode(err: unknown): string | undefined {
-  if (isPgError(err) && err.code) return err.code;
-  if (err instanceof Error && isPgError(err.cause)) return err.cause.code;
-  return undefined;
-}
+import { getPgErrorCode } from '../common/utils/pg-error.util.js';
 
 @Injectable()
 export class UsersService {

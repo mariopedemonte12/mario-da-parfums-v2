@@ -13,7 +13,7 @@ export default function FragranceCard({fragrance}: FragranceCardProps) {
     return (
         <li>
             <h2>{fragrance.name}</h2>
-            <p>${fragrance.price}</p>
+            <p>{fragrance.brand}</p>
             <p> Cantidad: {count}</p>
             <button onClick={() => setCount(count + 1)}>
                 +

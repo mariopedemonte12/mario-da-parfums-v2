@@ -3,6 +3,7 @@ import { Cormorant_Garamond, Jost } from "next/font/google";
 
 import Navbar from "@/features/layout/components/Navbar"
 import Footer from "@/features/layout/components/Footer";
+import { AuthProvider } from "@/features/auth/hooks/useAuth";
 
 import "./globals.css";
 
@@ -33,13 +34,15 @@ export default function RootLayout({
       className={`${cormorantGaramond.variable} ${jost.variable} h-full antialiased`}
     >
       <body className="min-h-full flex flex-col">
-        <Navbar />
+        <AuthProvider>
+          <Navbar />
 
-        <main className="flex-1">
-          {children}
-        </main>
+          <main className="flex-1">
+            {children}
+          </main>
 
-        <Footer />
+          <Footer />
+        </AuthProvider>
       </body>
     </html>
   );

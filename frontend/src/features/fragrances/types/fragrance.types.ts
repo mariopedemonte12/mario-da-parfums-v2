@@ -1,7 +1,22 @@
 export type Fragrance = {
-    id: number;
+    id: string;
     name: string;
-    price: number;
+    brand: string;
+    concentration: string | null;
+    description: string | null;
+    imageUrl: string | null;
+    olfactoryFamily: string | null;
+    targetAudience: string | null;
+    longevity: string | null;
+    createdAt: string;
+    updatedAt: string;
+}
+
+export type PaginatedFragrances = {
+    data: Fragrance[];
+    total: number;
+    page: number;
+    limit: number;
 }
 
 // Matches backend/src/fragrances/dto/response-fragrance.dto.ts (ResponseFragranceDto).
