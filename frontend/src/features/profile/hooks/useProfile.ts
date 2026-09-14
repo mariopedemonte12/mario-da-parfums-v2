@@ -36,11 +36,11 @@ const sessionExpiredState: ProfileState = {
 };
 
 export function useProfile() {
-  const { user, logout } = useAuth();
+  const { user, isHydrating, logout } = useAuth();
   const [state, setState] = useState<ProfileState>(initialState);
 
   useEffect(() => {
-    if (!user) {
+    if (isHydrating || !user) {
       return;
     }
 
@@ -86,7 +86,11 @@ export function useProfile() {
     return () => {
       cancelled = true;
     };
-  }, [user, logout]);
+  }, [user, isHydrating, logout]);
+
+  if (isHydrating) {
+    return initialState;
+  }
 
   if (!user) {
     return sessionExpiredState;
