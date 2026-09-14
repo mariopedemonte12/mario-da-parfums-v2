@@ -1,7 +1,10 @@
+"use client";
+
 import Link from "next/link";
 import type { ReactNode } from "react";
 
 import WindLines from "@/components/ui/WindLines";
+import { useChatbotWidget } from "@/features/chatbot-widget/components/ChatbotWidgetProvider";
 
 // A gust that spawns beneath the word on hover — two short strokes drawn in from nothing
 // (not WindLines' continuous flow) via stroke-dashoffset, and retracted the same way on
@@ -25,6 +28,8 @@ function NavLink({ href, children }: { href: string; children: ReactNode }) {
 }
 
 export default function Navbar() {
+  const { isOpen, toggle } = useChatbotWidget();
+
   return (
     <header className="relative bg-background">
       <nav className="mx-auto flex w-full max-w-7xl items-center justify-between px-14 pt-[26px] pb-[18px] text-[13px] font-normal tracking-[0.14em] uppercase">
@@ -39,7 +44,14 @@ export default function Navbar() {
           <NavLink href="/">Inicio</NavLink>
           <NavLink href="/fragrances">Perfumes</NavLink>
           <span>Notas</span>
-          <span>Sensei</span>
+          <button
+            type="button"
+            onClick={toggle}
+            aria-expanded={isOpen}
+            className="cursor-pointer uppercase"
+          >
+            Sensei
+          </button>
         </div>
 
         <div className="flex items-center gap-7">
