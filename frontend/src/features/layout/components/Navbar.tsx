@@ -2,9 +2,25 @@
 
 import Link from "next/link";
 import { useRef, useState } from "react";
-import type { MouseEvent as ReactMouseEvent, PointerEvent as ReactPointerEvent, ReactNode } from "react";
+import type { MouseEvent as ReactMouseEvent, PointerEvent as ReactPointerEvent } from "react";
 
 import WindLines from "@/components/ui/WindLines";
+import WindGustLink from "@/features/common/components/WindGustLink";
+import { useAuth } from "@/features/auth/hooks/useAuth";
+
+// Initials only, not a `photoS3Key`-backed image: there is no S3 base-URL/
+// key-to-image resolution anywhere in this codebase yet (backend only
+// validates the key's shape, see backend/src/users/dto/update-user.dto.ts —
+// nothing serves or exposes it as a URL). Wiring an actual photo avatar
+// needs that piece first; see specs/auth-pages.md, "Navbar reflects session
+// state".
+function getInitials(name: string): string {
+  const parts = name.trim().split(/\s+/).filter(Boolean);
+  if (parts.length === 0) return "?";
+  const first = parts[0][0];
+  const last = parts.length > 1 ? parts[parts.length - 1][0] : "";
+  return (first + last).toUpperCase();
+}
 
 type MobileNavItem = { key: string; label: string; href?: string };
 
@@ -126,29 +142,9 @@ function MobileNavCarousel({ onNavigate }: { onNavigate: () => void }) {
   );
 }
 
-// A gust that spawns beneath the word on hover — two short strokes drawn in from nothing
-// (not WindLines' continuous flow) via stroke-dashoffset, and retracted the same way on
-// hover-out. See the `.nav-gust` rule in globals.css for the draw transition.
-function NavLink({ href, children }: { href: string; children: ReactNode }) {
-  return (
-    <Link href={href} className="nav-link relative inline-block">
-      {children}
-      <svg
-        aria-hidden="true"
-        focusable="false"
-        className="nav-gust pointer-events-none absolute inset-x-0 -bottom-1.5 h-2 w-full"
-        viewBox="0 0 100 10"
-        preserveAspectRatio="none"
-      >
-        <path d="M0 6 L100 4" strokeWidth="1.4" pathLength={1} />
-        <path d="M0 8 L100 7" strokeWidth="1" pathLength={1} />
-      </svg>
-    </Link>
-  );
-}
-
 export default function Navbar() {
   const [menuOpen, setMenuOpen] = useState(false);
+  const { user, logout } = useAuth();
 
   return (
     <header className="relative bg-background">
@@ -172,19 +168,34 @@ export default function Navbar() {
         </Link>
 
         <div className="hidden gap-10 md:flex">
-          <NavLink href="/">Inicio</NavLink>
-          <NavLink href="/fragrances">Perfumes</NavLink>
+          <WindGustLink href="/">Inicio</WindGustLink>
+          <WindGustLink href="/fragrances">Perfumes</WindGustLink>
           <span>Notas</span>
           <span>Sensei</span>
         </div>
 
-        <Link href="/login" className="md:hidden" aria-label="Entrar">
-          <span className="inline-block h-[26px] w-[26px] rounded-full border border-primary" />
-        </Link>
+        {user ? (
+          <span
+            aria-hidden="true"
+            className="flex h-[26px] w-[26px] items-center justify-center rounded-full border border-primary font-sans text-[11px] normal-case md:hidden"
+          >
+            {getInitials(user.name)}
+          </span>
+        ) : (
+          <Link href="/login" className="md:hidden" aria-label="Entrar">
+            <span className="inline-block h-[26px] w-[26px] rounded-full border border-primary" />
+          </Link>
+        )}
 
         <div className="hidden items-center gap-7 md:flex">
-          <NavLink href="/login">Entrar</NavLink>
-          <span className="inline-block h-[26px] w-[26px] rounded-full border border-primary" />
+          {user ? (
+            <WindGustLink onClick={logout}>Salir</WindGustLink>
+          ) : (
+            <WindGustLink href="/login">Entrar</WindGustLink>
+          )}
+          <span className="flex h-[26px] w-[26px] items-center justify-center rounded-full border border-primary font-sans text-[11px] normal-case">
+            {user ? getInitials(user.name) : null}
+          </span>
         </div>
       </nav>
 

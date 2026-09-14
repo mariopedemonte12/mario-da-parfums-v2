@@ -13,6 +13,7 @@ import { PasswordsService } from '../passwords/passwords.service.js';
 import { UserResponseDto } from '../users/dto/response-user.dto.js';
 import type { User } from '../database/schema/user.schema.js';
 import { Role } from '../shared/enums/role.enums.js';
+import { getPgErrorCode } from '../common/utils/pg-error.util.js';
 
 @Injectable()
 export class AuthsService {
@@ -39,7 +40,7 @@ export class AuthsService {
         role: Role.USER,
       });
     } catch (err) {
-      if ((err as { code?: string })?.code === '23505') {
+      if (getPgErrorCode(err) === '23505') {
         throw new ConflictException('Email already registered');
       }
       throw err;
@@ -69,7 +70,7 @@ export class AuthsService {
         role: dto.role,
       });
     } catch (err) {
-      if ((err as { code?: string })?.code === '23505') {
+      if (getPgErrorCode(err) === '23505') {
         throw new ConflictException('Email already registered');
       }
       throw err;

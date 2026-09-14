@@ -13,25 +13,9 @@ import { ResponseFavoriteDto } from './dto/response-favorite.dto.js';
 import { FavoriteCountDto } from './dto/favorite-count.dto.js';
 import { CreateBatchResultDto } from './dto/create-batch-result.dto.js';
 import { BatchResultDto } from './dto/batch-result.dto.js';
+import { getPgErrorCode } from '../common/utils/pg-error.util.js';
 
 const UNIQUE_VIOLATION = '23505';
-
-function getPgErrorCode(error: unknown): string | undefined {
-  if (typeof error !== 'object' || error === null) {
-    return undefined;
-  }
-  const code = (error as { code?: string }).code;
-  if (code !== undefined) {
-    return code;
-  }
-  // drizzle-orm wraps the real driver error in a DrizzleQueryError whose
-  // own `.code` is undefined — the Postgres error code lives on `.cause`.
-  const cause = (error as { cause?: unknown }).cause;
-  if (typeof cause === 'object' && cause !== null) {
-    return (cause as { code?: string }).code;
-  }
-  return undefined;
-}
 
 function isUniqueViolation(error: unknown): boolean {
   return getPgErrorCode(error) === UNIQUE_VIOLATION;

@@ -9,6 +9,11 @@ import { AuthsService } from './auths.service.js';
 import { Role } from '../shared/enums/role.enums.js';
 import { customValidationPipe } from '../pipes/custom-validation.pipe.js';
 import { AllExceptionsFilter } from '../common/filters/http-exception.filter.js';
+import { SESSION_COOKIE_NAME } from './constants.js';
+
+function mockResponse() {
+  return { cookie: vi.fn() } as unknown as import('express').Response;
+}
 
 describe('AuthsController', () => {
   let controller: AuthsController;
@@ -40,28 +45,42 @@ describe('AuthsController', () => {
     expect(controller).toBeDefined();
   });
 
-  it('register delegates to AuthsService.register', async () => {
+  it('register delegates to AuthsService.register and sets the session cookie', async () => {
     const dto = {
       name: 'Jane Doe',
       email: 'jane@example.com',
       password: 'Str0ng!Pass',
     };
-    authsService.register.mockResolvedValue({ accessToken: 'token' });
+    const user = { id: 1, email: dto.email };
+    authsService.register.mockResolvedValue({ accessToken: 'token', user });
+    const res = mockResponse();
 
-    const result = await controller.register(dto);
+    const result = await controller.register(dto, res);
 
     expect(authsService.register).toHaveBeenCalledWith(dto);
-    expect(result).toEqual({ accessToken: 'token' });
+    expect(result).toEqual({ user });
+    expect(res.cookie).toHaveBeenCalledWith(
+      SESSION_COOKIE_NAME,
+      'token',
+      expect.objectContaining({ httpOnly: true, sameSite: 'lax' }),
+    );
   });
 
-  it('login delegates to AuthsService.login', async () => {
+  it('login delegates to AuthsService.login and sets the session cookie', async () => {
     const dto = { email: 'jane@example.com', password: 'Str0ng!Pass' };
-    authsService.login.mockResolvedValue({ accessToken: 'token' });
+    const user = { id: 1, email: dto.email };
+    authsService.login.mockResolvedValue({ accessToken: 'token', user });
+    const res = mockResponse();
 
-    const result = await controller.login(dto);
+    const result = await controller.login(dto, res);
 
     expect(authsService.login).toHaveBeenCalledWith(dto);
-    expect(result).toEqual({ accessToken: 'token' });
+    expect(result).toEqual({ user });
+    expect(res.cookie).toHaveBeenCalledWith(
+      SESSION_COOKIE_NAME,
+      'token',
+      expect.objectContaining({ httpOnly: true, sameSite: 'lax' }),
+    );
   });
 
   it('adminRegister delegates to AuthsService.adminCreate', async () => {
