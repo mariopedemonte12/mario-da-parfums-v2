@@ -2,7 +2,7 @@
 module-path = "orchestrator.py"
 timeout = 15.0
 excluded-modules = []
-test-command = ".venv/bin/python -m pytest -x -q tests/test_orchestrator.py -k 'not colliding_brand_and_name'"
+test-command = ".venv/bin/python -m pytest -x -q tests/test_orchestrator.py"
 
 [cosmic-ray.distributor]
 name = "local"

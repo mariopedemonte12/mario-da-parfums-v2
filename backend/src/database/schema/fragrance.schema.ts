@@ -17,7 +17,7 @@ export const fragrances = pgTable(
   'fragrances',
   {
     id: uuid('id').defaultRandom().primaryKey(),
-    name: varchar('name', { length: 255 }).notNull().unique(),
+    name: varchar('name', { length: 255 }).notNull(),
     brand: varchar('brand', { length: 128 }).notNull(),
     concentration: varchar('concentration', { length: 128 }),
     description: text('description'),
@@ -34,7 +34,7 @@ export const fragrances = pgTable(
     updatedAt: timestamp('updated_at').defaultNow().notNull(),
   },
   (table) => [
-    uniqueIndex('fragrances_name_idx').on(table.name),
+    uniqueIndex('fragrances_name_brand_idx').on(table.name, table.brand),
     index('fragrances_brand_idx').on(table.brand),
     index('fragrances_olfactory_family_idx').on(table.olfactoryFamily),
     index('fragrances_longevity_idx').on(table.longevity),

@@ -28,15 +28,27 @@ class CatalogSyncOrchestrator:
         """Iterate the dataset source's catalog and upsert each valid record.
 
         A single item failing (missing required field, DB error, etc.) must
-        not stop the run.
+        not stop the run. A second row within the same run sharing a
+        (brand, name) key with one already processed is a point failure too
+        — it never reaches repository.upsert(), so a genuine ambiguous
+        collision in the source dataset can't silently overwrite the first
+        row's data (see specs/perfume-catalog-import.md).
         """
         created = updated = discarded = failed = 0
+        seen_keys: set[tuple[str, str]] = set()
 
         for record in self.source.iter_catalog():
             if not record.name or not record.brand:
                 discarded += 1
                 logger.warning("Discarded row missing name/brand: %r", record)
                 continue
+
+            key = (record.brand, record.name)
+            if key in seen_keys:
+                failed += 1
+                logger.warning("Failed row: (brand, name) collision within this run: %r", key)
+                continue
+            seen_keys.add(key)
 
             try:
                 result = self.repository.upsert(record)

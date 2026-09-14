@@ -17,7 +17,7 @@ class FragranceRepository:
         self.connection = connection
 
     def upsert(self, record: CatalogFragrance) -> UpsertResult:
-        """INSERT ... ON CONFLICT (name) DO UPDATE, bumping updated_at explicitly.
+        """INSERT ... ON CONFLICT (name, brand) DO UPDATE, bumping updated_at explicitly.
 
         Commits its own transaction per call (see CLAUDE.md: "commit per
         fragrance, not one giant transaction"), rolling back on failure so a
@@ -40,7 +40,7 @@ class FragranceRepository:
                         olfactory_family, target_audience, longevity
                     )
                     VALUES (%s, %s, %s, %s, %s, %s, %s, %s)
-                    ON CONFLICT (name) DO UPDATE SET
+                    ON CONFLICT (name, brand) DO UPDATE SET
                         brand = EXCLUDED.brand,
                         concentration = EXCLUDED.concentration,
                         description = EXCLUDED.description,

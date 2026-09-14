@@ -1,7 +1,7 @@
 """Integration tests for FragranceRepository.upsert() against real Postgres.
 
 Worth a real DB per the scope gate: the behavior under test is the actual
-`INSERT ... ON CONFLICT (name) DO UPDATE` statement and its created/updated
+`INSERT ... ON CONFLICT (name, brand) DO UPDATE` statement and its created/updated
 detection (RETURNING (created_at = updated_at)) -- a mock of psycopg2 wouldn't
 exercise that SQL or Postgres's real behavior around it. Also covers that a
 failed upsert() rolls back and leaves the connection usable for the next call
@@ -134,10 +134,13 @@ class TestUpdateBranch:
         cleanup_names.append(name)
         repository = FragranceRepository(real_connection)
 
+        # brand is part of the matching key (name, brand) -- it must stay the
+        # same across both calls, or the second call is a different identity
+        # (an INSERT of a new row) rather than an update of this one.
         first = repository.upsert(
             _fragrance(
                 name,
-                brand="Old Brand",
+                brand="Same Brand",
                 concentration="Eau de Toilette",
                 description="old description",
                 olfactory_family="Citrus",
@@ -150,7 +153,7 @@ class TestUpdateBranch:
         second = repository.upsert(
             _fragrance(
                 name,
-                brand="New Brand",
+                brand="Same Brand",
                 concentration="Eau de Parfum",
                 description="new description",
                 olfactory_family="Woody Spicy",
@@ -174,7 +177,7 @@ class TestUpdateBranch:
             row = cursor.fetchone()
 
         assert row == (
-            "New Brand",
+            "Same Brand",
             "Eau de Parfum",
             "new description",
             "Woody Spicy",
