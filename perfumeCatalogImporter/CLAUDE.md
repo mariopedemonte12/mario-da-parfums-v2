@@ -50,6 +50,11 @@ keep each piece independently testable:
   `type` → `concentration`, normalizing `target_audience`, and the
   lowercase-only title-casing fix for `brand`/`name` (see the spec for exactly
   why it's conditional on the original string being all-lowercase).
+- The same cleaned `category`/`target_audience`/`longevity` values feed both
+  `description_generator.py` **and** `CatalogFragrance.olfactory_family`/
+  `target_audience`/`longevity` — computed once per row, used for both (see
+  specs/fragrance-notes-enrichment.md for why these three are structured
+  columns on `fragrances` now, not just description inputs).
 - Delegates description text to `description_generator.py` — this class
   decides *which* cleaned fields go into a description, not *how* the
   sentence is phrased.
@@ -75,9 +80,10 @@ Unchanged from the original design — still the only class that imports
 `psycopg2` or writes SQL, still a single `INSERT ... ON CONFLICT (name) DO
 UPDATE ...`, still must match `backend/src/database/schema/fragrance.schema.ts`
 exactly (columns `id`, `name`, `brand`, `concentration`, `description`,
-`image_url`, `created_at`, `updated_at` — no DB trigger for `updated_at`, this
-class sets it explicitly on the `UPDATE` branch). Never touches `vendors` or
-`listings`. Commit per fragrance, not one giant transaction.
+`image_url`, `olfactory_family`, `target_audience`, `longevity`,
+`created_at`, `updated_at` — no DB trigger for `updated_at`, this class sets
+it explicitly on the `UPDATE` branch). Never touches `vendors` or `listings`.
+Commit per fragrance, not one giant transaction.
 
 ### 4. `CatalogSyncOrchestrator` (`orchestrator.py`) — coordinates one run
 
@@ -86,6 +92,10 @@ class sets it explicitly on the `UPDATE` branch). Never touches `vendors` or
 - Owns the run loop, the field-completeness rule (discard a record missing
   `name` or `brand` before it reaches the repository), and the end-of-run
   summary/log.
+- `main.py` is the CLI entrypoint that wires the two together and calls
+  `run()` once. Run with `python -m perfumeCatalogImporter.main` — a separate,
+  short-lived process from `app.py` (the long-running FastAPI/MCP search
+  server); they share `repository.py` but nothing else at runtime.
 
 ### 5. `PerfumeSimilarityIndex` (`similarity.py`) — the similarity-search engine
 
@@ -177,7 +187,10 @@ skill). What this architecture buys for that later session:
 
 - `KaggleCatalogSource` can be tested against a small fixture CSV (including
   deliberately-broken rows: the leaked header, a citation-artifact
-  `longevity`, mixed casing) — no network, no DB.
+  `longevity`, mixed casing) — no network, no DB. Include assertions that
+  `olfactory_family`/`target_audience`/`longevity` land on the returned
+  `CatalogFragrance` with the same normalized values used in `description`,
+  not just that the description text looks right.
 - `description_generator.py` is pure functions — trivial to test directly,
   including the determinism property (same inputs → same output across calls).
 - `FragranceRepository` can be tested against a real/test Postgres instance (or

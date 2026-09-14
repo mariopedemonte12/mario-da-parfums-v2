@@ -31,16 +31,24 @@ Sigue viviendo en `perfumeCatalogImporter/` (renombrado desde
    obligatoria — ver `perfumeCatalogImporter/data/README.md`, que es la
    atribución). Columnas: `brand`, `perfume`, `type`, `category`,
    `target_audience`, `longevity`. `brand`/`perfume` son marcas y nombres de
-   perfumes reales; el resto son metadatos del propio dataset, usados solo
-   como insumo para generar la descripción sintética (no se presentan como
-   dato editorial de ninguna fuente real).
+   perfumes reales; `category`/`target_audience`/`longevity` son metadatos
+   del propio dataset — usados como insumo para generar la descripción
+   sintética **y** persistidos como columnas estructuradas propias (ver
+   punto 2 y `specs/fragrance-notes-enrichment.md`, que agregó esas tres
+   columnas al schema; no se presentan como dato editorial de ninguna fuente
+   real).
 2. Por cada fila válida del CSV, construye `name`, `brand`, `concentration`,
-   `description` (siempre generada, nunca copiada) e `imageUrl` (siempre
-   `null` — este dataset no trae fotos; ver "Fuera de alcance").
+   `description` (siempre generada, nunca copiada), `imageUrl` (siempre
+   `null` — este dataset no trae fotos; ver "Fuera de alcance") y
+   `olfactoryFamily`/`targetAudience`/`longevity` (los mismos valores
+   limpios/normalizados que alimentan la descripción — `category` del
+   dataset, `target_audience` normalizado vía `_AUDIENCE_MAP`, `longevity`
+   normalizado vía `_LONGEVITY_MAP` — ver `dataset_source.py`).
 3. Hace upsert en `fragrances` igual que el diseño original: `INSERT` si
    `name` no existe, `UPDATE` de `brand`/`concentration`/`description`/
-   `image_url` con `updated_at = now()` explícito si ya existe (la tabla no
-   tiene trigger de DB para `updated_at`, igual que antes).
+   `image_url`/`olfactory_family`/`target_audience`/`longevity` con
+   `updated_at = now()` explícito si ya existe (la tabla no tiene trigger de
+   DB para `updated_at`, igual que antes).
 4. Además del import, ofrece **búsqueda por similitud**: dado un texto libre
    ("algo fresco y cítrico para el verano"), devuelve las N fragancias cuya
    descripción generada es más cercana semánticamente (embeddings + similitud
@@ -50,10 +58,27 @@ Sigue viviendo en `perfumeCatalogImporter/` (renombrado desde
 
 ## Reglas de negocio — import del catálogo
 
-- **`name` sigue siendo la clave de matching contra la DB** (único índice
-  unique en `fragrances` hoy). Mismo manejo que antes: una colisión de
-  `name` entre dos filas del dataset se loguea como fallo puntual, no aborta
-  la corrida completa.
+- **La clave de matching contra la DB es el par (`brand`, `name`), no `name`
+  solo** — decisión corregida durante la sesión de testing de esta feature
+  (2026-09-13): el índice unique original era solo sobre `name`, pero el
+  dataset real trae perfumes homónimos de marcas distintas (ej. `"Theoreme"`
+  existe como `Rue Broca` y como `Afnan`; `"Pour Homme EDT"` existe como
+  `Dolce & Gabbana` y como `Azzaro`) — con `name` solo como clave, importar
+  el segundo pisa silenciosamente los datos del primero (se pierde una
+  fragancia real del catálogo sin ningún error ni log). El índice unique en
+  `fragrances` pasa a ser compuesto (`brand`, `name`) — cambio de schema a
+  cargo de una sesión de implementación aparte (Drizzle, `backend/`), no de
+  este documento ni de este paquete Python.
+- Mismo manejo que antes, ahora sobre la clave compuesta: **una colisión de
+  (`brand`, `name`) entre dos filas del dataset se loguea como fallo
+  puntual, no aborta la corrida completa.** Esto sigue siendo necesario
+  incluso con la clave compuesta — el dataset real tiene pares
+  `(brand, name)` idénticos con datos distintos en el resto de las columnas
+  (ej. `Al Haramain` / `"Amber Oud Aqua Dubai"` aparece dos veces con
+  `category`/`target_audience`/`longevity` diferentes), un caso genuinamente
+  ambiguo (¿cuál de las dos filas es la fragancia real?) que debe
+  descartarse con motivo, no resolverse arbitrariamente quedándose con "la
+  que se procesó último".
 - **`name` y `brand` son obligatorios** (igual que `CreateFragranceDto`): una
   fila del CSV sin alguno de los dos se descarta y se loguea, sin detener el
   resto del import.
@@ -78,6 +103,23 @@ Sigue viviendo en `perfumeCatalogImporter/` (renombrado desde
   validación de forma (`is-image-url.validator.ts`) por si en el futuro se
   vuelve a poblar desde otra fuente, pero hoy nunca hay un valor no-null que
   validar.
+- **`olfactoryFamily`/`targetAudience`/`longevity` se persisten como columnas
+  estructuradas** (agregadas al schema por `specs/fragrance-notes-enrichment.md`;
+  antes de esta feature el importer las calculaba solo para armar
+  `description` y las descartaba después, dejando esas tres columnas siempre
+  en `null` para cualquier fila que tocara):
+  - `olfactoryFamily` sale de `category` del dataset tal cual (recortado),
+    sin normalizar — es `varchar` libre en el backend, igual que
+    `concentration`.
+  - `targetAudience`/`longevity` son los mismos valores normalizados
+    (`_AUDIENCE_MAP`/`_LONGEVITY_MAP`) que ya alimentaban la descripción. Si
+    el dataset trae un valor no reconocido, el campo queda `null` (no se
+    inventa un valor ni se descarta la fila por esto — estos tres campos no
+    son obligatorios, a diferencia de `name`/`brand`).
+  - Se actualizan en el `UPDATE` igual que el resto de las columnas
+    derivadas del dataset (`brand`/`concentration`/`description`/
+    `image_url`): un re-import que corrige el dataset fuente corrige también
+    estas tres columnas en filas ya existentes.
 - **Calidad del CSV fuente — limpieza obligatoria antes de generar nada**:
   - El archivo trae su propio header duplicado como fila de datos más abajo
     (`brand='Brand', perfume='Perfume', type='Type', ...`) — se detecta y se

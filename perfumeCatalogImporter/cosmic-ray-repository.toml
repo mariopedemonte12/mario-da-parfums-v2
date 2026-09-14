@@ -1,0 +1,8 @@
+[cosmic-ray]
+module-path = "repository.py"
+timeout = 15.0
+excluded-modules = []
+test-command = ".venv/bin/python -m pytest -x -q tests/integration/test_repository_integration.py tests/integration/test_repository_upsert_integration.py"
+
+[cosmic-ray.distributor]
+name = "local"

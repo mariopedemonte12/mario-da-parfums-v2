@@ -140,6 +140,9 @@ class KaggleCatalogSource:
             concentration=concentration,
             description=description,
             image_url=None,  # this dataset has no photos
+            olfactory_family=category,
+            target_audience=audience,
+            longevity=longevity,
         )
 
     @staticmethod
