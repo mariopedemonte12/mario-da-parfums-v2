@@ -67,23 +67,33 @@ export function useChatbotSession() {
           setStatusText(message.text);
           break;
 
-        case "token":
+        case "token": {
           setIsThinking(false);
           setStatusText(null);
+          // Id assignment happens here, outside the updater: React Strict
+          // Mode invokes setState updaters twice to catch impure ones, and
+          // mutating streamingIdRef.current inside the updater used to leak
+          // between those two invocations — the second call would see the
+          // ref already set (by the first) and try to append to a message
+          // that was never actually committed, silently dropping every
+          // streamed token. The updater below only *reads* the id, so it's
+          // pure and safe to invoke more than once.
+          if (streamingIdRef.current === null) {
+            streamingIdRef.current = createMessageId();
+          }
+          const id = streamingIdRef.current;
           setMessages((prev) => {
-            if (streamingIdRef.current) {
+            if (prev.some((existing) => existing.id === id)) {
               return prev.map((existing) =>
-                existing.id === streamingIdRef.current
+                existing.id === id
                   ? { ...existing, text: existing.text + message.text }
                   : existing
               );
             }
-
-            const id = createMessageId();
-            streamingIdRef.current = id;
             return [...prev, { id, role: "assistant", text: message.text }];
           });
           break;
+        }
 
         case "done":
           streamingIdRef.current = null;

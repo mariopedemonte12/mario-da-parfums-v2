@@ -17,13 +17,15 @@ export function ChatbotWidgetProvider({ children }: { children: ReactNode }) {
   const [isOpen, setIsOpen] = useState(false);
 
   function toggle() {
-    setIsOpen((prev) => {
-      const next = !prev;
-      if (next) {
-        session.ensureConnected();
-      }
-      return next;
-    });
+    // ensureConnected() is a side effect, kept out of the setIsOpen updater
+    // (same reasoning as useChatbotSession's token handling): Strict Mode
+    // invokes updaters twice, and a side effect inside one isn't guaranteed
+    // to run exactly once.
+    const next = !isOpen;
+    if (next) {
+      session.ensureConnected();
+    }
+    setIsOpen(next);
   }
 
   function close() {
