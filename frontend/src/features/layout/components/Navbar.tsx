@@ -175,12 +175,11 @@ export default function Navbar() {
         </div>
 
         {user ? (
-          <span
-            aria-hidden="true"
-            className="flex h-[26px] w-[26px] items-center justify-center rounded-full border border-primary font-sans text-[11px] normal-case md:hidden"
-          >
-            {getInitials(user.name)}
-          </span>
+          <WindGustLink href="/profile" ariaLabel="Tu perfil" className="md:hidden">
+            <span className="flex h-[26px] w-[26px] items-center justify-center rounded-full border border-primary font-sans text-[11px] normal-case">
+              {getInitials(user.name)}
+            </span>
+          </WindGustLink>
         ) : (
           <Link href="/login" className="md:hidden" aria-label="Entrar">
             <span className="inline-block h-[26px] w-[26px] rounded-full border border-primary" />
@@ -193,9 +192,15 @@ export default function Navbar() {
           ) : (
             <WindGustLink href="/login">Entrar</WindGustLink>
           )}
-          <span className="flex h-[26px] w-[26px] items-center justify-center rounded-full border border-primary font-sans text-[11px] normal-case">
-            {user ? getInitials(user.name) : null}
-          </span>
+          {user ? (
+            <WindGustLink href="/profile" ariaLabel="Tu perfil">
+              <span className="flex h-[26px] w-[26px] items-center justify-center rounded-full border border-primary font-sans text-[11px] normal-case">
+                {getInitials(user.name)}
+              </span>
+            </WindGustLink>
+          ) : (
+            <span className="flex h-[26px] w-[26px] items-center justify-center rounded-full border border-primary font-sans text-[11px] normal-case" />
+          )}
         </div>
       </nav>
 
