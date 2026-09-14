@@ -11,27 +11,7 @@ import { CreateVendorDto } from './dto/create-vendor.dto.js';
 import { UpdateVendorItemDto } from './dto/batch-update-vendors.dto.js';
 import { FindVendorsDto } from './dto/find-vendors.dto.js';
 import { BatchItemResultDto } from './dto/batch-result.dto.js';
-
-interface PgError {
-  code?: string;
-}
-
-function isPgError(err: unknown): err is PgError {
-  return typeof err === 'object' && err !== null && 'code' in err;
-}
-
-// drizzle-orm (0.45.x) wraps every real driver error in a DrizzleQueryError
-// whose own `.code` is undefined — the pg error (with the actual SQLSTATE)
-// lives on `.cause`. Unwrap both shapes so real unique/FK violations are
-// recognized instead of always falling through to "Unexpected error".
-function getPgErrorCode(err: unknown): string | undefined {
-  if (isPgError(err) && err.code) return err.code;
-  if (err && typeof err === 'object' && 'cause' in err) {
-    const cause = (err as { cause?: unknown }).cause;
-    if (isPgError(cause)) return cause.code;
-  }
-  return undefined;
-}
+import { getPgErrorCode } from '../common/utils/pg-error.util.js';
 
 function describeWriteError(err: unknown): string {
   const code = getPgErrorCode(err);

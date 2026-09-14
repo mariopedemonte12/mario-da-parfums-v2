@@ -22,11 +22,13 @@ search the chatbot can use as an MCP tool instead of plain HTTP.
 """
 
 import logging
+import os
 from collections.abc import AsyncIterator
 from contextlib import asynccontextmanager
 
 import psycopg2
 from fastapi import FastAPI, HTTPException, Query
+from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 
 from .index_sync import IndexSyncService
@@ -69,6 +71,12 @@ async def lifespan(app: FastAPI) -> AsyncIterator[None]:
 
 
 app = FastAPI(title="Perfume similarity search", lifespan=lifespan)
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=[os.environ.get("FRONTEND_URL", "http://localhost:3010")],
+    allow_methods=["GET"],
+)
 
 # get_index is a closure over app.state, not a snapshot: app.state.index is
 # only populated once the lifespan above finishes its startup sync, but this

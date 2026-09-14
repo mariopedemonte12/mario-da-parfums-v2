@@ -30,3 +30,8 @@ export type PaginatedFragranceResponse = {
   page: number;
   limit: number;
 };
+
+// Same shape as PaginatedFragranceResponse — kept as a separate alias because
+// home-search's findFragranceByExactName (fragrances.api.ts) was written against
+// this name; not worth a rename-and-reconcile for a plain structural duplicate.
+export type PaginatedFragrances = PaginatedFragranceResponse;

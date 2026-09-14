@@ -8,34 +8,10 @@ import { CreateListingDto } from './dto/create-listing.dto.js';
 import { UpdateListingItemDto } from './dto/batch-update-listings.dto.js';
 import { FindListingsDto } from './dto/find-listings.dto.js';
 import { BatchItemResultDto } from './dto/batch-result.dto.js';
-
-interface PgError {
-  code?: string;
-}
-
-function hasPgCode(value: unknown): value is PgError {
-  return (
-    typeof value === 'object' &&
-    value !== null &&
-    'code' in value &&
-    typeof (value as PgError).code === 'string'
-  );
-}
-
-// drizzle-orm 0.45.x wraps every real driver error in a DrizzleQueryError
-// whose `.code` lives on `err.cause.code`, not `err.code` — so the Postgres
-// error code must be looked up on both the error itself and its `cause`.
-function pgErrorCode(err: unknown): string | undefined {
-  if (hasPgCode(err)) return err.code;
-  if (typeof err === 'object' && err !== null && 'cause' in err) {
-    const cause = (err as { cause?: unknown }).cause;
-    if (hasPgCode(cause)) return cause.code;
-  }
-  return undefined;
-}
+import { getPgErrorCode } from '../common/utils/pg-error.util.js';
 
 function describeWriteError(err: unknown): string {
-  const code = pgErrorCode(err);
+  const code = getPgErrorCode(err);
   if (code === '23505')
     return 'A listing for this vendor/fragrance/size already exists';
   if (code === '23503') return 'Fragrance or vendor not found';
