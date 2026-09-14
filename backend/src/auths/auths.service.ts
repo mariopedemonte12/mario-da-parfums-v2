@@ -13,7 +13,16 @@ import { PasswordsService } from '../passwords/passwords.service.js';
 import { UserResponseDto } from '../users/dto/response-user.dto.js';
 import type { User } from '../database/schema/user.schema.js';
 import { Role } from '../shared/enums/role.enums.js';
-import { getPgErrorCode } from '../common/utils/pg-error.util.js';
+import {
+  getPgErrorCode,
+  getPgErrorConstraint,
+} from '../common/utils/pg-error.util.js';
+
+// users.name and users.email each have their own unique constraint
+// (database/schema/user.schema.ts) — the 23505 handler below reports which
+// one actually collided instead of always blaming email.
+const USERS_NAME_UNIQUE_CONSTRAINT = 'users_name_unique';
+const USERS_EMAIL_UNIQUE_CONSTRAINT = 'users_email_unique';
 
 @Injectable()
 export class AuthsService {
@@ -40,9 +49,7 @@ export class AuthsService {
         role: Role.USER,
       });
     } catch (err) {
-      if (getPgErrorCode(err) === '23505') {
-        throw new ConflictException('Email already registered');
-      }
+      this.throwIfUniqueViolation(err);
       throw err;
     }
 
@@ -70,9 +77,7 @@ export class AuthsService {
         role: dto.role,
       });
     } catch (err) {
-      if (getPgErrorCode(err) === '23505') {
-        throw new ConflictException('Email already registered');
-      }
+      this.throwIfUniqueViolation(err);
       throw err;
     }
 
@@ -92,6 +97,23 @@ export class AuthsService {
     }
 
     return this.buildAuthResponse(user);
+  }
+
+  // Only throws (never returns) when err is actually a 23505; otherwise
+  // callers fall through and rethrow the original error unchanged.
+  private throwIfUniqueViolation(err: unknown): void {
+    if (getPgErrorCode(err) !== '23505') return;
+
+    switch (getPgErrorConstraint(err)) {
+      case USERS_EMAIL_UNIQUE_CONSTRAINT:
+        throw new ConflictException('Email already registered');
+      case USERS_NAME_UNIQUE_CONSTRAINT:
+        throw new ConflictException('Name already taken');
+      default:
+        throw new ConflictException(
+          'A user with that name or email already exists',
+        );
+    }
   }
 
   private buildAuthResponse(user: User) {
