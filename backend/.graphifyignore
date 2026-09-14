@@ -1,4 +1,0 @@
-# Per repo-root CLAUDE.md: NOTES.md and docs/ are programmer-facing docs,
-# not context for graphify — excluded from the knowledge graph.
-NOTES.md
-docs/
