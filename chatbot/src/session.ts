@@ -1,5 +1,6 @@
 import type { Content, GoogleGenAI } from '@google/genai';
 import { runTurn } from './agent/chat-agent.js';
+import { withModelFallback } from './gemini/model-fallback.js';
 import {
   classifyScope,
   type ClassifierTurn,
@@ -31,12 +32,25 @@ export class ChatSession {
   private agentTurns: AgentTurn[] = [];
   private classifierTurns: ClassifierTurn[] = [];
   private busy = false;
+  private readonly classifierAi: GoogleGenAI;
+  private readonly agentAi: GoogleGenAI;
 
   constructor(
-    private readonly ai: GoogleGenAI,
+    ai: GoogleGenAI,
     private readonly mcpManager: McpManager,
     private readonly config: ChatbotConfig,
-  ) {}
+  ) {
+    this.classifierAi = withModelFallback(
+      ai,
+      config.classifierModel,
+      config.classifierFallbackModel,
+    );
+    this.agentAi = withModelFallback(
+      ai,
+      config.agentModel,
+      config.agentFallbackModel,
+    );
+  }
 
   isBusy(): boolean {
     return this.busy;
@@ -49,7 +63,7 @@ export class ChatSession {
     this.busy = true;
     try {
       const inScope = await classifyScope(
-        this.ai,
+        this.classifierAi,
         this.config.classifierModel,
         this.classifierTurns,
         text,
@@ -67,7 +81,7 @@ export class ChatSession {
       }
 
       const result = await runTurn({
-        ai: this.ai,
+        ai: this.agentAi,
         model: this.config.agentModel,
         history: this.flattenAgentHistory(),
         userText: text,

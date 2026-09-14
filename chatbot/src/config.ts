@@ -95,9 +95,13 @@ function loadMcpServers(path: string): McpServerConfig[] {
 export function loadConfig(): ChatbotConfig {
   return {
     geminiApiKey: requireEnv('GEMINI_API_KEY'),
-    agentModel: process.env.GEMINI_AGENT_MODEL ?? 'gemini-2.5-flash',
+    agentModel: process.env.GEMINI_AGENT_MODEL ?? 'gemini-3.5-flash-lite',
+    agentFallbackModel:
+      process.env.GEMINI_AGENT_FALLBACK_MODEL ?? 'gemini-3.1-flash-lite',
     classifierModel:
-      process.env.GEMINI_CLASSIFIER_MODEL ?? 'gemini-2.5-flash-lite',
+      process.env.GEMINI_CLASSIFIER_MODEL ?? 'gemini-3.5-flash-lite',
+    classifierFallbackModel:
+      process.env.GEMINI_CLASSIFIER_FALLBACK_MODEL ?? 'gemini-3.1-flash-lite',
     wsHost: process.env.CHATBOT_WS_HOST ?? '0.0.0.0',
     wsPort: intEnv('CHATBOT_WS_PORT', 8081),
     agentHistoryTurns: intEnv('CHATBOT_AGENT_HISTORY_TURNS', 12),

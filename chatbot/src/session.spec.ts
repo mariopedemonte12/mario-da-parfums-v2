@@ -19,7 +19,9 @@ function config(overrides: Partial<ChatbotConfig> = {}): ChatbotConfig {
   return {
     geminiApiKey: 'k',
     agentModel: 'agent-model',
+    agentFallbackModel: 'agent-fallback-model',
     classifierModel: 'classifier-model',
+    classifierFallbackModel: 'classifier-fallback-model',
     wsHost: '0.0.0.0',
     wsPort: 8081,
     agentHistoryTurns: 12,

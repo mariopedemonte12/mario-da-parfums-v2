@@ -11,7 +11,7 @@ import { classifyScope, type ClassifierTurn } from './scope-classifier.js';
 // for that). A failure here is a signal to iterate the prompt, per the spec.
 
 const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY! });
-const model = process.env.GEMINI_CLASSIFIER_MODEL ?? 'gemini-2.5-flash-lite';
+const model = process.env.GEMINI_CLASSIFIER_MODEL ?? 'gemini-3.5-flash-lite';
 
 const priceComparisonHistory: ClassifierTurn[] = [
   {

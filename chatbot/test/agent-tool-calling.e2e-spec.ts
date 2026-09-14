@@ -13,7 +13,7 @@ import { McpManager } from '../src/mcp/mcp-manager.js';
 // correctness a fully mocked unit test (chat-agent.spec.ts) can't catch.
 
 const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY! });
-const model = process.env.GEMINI_AGENT_MODEL ?? 'gemini-2.5-flash';
+const model = process.env.GEMINI_AGENT_MODEL ?? 'gemini-3.5-flash-lite';
 
 let manager: McpManager;
 
