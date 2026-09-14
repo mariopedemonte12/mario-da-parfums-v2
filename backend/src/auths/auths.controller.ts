@@ -50,27 +50,13 @@ export class AuthsController {
     return { user };
   }
 
-  // Stateless JWT session: there's no server-side record to revoke, so
-  // "logout" is just expiring the httpOnly cookie the browser holds — see
-  // specs/auth-pages.md ("POST /auths/logout does not exist").
-  @Post('logout')
-  @HttpCode(HttpStatus.OK)
-  logout(@Res({ passthrough: true }) res: Response) {
-    res.clearCookie(SESSION_COOKIE_NAME, this.cookieOptions());
-    return {};
-  }
-
   // Session credential travels only via httpOnly cookie, never in the
   // response body — see specs/auth-pages.md ("Contract assumption").
   private setSessionCookie(res: Response, accessToken: string) {
-    res.cookie(SESSION_COOKIE_NAME, accessToken, this.cookieOptions());
-  }
-
-  private cookieOptions() {
-    return {
+    res.cookie(SESSION_COOKIE_NAME, accessToken, {
       httpOnly: true,
-      sameSite: 'lax' as const,
+      sameSite: 'lax',
       secure: process.env.NODE_ENV === 'production',
-    };
+    });
   }
 }
