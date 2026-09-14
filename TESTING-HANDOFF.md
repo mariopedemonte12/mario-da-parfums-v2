@@ -38,12 +38,9 @@ These touch `features/auth` and `features/layout` (owned by `auth-pages`, not `u
 1. **Navbar avatar now links to `/profile`.** Was a plain `<span>` with initials — no way to reach `/profile` from the UI at all (this is what made the isHydrating bug above hit on *every* visit, since a full page load was the only path in). Both the mobile and desktop avatar now use `WindGustLink` (extended with an `ariaLabel` prop, since initials alone don't describe the link) to navigate to `/profile`, responsive by construction since it's one shared component at both breakpoints, and picks up the same hover gust-underline as the rest of the navbar for free. Verified: click navigates correctly at both viewport sizes, hover draws the gust in under the avatar exactly like "Inicio"/"Perfumes"/"Salir".
 2. **`useAuth.tsx`'s `logout()` now catches the `POST /auths/logout` 404.** It re-threw past its `finally` before, so `Navbar`'s `onClick={logout}` produced an uncaught promise rejection — visible as a Next.js dev "Runtime Error" overlay when clicking "Salir". Local state already cleared correctly regardless (confirmed); now the failure itself is caught so it doesn't propagate. Verified: no `pageerror` after clicking "Salir" anymore — only the browser's own unavoidable network-log line for the 404 itself remains.
 
-## Backend fixes (landed independently, commit `02b65c4`)
+## Backend fixes — tracked in their own branch, not this one
 
-Not made in this session — appeared in the worktree mid-session (the user or a parallel session implemented them in response to the findings above) and verified/included here before push:
-
-- **`POST /auths/logout` now exists**: expires the httpOnly session cookie server-side (`res.clearCookie`, sharing `cookieOptions()` with `setSessionCookie`). Re-tested `useAuth`'s `logout()` end-to-end against the real endpoint — 0 console/page errors now (previously only silent because of the `catch` added in commit `cd585b6`).
-- **`23505` conflict message now reports which column actually collided** (`users_name_unique` → "Name already taken", else "Email already registered") via a new `getPgErrorConstraint` util — fixes the misleading message flagged earlier in this doc.
+The two backend issues flagged earlier in this doc (`POST /auths/logout` missing, misleading `23505` conflict message) briefly showed up as uncommitted changes in this worktree mid-session and were committed here (`02b65c4`), then **reverted** (`66ffc3e`) once it became clear they already exist as their own committed, dedicated feature: worktree `auth-logout-conflict-messages` (branch `worktree-auth-logout-conflict-messages`, commit `8813cdb`, spec `specs/auth-logout-conflict-messages.md`), awaiting its own separate testing session. Keeping them out of `user-profile`'s branch avoids a duplicate/conflicting commit when that branch merges on its own. Re-tested `useAuth`'s `logout()` end-to-end against that worktree's real endpoint before reverting here — 0 console/page errors (the `catch` from commit `cd585b6` in *this* branch handles the 404 regardless of whether that endpoint exists yet).
 
 ## Lint / type-check
 
@@ -52,4 +49,4 @@ Not made in this session — appeared in the worktree mid-session (the user or a
 
 ## Status
 
-Feature matches spec. One in-scope bug found and fixed (isHydrating race, with explicit user sign-off); two out-of-scope frontend items fixed at explicit user request (navbar avatar link, logout error handling); two backend issues this session flagged were independently fixed and verified before push (real logout endpoint, accurate conflict message). Pushed and PR opened at explicit user request.
+Feature matches spec. One in-scope bug found and fixed (isHydrating race, with explicit user sign-off); two out-of-scope frontend items fixed at explicit user request (navbar avatar link, logout error handling). The two backend issues this session flagged are fixed in their own dedicated branch (`worktree-auth-logout-conflict-messages`), kept out of this one. Pushed and PR opened at explicit user request.
