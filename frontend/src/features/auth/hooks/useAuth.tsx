@@ -103,8 +103,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       // Not yet implemented on the backend (no POST /auths/logout) — will
       // 404 until it ships. See specs/auth-pages.md ("logout does not
       // exist"): clearing local state below is best-effort UX only, it does
-      // NOT invalidate the httpOnly session cookie server-side.
+      // NOT invalidate the httpOnly session cookie server-side. The request
+      // failing must not block that, or surface as an uncaught rejection to
+      // callers like Navbar's `onClick={logout}`.
       await authApi.logout();
+    } catch {
+      // Best-effort — local state still clears in `finally` below.
     } finally {
       setUser(null);
       writeCachedUser(null);
