@@ -31,11 +31,16 @@ Confirmed via network trace: `GET /users/:id` and `GET /favorites` both came bac
 - **Mobile viewport** (390×844): clean single-column stack, no overflow. ✅
 - **Confirmed NOT implemented** (per spec's explicit cut list): no estela/afinidad %, no pedidos-entregados/perfume-más-buscado tiles, no sidebar tabs, no `PATCH /users/:id` call anywhere in the feature — grepped clean. ✅
 
-## Out-of-scope observations (not user-profile bugs, flagging for awareness)
+## Out-of-scope items fixed at explicit user request (commit `cd585b6`)
 
-1. **No navbar link to `/profile`.** `Navbar.tsx`'s logged-in avatar is a plain `<span>` with initials, not a `<Link>`. Not in user-profile's declared spec scope, but it's the reason the isHydrating bug above was guaranteed to hit on every visit — worth a follow-up ticket against `auth-pages`/navbar ownership.
-2. **`useAuth.tsx`'s `logout()` doesn't catch the `POST /auths/logout` 404.** `try { await authApi.logout() } finally { clear state }` still re-throws after `finally` runs, so `Navbar`'s `onClick={logout}` produces an uncaught promise rejection — visible as a Next.js dev "Runtime ApiError" overlay when clicking "Salir" in a real browser. State clears correctly regardless (confirmed), but the uncaught error is a real UX defect. File is owned by `auth-pages`, not touched here.
-3. **DB-level bug (unrelated to auth-pages or user-profile)**: `users.name` has a `.unique()` constraint (`database/schema/user.schema.ts`), and `auths.service.ts`'s `23505` catch always reports "Email already registered" regardless of whether it was actually the `name` or `email` column that collided — misleading error message. Cost some time during testing (two different test users with the same literal name collided). Not fixed, just flagged.
+These touch `features/auth` and `features/layout` (owned by `auth-pages`, not `user-profile`) — done because the user asked directly, not on this session's own initiative:
+
+1. **Navbar avatar now links to `/profile`.** Was a plain `<span>` with initials — no way to reach `/profile` from the UI at all (this is what made the isHydrating bug above hit on *every* visit, since a full page load was the only path in). Both the mobile and desktop avatar now use `WindGustLink` (extended with an `ariaLabel` prop, since initials alone don't describe the link) to navigate to `/profile`, responsive by construction since it's one shared component at both breakpoints, and picks up the same hover gust-underline as the rest of the navbar for free. Verified: click navigates correctly at both viewport sizes, hover draws the gust in under the avatar exactly like "Inicio"/"Perfumes"/"Salir".
+2. **`useAuth.tsx`'s `logout()` now catches the `POST /auths/logout` 404.** It re-threw past its `finally` before, so `Navbar`'s `onClick={logout}` produced an uncaught promise rejection — visible as a Next.js dev "Runtime Error" overlay when clicking "Salir". Local state already cleared correctly regardless (confirmed); now the failure itself is caught so it doesn't propagate. Verified: no `pageerror` after clicking "Salir" anymore — only the browser's own unavoidable network-log line for the 404 itself remains.
+
+## Out-of-scope observation still open (not fixed)
+
+**DB-level bug (unrelated to auth-pages or user-profile)**: `users.name` has a `.unique()` constraint (`database/schema/user.schema.ts`), and `auths.service.ts`'s `23505` catch always reports "Email already registered" regardless of whether it was actually the `name` or `email` column that collided — misleading error message. Cost some time during testing (two different test users with the same literal name collided). Not fixed, just flagged.
 
 ## Lint / type-check
 
@@ -44,4 +49,4 @@ Confirmed via network trace: `GET /users/:id` and `GET /favorites` both came bac
 
 ## Status
 
-Feature matches spec. One bug found and fixed (with explicit user sign-off) during this session; three out-of-scope observations documented above for awareness/follow-up. Worktree left in place, not merged/PR'd (per convention — only on explicit request).
+Feature matches spec. One in-scope bug found and fixed (isHydrating race, with explicit user sign-off); two out-of-scope items also fixed at explicit user request (navbar avatar link, logout error handling); one out-of-scope observation left open (misleading duplicate-name/email error). Worktree left in place, not merged/PR'd (per convention — only on explicit request).
