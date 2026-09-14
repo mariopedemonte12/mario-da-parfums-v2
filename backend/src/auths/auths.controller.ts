@@ -7,7 +7,7 @@ import {
   Res,
   UseGuards,
 } from '@nestjs/common';
-import type { Response } from 'express';
+import type { CookieOptions, Response } from 'express';
 import { AuthsService } from './auths.service.js';
 import { RegisterDto } from './dto/register.dto.js';
 import { LoginDto } from './dto/login.dto.js';
@@ -50,13 +50,33 @@ export class AuthsController {
     return { user };
   }
 
+  // No guard: logging out is idempotent whether or not the caller currently
+  // holds a valid (or any) session cookie. Nothing to return — the
+  // frontend's logout() discards the response body (see
+  // specs/auth-pages.md, "POST /auths/logout does not exist").
+  @Post('logout')
+  @HttpCode(HttpStatus.NO_CONTENT)
+  logout(@Res({ passthrough: true }) res: Response) {
+    res.clearCookie(SESSION_COOKIE_NAME, AuthsController.COOKIE_OPTIONS);
+  }
+
+  // Attributes shared by every Set-Cookie for the session cookie — clearing
+  // it (res.clearCookie) must use the same httpOnly/sameSite/secure the
+  // cookie was originally set with, or the browser won't recognize it as
+  // the same cookie and it won't actually be deleted.
+  private static readonly COOKIE_OPTIONS: CookieOptions = {
+    httpOnly: true,
+    sameSite: 'lax',
+    secure: process.env.NODE_ENV === 'production',
+  };
+
   // Session credential travels only via httpOnly cookie, never in the
   // response body — see specs/auth-pages.md ("Contract assumption").
   private setSessionCookie(res: Response, accessToken: string) {
-    res.cookie(SESSION_COOKIE_NAME, accessToken, {
-      httpOnly: true,
-      sameSite: 'lax',
-      secure: process.env.NODE_ENV === 'production',
-    });
+    res.cookie(
+      SESSION_COOKIE_NAME,
+      accessToken,
+      AuthsController.COOKIE_OPTIONS,
+    );
   }
 }
