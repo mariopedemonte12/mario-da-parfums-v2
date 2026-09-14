@@ -9,3 +9,4 @@ allowBuilds:
   "@scarf/scarf": false
   '@google/genai': true
   protobufjs: true
+  unrs-resolver: true

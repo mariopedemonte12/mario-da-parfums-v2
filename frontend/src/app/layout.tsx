@@ -5,6 +5,7 @@ import ChatPanel from "@/features/chatbot-widget/components/ChatPanel";
 import { ChatbotWidgetProvider } from "@/features/chatbot-widget/components/ChatbotWidgetProvider";
 import Navbar from "@/features/layout/components/Navbar"
 import Footer from "@/features/layout/components/Footer";
+import { AuthProvider } from "@/features/auth/hooks/useAuth";
 
 import "./globals.css";
 
@@ -35,17 +36,19 @@ export default function RootLayout({
       className={`${cormorantGaramond.variable} ${jost.variable} h-full antialiased`}
     >
       <body className="min-h-full flex flex-col">
-        <ChatbotWidgetProvider>
-          <Navbar />
+        <AuthProvider>
+          <ChatbotWidgetProvider>
+            <Navbar />
 
-          <main className="flex-1">
-            {children}
-          </main>
+            <main className="flex-1">
+              {children}
+            </main>
 
-          <Footer />
+            <Footer />
 
-          <ChatPanel />
-        </ChatbotWidgetProvider>
+            <ChatPanel />
+          </ChatbotWidgetProvider>
+        </AuthProvider>
       </body>
     </html>
   );

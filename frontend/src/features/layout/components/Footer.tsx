@@ -2,12 +2,14 @@ import WindLines from "@/components/ui/WindLines";
 
 export default function Footer() {
   return (
-    <footer className="relative flex items-end justify-between px-14 pt-[22px] pb-[26px] text-xs tracking-[0.06em] text-text-muted">
+    <footer className="relative flex items-end justify-between gap-4 px-6 pt-4 pb-6 text-[11px] tracking-[0.06em] text-text-muted md:px-14 md:pt-[22px] md:pb-[26px] md:text-xs">
       <WindLines variant="divider" className="absolute inset-x-0 top-0 h-[16px] w-full" />
 
       <span>© 2026 mario-da-parfumsv2</span>
 
-      <div className="flex gap-7">
+      <span className="md:hidden">Envíos · Notas · Contacto</span>
+
+      <div className="hidden gap-7 md:flex">
         <span>Envíos</span>
         <span>Notas olfativas</span>
         <span>Contacto</span>
