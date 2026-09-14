@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 
 import { useAuth } from "@/features/auth/hooks/useAuth";
-import { ApiError } from "@/lib/api/client";
+import { ApiError } from "@/lib/api/errors";
 
 import { getFavorites, getUser } from "../api/profile.api";
 import type { Favorite, UserProfile } from "../types/profile.types";

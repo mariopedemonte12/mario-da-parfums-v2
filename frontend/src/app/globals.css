@@ -154,7 +154,8 @@
 .nav-gust path:nth-child(2) {
   transition-delay: 60ms;
 }
-.nav-link:hover .nav-gust path {
+.nav-link:hover .nav-gust path,
+.nav-link.is-active .nav-gust path {
   stroke-dashoffset: 0;
   opacity: 1;
 }

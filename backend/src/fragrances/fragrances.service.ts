@@ -15,21 +15,12 @@ import { ResponseFragranceDto } from './dto/response-fragrance.dto.js';
 import { PaginatedFragranceDto } from './dto/paginated-fragrance.dto.js';
 import { BatchResultDto } from './dto/batch-result.dto.js';
 import { CreateBatchResultDto } from './dto/create-batch-result.dto.js';
+import { getPgErrorCode } from '../common/utils/pg-error.util.js';
 
 const UNIQUE_VIOLATION = '23505';
 
-function pgErrorCode(error: unknown): string | undefined {
-  if (typeof error !== 'object' || error === null) return undefined;
-  // drizzle-orm wraps real driver errors in a DrizzleQueryError whose
-  // `.code` lives on `.cause.code`, not on the error itself.
-  return (
-    (error as { code?: string; cause?: { code?: string } }).code ??
-    (error as { cause?: { code?: string } }).cause?.code
-  );
-}
-
 function isUniqueViolation(error: unknown): boolean {
-  return pgErrorCode(error) === UNIQUE_VIOLATION;
+  return getPgErrorCode(error) === UNIQUE_VIOLATION;
 }
 
 @Injectable()

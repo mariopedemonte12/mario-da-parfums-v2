@@ -7,6 +7,7 @@ import {
 import { JwtService } from '@nestjs/jwt';
 import type { Request } from 'express';
 import type { JwtPayload } from '../../auths/interfaces/jwt-payload.interface.js';
+import { SESSION_COOKIE_NAME } from '../../auths/constants.js';
 
 export interface AuthenticatedRequest extends Request {
   user: JwtPayload;
@@ -33,8 +34,14 @@ export class JwtAuthGuard implements CanActivate {
     return true;
   }
 
+  // Bearer header first (Swagger/API clients), falling back to the httpOnly
+  // session cookie the browser sends automatically — see
+  // specs/auth-pages.md ("Contract assumption").
   private extractToken(request: Request): string | undefined {
-    const [type, token] = request.headers.authorization?.split(' ') ?? [];
-    return type === 'Bearer' ? token : undefined;
+    const [type, headerToken] = request.headers.authorization?.split(' ') ?? [];
+    if (type === 'Bearer' && headerToken) {
+      return headerToken;
+    }
+    return request.cookies?.[SESSION_COOKIE_NAME];
   }
 }
