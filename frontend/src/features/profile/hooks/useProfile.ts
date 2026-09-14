@@ -67,7 +67,7 @@ export function useProfile() {
       } catch (err) {
         if (cancelled) return;
 
-        if (err instanceof ApiError && err.status === 401) {
+        if (err instanceof ApiError && err.statusCode === 401) {
           logout();
           setState(sessionExpiredState);
           return;
