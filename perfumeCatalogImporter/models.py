@@ -9,6 +9,10 @@ class CatalogFragrance:
 
     `description` is synthetic (see description_generator.py) — never copied
     editorial text. `image_url` is always None: this dataset has no photos.
+    `olfactory_family`/`target_audience`/`longevity` are the same cleaned
+    `category`/`target_audience`/`longevity` values already used to build
+    `description` — see specs/fragrance-notes-enrichment.md for why these are
+    free-form varchar columns in the backend, not an enum.
     """
 
     name: str | None
@@ -16,6 +20,9 @@ class CatalogFragrance:
     concentration: str | None
     description: str | None
     image_url: str | None
+    olfactory_family: str | None
+    target_audience: str | None
+    longevity: str | None
 
 
 @dataclass

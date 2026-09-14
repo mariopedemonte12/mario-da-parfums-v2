@@ -67,6 +67,14 @@ debe:
   como parámetros y generando la prosa igual que hoy; no hay conflicto entre
   guardarlos estructurados y seguir usándolos para la descripción.
 
+**Actualización — resuelto en `worktree-perfume-catalog-import`**: todo lo
+de arriba (implementar `upsert()`/`run()`, agregar los tres campos a
+`CatalogFragrance`, poblarlos en `dataset_source.py`, persistirlos en
+`repository.py`) se implementó en esa feature — ver
+`specs/perfume-catalog-import.md`, sección "Reglas de negocio", bullet de
+`olfactoryFamily`/`targetAudience`/`longevity`. Este documento se deja
+intacto como registro de lo que era cierto al momento de escribirlo.
+
 ## Cambio de esquema (`backend/src/database/schema/fragrance.schema.ts`)
 
 Tres columnas nuevas, todas nullable, sin default — mismo patrón que

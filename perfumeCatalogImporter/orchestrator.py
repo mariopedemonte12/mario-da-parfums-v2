@@ -1,8 +1,12 @@
 """Coordinates KaggleCatalogSource and FragranceRepository for one full run."""
 
+import logging
+
 from .dataset_source import KaggleCatalogSource
 from .models import SyncOutcome
 from .repository import FragranceRepository
+
+logger = logging.getLogger(__name__)
 
 
 class CatalogSyncOrchestrator:
@@ -26,4 +30,34 @@ class CatalogSyncOrchestrator:
         A single item failing (missing required field, DB error, etc.) must
         not stop the run.
         """
-        raise NotImplementedError
+        created = updated = discarded = failed = 0
+
+        for record in self.source.iter_catalog():
+            if not record.name or not record.brand:
+                discarded += 1
+                logger.warning("Discarded row missing name/brand: %r", record)
+                continue
+
+            try:
+                result = self.repository.upsert(record)
+            except Exception:
+                failed += 1
+                logger.exception("Failed to upsert %r", record.name)
+                continue
+
+            if result.created:
+                created += 1
+                logger.info("Created %s", result.name)
+            else:
+                updated += 1
+                logger.info("Updated %s", result.name)
+
+        outcome = SyncOutcome(created=created, updated=updated, discarded=discarded, failed=failed)
+        logger.info(
+            "Catalog sync finished: created=%d updated=%d discarded=%d failed=%d",
+            outcome.created,
+            outcome.updated,
+            outcome.discarded,
+            outcome.failed,
+        )
+        return outcome
