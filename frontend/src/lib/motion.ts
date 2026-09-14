@@ -62,3 +62,27 @@ export const resultsSweep: Variants = {
   },
   exit: { opacity: 0, x: 360, transition: { duration: 0.65, ease: [0.3, 0, 0.2, 1] } },
 }
+
+/**
+ * /login ↔ /register swap — "el viento se lleva un panel y trae el otro".
+ * Kept as two real routes (see specs/auth-pages.md) — this is not
+ * client-side tab-state.
+ *
+ * NOT consumed via AnimatePresence/`variants` — Next.js App Router swaps
+ * `{children}` between sibling routes as one atomic replace, giving
+ * AnimatePresence no real "old and new both present" moment to detect and
+ * defer, no matter which file (layout vs template) owns the animated
+ * element (confirmed by watching it break two different ways: the exiting
+ * panel either flashed to the *new* route's content mid-exit, or the exit
+ * simply never played at all). `features/auth/components/AuthPanelTransition.tsx`
+ * instead calls `animate()` (from `motion/react`) imperatively on a stable
+ * DOM ref it owns itself: play `exit` on the *current* DOM (still showing the old
+ * route, since nothing has navigated yet) → only then `router.push` → then
+ * play `show` once the new route's content is in. Fully decoupled from
+ * Next's own mount/unmount timing, so it can't be undermined by it.
+ */
+export const authPanelSweep: Variants = {
+  hidden: { opacity: 0, x: 240 },
+  show: { opacity: 1, x: 0, transition: { duration: 0.8, ease: [0.16, 1, 0.3, 1] } },
+  exit: { opacity: 0, x: -240, transition: { duration: 0.6, ease: [0.3, 0, 0.2, 1] } },
+}
