@@ -13,7 +13,10 @@ import { PasswordsService } from '../passwords/passwords.service.js';
 import { UserResponseDto } from '../users/dto/response-user.dto.js';
 import type { User } from '../database/schema/user.schema.js';
 import { Role } from '../shared/enums/role.enums.js';
-import { getPgErrorCode } from '../common/utils/pg-error.util.js';
+import {
+  getPgErrorCode,
+  getPgErrorConstraint,
+} from '../common/utils/pg-error.util.js';
 
 @Injectable()
 export class AuthsService {
@@ -41,7 +44,7 @@ export class AuthsService {
       });
     } catch (err) {
       if (getPgErrorCode(err) === '23505') {
-        throw new ConflictException('Email already registered');
+        throw new ConflictException(this.conflictMessage(err));
       }
       throw err;
     }
@@ -71,7 +74,7 @@ export class AuthsService {
       });
     } catch (err) {
       if (getPgErrorCode(err) === '23505') {
-        throw new ConflictException('Email already registered');
+        throw new ConflictException(this.conflictMessage(err));
       }
       throw err;
     }
@@ -92,6 +95,17 @@ export class AuthsService {
     }
 
     return this.buildAuthResponse(user);
+  }
+
+  // `users.name` and `users.email` are both unique, so a 23505 from the
+  // db-level check (the optimistic findByEmail check above already covers
+  // the email case in the common path) needs the constraint name to report
+  // which column actually collided instead of always blaming the email.
+  private conflictMessage(err: unknown): string {
+    if (getPgErrorConstraint(err) === 'users_name_unique') {
+      return 'Name already taken';
+    }
+    return 'Email already registered';
   }
 
   private buildAuthResponse(user: User) {

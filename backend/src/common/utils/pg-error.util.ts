@@ -1,5 +1,6 @@
 interface PgError {
   code?: string;
+  constraint?: string;
 }
 
 function isPgError(value: unknown): value is PgError {
@@ -15,5 +16,14 @@ function isPgError(value: unknown): value is PgError {
 export function getPgErrorCode(err: unknown): string | undefined {
   if (isPgError(err) && err.code) return err.code;
   if (err instanceof Error && isPgError(err.cause)) return err.cause.code;
+  return undefined;
+}
+
+// Same unwrapping as getPgErrorCode, but for the violated constraint's name
+// (e.g. 'users_name_unique' vs 'users_email_unique') — lets a 23505 handler
+// report which column actually collided instead of guessing.
+export function getPgErrorConstraint(err: unknown): string | undefined {
+  if (isPgError(err) && err.constraint) return err.constraint;
+  if (err instanceof Error && isPgError(err.cause)) return err.cause.constraint;
   return undefined;
 }
