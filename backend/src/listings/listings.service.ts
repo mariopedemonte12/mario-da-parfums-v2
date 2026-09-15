@@ -1,5 +1,5 @@
 import { Inject, Injectable, Logger, NotFoundException } from '@nestjs/common';
-import { and, count, eq, gte, lte } from 'drizzle-orm';
+import { and, asc, eq, gt, gte, lte } from 'drizzle-orm';
 import { DRIZZLE } from '../database/database.module.js';
 import type { Database } from '../database/database.module.js';
 import { listings } from '../database/schema/listing.schema.js';
@@ -26,7 +26,7 @@ export class ListingsService {
 
   async findAll(
     query: FindListingsDto,
-  ): Promise<{ data: Listing[]; total: number }> {
+  ): Promise<{ data: Listing[]; nextCursor: number | null }> {
     const conditions = [
       query.fragranceId
         ? eq(listings.fragranceId, query.fragranceId)
@@ -43,25 +43,24 @@ export class ListingsService {
       query.maxPrice !== undefined
         ? lte(listings.price, query.maxPrice)
         : undefined,
+      query.cursor !== undefined ? gt(listings.id, query.cursor) : undefined,
     ].filter(
       (condition): condition is NonNullable<typeof condition> =>
         condition !== undefined,
     );
     const where = conditions.length ? and(...conditions) : undefined;
 
-    const offset = (query.page - 1) * query.limit;
+    const data = await this.db
+      .select()
+      .from(listings)
+      .where(where)
+      .orderBy(asc(listings.id))
+      .limit(query.limit);
 
-    const [data, totalRows] = await Promise.all([
-      this.db
-        .select()
-        .from(listings)
-        .where(where)
-        .limit(query.limit)
-        .offset(offset),
-      this.db.select({ value: count() }).from(listings).where(where),
-    ]);
+    const nextCursor =
+      data.length === query.limit ? data[data.length - 1].id : null;
 
-    return { data, total: totalRows[0]?.value ?? 0 };
+    return { data, nextCursor };
   }
 
   async findOne(id: number): Promise<Listing> {

@@ -31,28 +31,19 @@ describe('ListingsService', () => {
     scrapedAt: new Date('2026-01-01T00:00:00Z'),
   };
 
-  // Mocks the select().from().where().limit().offset() chain used by
-  // findAll's rows query, resolved in parallel (Promise.all) with the
-  // select({value: count()}).from().where() chain for the count query.
-  // The array literal in Promise.all evaluates left-to-right synchronously,
-  // so the rows query's where() is always called first (call===1) and the
-  // count query's where() second (call===2).
-  function mockSelectChain(rows: unknown[], total: number) {
+  // Mocks the select().from().where().orderBy().limit() chain used by
+  // findAll — cursor pagination needs only one query, no paired count().
+  function mockSelectChain(rows: unknown[]) {
     const whereMock = vi.fn();
-    let call = 0;
     db.select.mockImplementation(() => ({
       from: vi.fn().mockReturnValue({
         where: (...args: unknown[]) => {
           whereMock(...args);
-          call += 1;
-          if (call === 1) {
-            return {
-              limit: vi.fn().mockReturnValue({
-                offset: vi.fn().mockResolvedValue(rows),
-              }),
-            };
-          }
-          return Promise.resolve([{ value: total }]);
+          return {
+            orderBy: vi.fn().mockReturnValue({
+              limit: vi.fn().mockResolvedValue(rows),
+            }),
+          };
         },
       }),
     }));
@@ -79,19 +70,31 @@ describe('ListingsService', () => {
   });
 
   describe('findAll', () => {
-    it('returns rows as-is (not remapped) plus the total count', async () => {
-      mockSelectChain([sampleRow], 1);
+    it('returns rows as-is (not remapped) plus nextCursor: null on a short page', async () => {
+      mockSelectChain([sampleRow]);
 
-      const result = await service.findAll({ page: 1, limit: 20 });
+      const result = await service.findAll({ limit: 20 });
 
-      expect(result.total).toBe(1);
+      expect(result.nextCursor).toBeNull();
       expect(result.data).toEqual([sampleRow]);
     });
 
-    it('builds no filter condition (where: undefined) when no filters are given', async () => {
-      const whereMock = mockSelectChain([], 0);
+    it('returns nextCursor as the last row id when a full page comes back', async () => {
+      const rows = [
+        { ...sampleRow, id: 10 },
+        { ...sampleRow, id: 11 },
+      ];
+      mockSelectChain(rows);
 
-      await service.findAll({ page: 1, limit: 20 });
+      const result = await service.findAll({ limit: 2 });
+
+      expect(result.nextCursor).toBe(11);
+    });
+
+    it('builds no filter condition (where: undefined) when no filters/cursor are given', async () => {
+      const whereMock = mockSelectChain([]);
+
+      await service.findAll({ limit: 20 });
 
       expect(whereMock).toHaveBeenCalledWith(undefined);
     });
@@ -103,29 +106,30 @@ describe('ListingsService', () => {
       ['inStock: false', { inStock: false }],
       ['minPrice', { minPrice: 1000 }],
       ['maxPrice', { maxPrice: 100000 }],
+      ['cursor', { cursor: 5 }],
     ])(
       'builds a defined filter condition when %s is given',
       async (_label, filter) => {
-        const whereMock = mockSelectChain([], 0);
+        const whereMock = mockSelectChain([]);
 
-        await service.findAll({ page: 1, limit: 20, ...filter });
+        await service.findAll({ limit: 20, ...filter });
 
-        expect(whereMock).toHaveBeenCalledTimes(2);
+        expect(whereMock).toHaveBeenCalledTimes(1);
         expect(whereMock.mock.calls[0][0]).toBeDefined();
       },
     );
 
     it('builds a defined filter condition when all filters are combined', async () => {
-      const whereMock = mockSelectChain([], 0);
+      const whereMock = mockSelectChain([]);
 
       await service.findAll({
-        page: 1,
         limit: 20,
         fragranceId: sampleRow.fragranceId,
         vendorId: 1,
         inStock: true,
         minPrice: 1000,
         maxPrice: 100000,
+        cursor: 5,
       });
 
       expect(whereMock.mock.calls[0][0]).toBeDefined();
@@ -137,76 +141,35 @@ describe('ListingsService', () => {
     // mutant that swaps `!== undefined` for a plain truthiness check on
     // inStock, which would silently drop the `inStock=false` filter.
     it('does not treat inStock: false as "no filter"', async () => {
-      const whereMock = mockSelectChain([], 0);
+      const whereMock = mockSelectChain([]);
 
-      await service.findAll({ page: 1, limit: 20, inStock: false });
+      await service.findAll({ limit: 20, inStock: false });
 
       expect(whereMock.mock.calls[0][0]).toBeDefined();
     });
 
-    it.each([
-      [1, 10, 0],
-      [2, 10, 10],
-      [3, 10, 20],
-      [1, 20, 0],
-      [5, 1, 4],
-    ])(
-      'applies documented pagination math for page=%i, limit=%i: offset=%i',
-      async (page, limit, expectedOffset) => {
-        let call = 0;
+    it.each([1, 10, 20, 100])(
+      'applies the documented limit %i and orders by id ascending',
+      async (limit) => {
         let limitArg: number | undefined;
-        let offsetArg: number | undefined;
         db.select.mockImplementation(() => ({
           from: vi.fn().mockReturnValue({
-            where: () => {
-              call += 1;
-              if (call === 1) {
-                return {
-                  limit: (l: number) => {
-                    limitArg = l;
-                    return {
-                      offset: (o: number) => {
-                        offsetArg = o;
-                        return Promise.resolve([sampleRow]);
-                      },
-                    };
-                  },
-                };
-              }
-              return Promise.resolve([{ value: 1 }]);
-            },
+            where: () => ({
+              orderBy: vi.fn().mockReturnValue({
+                limit: (l: number) => {
+                  limitArg = l;
+                  return Promise.resolve([sampleRow]);
+                },
+              }),
+            }),
           }),
         }));
 
-        await service.findAll({ page, limit });
+        await service.findAll({ limit });
 
         expect(limitArg).toBe(limit);
-        expect(offsetArg).toBe(expectedOffset);
       },
     );
-
-    it('falls back to total: 0 when the count query returns no row', async () => {
-      let call = 0;
-      db.select.mockImplementation(() => ({
-        from: vi.fn().mockReturnValue({
-          where: () => {
-            call += 1;
-            if (call === 1) {
-              return {
-                limit: vi.fn().mockReturnValue({
-                  offset: vi.fn().mockResolvedValue([]),
-                }),
-              };
-            }
-            return Promise.resolve([]);
-          },
-        }),
-      }));
-
-      const result = await service.findAll({ page: 1, limit: 20 });
-
-      expect(result.total).toBe(0);
-    });
   });
 
   describe('findOne', () => {

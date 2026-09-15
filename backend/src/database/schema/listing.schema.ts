@@ -32,7 +32,11 @@ export const listings = pgTable(
   },
   (table) => [
     index('listings_fragrance_id_idx').on(table.fragranceId),
-    index('listings_vendor_id_idx').on(table.vendorId),
+    // listings_vendor_id_idx (single-column) dropped: by leftmost-prefix
+    // rule, the two composite indexes below already serve any equality
+    // lookup on vendor_id alone — see src/database/NOTES.md.
+    index('listings_vendor_id_price_idx').on(table.vendorId, table.price),
+    index('listings_vendor_id_id_idx').on(table.vendorId, table.id),
     uniqueIndex('listings_vendor_fragrance_size_idx').on(
       table.vendorId,
       table.fragranceId,

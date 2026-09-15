@@ -15,6 +15,9 @@ import { Role } from '../../shared/enums/role.enums.js';
 
 export const roleEnum = pgEnum('role', [Role.USER, Role.ADMIN]);
 
+// users_email_trgm_idx: GIN/pg_trgm added by hand in the migration SQL
+// (Drizzle's schema DSL can't express `USING gin (... gin_trgm_ops)`) — see
+// src/database/NOTES.md.
 export const users = pgTable('users', {
   id: serial('id').primaryKey(),
   name: varchar('name', { length: 255 }).notNull().unique(),

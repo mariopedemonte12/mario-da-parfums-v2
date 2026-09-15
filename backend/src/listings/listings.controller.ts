@@ -41,24 +41,20 @@ export class ListingsController {
 
   @Get()
   @ApiOperation({
-    summary: 'List listings with optional filters and pagination',
+    summary:
+      'List listings with optional filters and keyset (cursor) pagination',
   })
   @ApiResponse({ status: 200, type: PaginatedListingsDto })
   @ApiResponse({ status: 400, description: 'Validation failed' })
   async findAll(
     @Query() query: FindListingsDto,
   ): Promise<PaginatedListingsDto> {
-    const { data, total } = await this.listingsService.findAll(query);
+    const { data, nextCursor } = await this.listingsService.findAll(query);
     return {
       data: plainToInstance(ResponseListingDto, data, {
         excludeExtraneousValues: true,
       }),
-      meta: {
-        page: query.page,
-        limit: query.limit,
-        total,
-        totalPages: Math.ceil(total / query.limit),
-      },
+      nextCursor,
     };
   }
 

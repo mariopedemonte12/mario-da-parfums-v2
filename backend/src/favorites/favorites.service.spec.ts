@@ -104,9 +104,11 @@ describe('FavoritesService', () => {
                 where: vi.fn((where: unknown) => {
                   whereCalls.push(where);
                   return {
-                    limit: vi.fn().mockReturnValue({
-                      offset: vi.fn().mockReturnValue({
-                        execute: vi.fn().mockResolvedValue(rows),
+                    orderBy: vi.fn().mockReturnValue({
+                      limit: vi.fn().mockReturnValue({
+                        offset: vi.fn().mockReturnValue({
+                          execute: vi.fn().mockResolvedValue(rows),
+                        }),
                       }),
                     }),
                   };
@@ -160,10 +162,12 @@ describe('FavoritesService', () => {
             from: vi.fn().mockReturnValue({
               innerJoin: vi.fn().mockReturnValue({
                 where: vi.fn().mockReturnValue({
-                  limit: vi.fn().mockReturnValue({
-                    offset: vi.fn((offset: number) => {
-                      capture(offset);
-                      return { execute: vi.fn().mockResolvedValue([]) };
+                  orderBy: vi.fn().mockReturnValue({
+                    limit: vi.fn().mockReturnValue({
+                      offset: vi.fn((offset: number) => {
+                        capture(offset);
+                        return { execute: vi.fn().mockResolvedValue([]) };
+                      }),
                     }),
                   }),
                 }),
@@ -218,12 +222,14 @@ describe('FavoritesService', () => {
             from: vi.fn().mockReturnValue({
               innerJoin: vi.fn().mockReturnValue({
                 where: vi.fn().mockReturnValue({
-                  limit: vi.fn().mockReturnValue({
-                    offset: vi
-                      .fn()
-                      .mockReturnValue({
-                        execute: vi.fn().mockResolvedValue([]),
-                      }),
+                  orderBy: vi.fn().mockReturnValue({
+                    limit: vi.fn().mockReturnValue({
+                      offset: vi
+                        .fn()
+                        .mockReturnValue({
+                          execute: vi.fn().mockResolvedValue([]),
+                        }),
+                    }),
                   }),
                 }),
               }),

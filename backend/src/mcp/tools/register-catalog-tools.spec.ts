@@ -120,12 +120,10 @@ describe('registerCatalogTools (unit, mocked services, real MCP dispatch)', () =
   // --- search_fragrances --------------------------------------------
 
   describe('search_fragrances', () => {
-    it('forwards filters and returns the paginated result as-is', async () => {
+    it('forwards filters and returns the cursor-paginated result as-is', async () => {
       const page = {
         data: [buildFragrance()],
-        total: 1,
-        page: 1,
-        limit: 20,
+        nextCursor: null,
       };
       services.fragrancesService.findAll.mockResolvedValue(page);
 
@@ -140,8 +138,6 @@ describe('registerCatalogTools (unit, mocked services, real MCP dispatch)', () =
           name: 'Chanel',
           brand: 'Chanel',
           concentration: 'EDP',
-          page: 1,
-          limit: 20,
         }),
       );
       expect(jsonOf(result as any)).toEqual(
@@ -149,39 +145,52 @@ describe('registerCatalogTools (unit, mocked services, real MCP dispatch)', () =
       );
     });
 
-    it('defaults page and limit when omitted', async () => {
+    it('defaults to no cursor (first page) when omitted', async () => {
       services.fragrancesService.findAll.mockResolvedValue({
         data: [],
-        total: 0,
-        page: 1,
-        limit: 20,
+        nextCursor: null,
       });
 
       await client.callTool({ name: 'search_fragrances', arguments: {} });
 
       expect(services.fragrancesService.findAll).toHaveBeenCalledWith(
-        expect.objectContaining({ page: 1, limit: 20 }),
+        expect.not.objectContaining({ cursor: expect.anything() }),
       );
     });
 
-    // BVA on the zod input schema itself (page: min 1; limit: min 1, max 100).
+    it('forwards an explicit cursor', async () => {
+      const cursor = randomUUID();
+      services.fragrancesService.findAll.mockResolvedValue({
+        data: [],
+        nextCursor: null,
+      });
+
+      await client.callTool({
+        name: 'search_fragrances',
+        arguments: { cursor },
+      });
+
+      expect(services.fragrancesService.findAll).toHaveBeenCalledWith(
+        expect.objectContaining({ cursor }),
+      );
+    });
+
+    // BVA on the zod input schema itself (cursor: uuid; limit: min 1, max 100).
     // A schema-invalid call resolves as a normal CallToolResult with
     // isError:true (the MCP SDK's own callTool handler wraps the schema
     // validation McpError via createToolError) — it never rejects the
     // client promise or crashes the connection.
     it.each([
-      ['page', 1, true],
-      ['page', 0, false],
+      ['cursor', randomUUID(), true],
+      ['cursor', 'not-a-uuid', false],
       ['limit', 1, true],
       ['limit', 0, false],
       ['limit', 100, true],
       ['limit', 101, false],
-    ])('boundary: %s=%d accepted=%s', async (field, value, accepted) => {
+    ])('boundary: %s=%s accepted=%s', async (field, value, accepted) => {
       services.fragrancesService.findAll.mockResolvedValue({
         data: [],
-        total: 0,
-        page: 1,
-        limit: 20,
+        nextCursor: null,
       });
 
       const result = await client.callTool({

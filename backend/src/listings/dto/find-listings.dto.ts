@@ -50,15 +50,14 @@ export class FindListingsDto {
   maxPrice?: number;
 
   @ApiPropertyOptional({
-    description: 'Page number, 1-indexed',
-    default: 1,
-    minimum: 1,
+    description:
+      'Keyset cursor: the id of the last item from the previous page. Omit to start from the first page.',
   })
   @IsOptional()
   @Type(() => Number)
   @IsInt()
   @Min(1)
-  page: number = 1;
+  cursor?: number;
 
   @ApiPropertyOptional({
     description: 'Items per page',

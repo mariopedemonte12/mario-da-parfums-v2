@@ -1,5 +1,5 @@
 import { Inject, Injectable, Logger } from '@nestjs/common';
-import { and, count, eq } from 'drizzle-orm';
+import { and, asc, count, eq } from 'drizzle-orm';
 import { plainToInstance } from 'class-transformer';
 import { DRIZZLE } from '../database/database.module.js';
 import type { Database } from '../database/database.module.js';
@@ -47,6 +47,7 @@ export class FavoritesService {
         .from(favorites)
         .innerJoin(fragrances, eq(favorites.fragranceId, fragrances.id))
         .where(where)
+        .orderBy(asc(favorites.id))
         .limit(limit)
         .offset((page - 1) * limit)
         .execute(),

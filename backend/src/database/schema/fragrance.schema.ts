@@ -38,6 +38,9 @@ export const fragrances = pgTable(
     index('fragrances_brand_idx').on(table.brand),
     index('fragrances_olfactory_family_idx').on(table.olfactoryFamily),
     index('fragrances_longevity_idx').on(table.longevity),
+    // fragrances_name_trgm_idx: GIN/pg_trgm added by hand in the migration
+    // SQL (Drizzle's schema DSL can't express `USING gin (... gin_trgm_ops)`
+    // or `CREATE EXTENSION`) — see src/database/NOTES.md.
   ],
 );
 

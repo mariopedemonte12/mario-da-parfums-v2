@@ -1,7 +1,7 @@
 import { Inject, Injectable, NotFoundException } from '@nestjs/common';
 import { plainToInstance, type ClassConstructor } from 'class-transformer';
 import { validate } from 'class-validator';
-import { and, count, eq, ilike } from 'drizzle-orm';
+import { and, asc, count, eq, ilike } from 'drizzle-orm';
 import { DRIZZLE } from '../database/database.module.js';
 import type { Database } from '../database/database.module.js';
 import { vendors } from '../database/schema/vendor.schema.js';
@@ -80,6 +80,7 @@ export class VendorsService {
         .select()
         .from(vendors)
         .where(where)
+        .orderBy(asc(vendors.id))
         .limit(query.limit)
         .offset(offset),
       this.db.select({ value: count() }).from(vendors).where(where),

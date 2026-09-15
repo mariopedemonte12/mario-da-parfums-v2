@@ -75,8 +75,10 @@ function makeSelectMock(dataRows: Vendor[], total: number) {
         where: vi.fn((where: unknown) => {
           whereCalls.push(where);
           return {
-            limit: vi.fn().mockReturnValue({
-              offset: vi.fn().mockResolvedValue(dataRows),
+            orderBy: vi.fn().mockReturnValue({
+              limit: vi.fn().mockReturnValue({
+                offset: vi.fn().mockResolvedValue(dataRows),
+              }),
             }),
           };
         }),
@@ -189,10 +191,12 @@ describe('VendorsService', () => {
       const select = vi.fn().mockReturnValue({
         from: vi.fn().mockReturnValue({
           where: vi.fn().mockReturnValue({
-            limit: vi.fn().mockReturnValue({
-              offset: vi.fn((offset: number) => {
-                capturedOffset = offset;
-                return Promise.resolve([]);
+            orderBy: vi.fn().mockReturnValue({
+              limit: vi.fn().mockReturnValue({
+                offset: vi.fn((offset: number) => {
+                  capturedOffset = offset;
+                  return Promise.resolve([]);
+                }),
               }),
             }),
           }),
@@ -217,10 +221,12 @@ describe('VendorsService', () => {
       const select = vi.fn().mockReturnValue({
         from: vi.fn().mockReturnValue({
           where: vi.fn().mockReturnValue({
-            limit: vi.fn().mockReturnValue({
-              offset: vi.fn((offset: number) => {
-                capturedOffset = offset;
-                return Promise.resolve([]);
+            orderBy: vi.fn().mockReturnValue({
+              limit: vi.fn().mockReturnValue({
+                offset: vi.fn((offset: number) => {
+                  capturedOffset = offset;
+                  return Promise.resolve([]);
+                }),
               }),
             }),
           }),
@@ -252,8 +258,10 @@ describe('VendorsService', () => {
         return {
           from: vi.fn().mockReturnValue({
             where: vi.fn().mockReturnValue({
-              limit: vi.fn().mockReturnValue({
-                offset: vi.fn().mockResolvedValue([]),
+              orderBy: vi.fn().mockReturnValue({
+                limit: vi.fn().mockReturnValue({
+                  offset: vi.fn().mockResolvedValue([]),
+                }),
               }),
             }),
           }),

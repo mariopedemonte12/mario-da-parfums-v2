@@ -1,10 +1,9 @@
 import { ApiPropertyOptional } from '@nestjs/swagger';
 import { Type } from 'class-transformer';
-import { IsInt, IsOptional, Max, Min } from 'class-validator';
+import { IsInt, IsOptional, IsUUID, Max, Min } from 'class-validator';
 import { ValidationErrorCode } from '../../shared/enums/validation-error-code.enums.js';
 import { IsStringField } from '../../validators/wrappers/is-string.wrapper.js';
 
-export const DEFAULT_PAGE = 1;
 export const DEFAULT_LIMIT = 20;
 export const MAX_LIMIT = 100;
 
@@ -41,12 +40,13 @@ export class FindFragranceDto {
   @IsStringField(ValidationErrorCode.LONGEVITY_INVALID_TYPE)
   longevity?: string;
 
-  @ApiPropertyOptional({ default: DEFAULT_PAGE, minimum: 1 })
+  @ApiPropertyOptional({
+    description:
+      'Keyset cursor: the id of the last item from the previous page. Omit to start from the first page.',
+  })
   @IsOptional()
-  @Type(() => Number)
-  @IsInt()
-  @Min(1)
-  page?: number = DEFAULT_PAGE;
+  @IsUUID('4')
+  cursor?: string;
 
   @ApiPropertyOptional({
     default: DEFAULT_LIMIT,

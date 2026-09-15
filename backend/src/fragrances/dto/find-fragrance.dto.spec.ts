@@ -1,11 +1,8 @@
 import { plainToInstance } from 'class-transformer';
 import { validate } from 'class-validator';
-import {
-  DEFAULT_LIMIT,
-  DEFAULT_PAGE,
-  FindFragranceDto,
-  MAX_LIMIT,
-} from './find-fragrance.dto.js';
+import { DEFAULT_LIMIT, FindFragranceDto, MAX_LIMIT } from './find-fragrance.dto.js';
+
+const SAMPLE_UUID = '3fa85f64-5717-4562-b3fc-2c963f66afa6';
 
 // Query DTOs are constructed from HTTP query strings, so inputs arrive as
 // strings even for numeric fields.
@@ -14,9 +11,9 @@ function build(query: Record<string, string>) {
 }
 
 describe('FindFragranceDto', () => {
-  it('applies documented defaults when page/limit are omitted', () => {
+  it('applies the documented default when limit is omitted, with no cursor', () => {
     const dto = build({});
-    expect(dto.page).toBe(DEFAULT_PAGE);
+    expect(dto.cursor).toBeUndefined();
     expect(dto.limit).toBe(DEFAULT_LIMIT);
   });
 
@@ -38,34 +35,21 @@ describe('FindFragranceDto', () => {
     expect(errors.some((e) => e.property === 'name')).toBe(true);
   });
 
-  describe('page boundary (Min(1))', () => {
-    it('accepts the boundary value 1', async () => {
-      const dto = build({ page: '1' });
+  describe('cursor (IsUUID)', () => {
+    it('passes when omitted (first page)', async () => {
+      const dto = build({});
       expect(await validate(dto)).toHaveLength(0);
     });
 
-    it('rejects the neighbor below the boundary, 0', async () => {
-      const dto = build({ page: '0' });
-      const errors = await validate(dto);
-      expect(errors.some((e) => e.property === 'page')).toBe(true);
+    it('accepts a valid uuid cursor', async () => {
+      const dto = build({ cursor: SAMPLE_UUID });
+      expect(await validate(dto)).toHaveLength(0);
     });
 
-    it('rejects a negative page', async () => {
-      const dto = build({ page: '-1' });
+    it('rejects a non-uuid cursor', async () => {
+      const dto = build({ cursor: 'not-a-uuid' });
       const errors = await validate(dto);
-      expect(errors.some((e) => e.property === 'page')).toBe(true);
-    });
-
-    it('rejects a non-integer page', async () => {
-      const dto = build({ page: '1.5' });
-      const errors = await validate(dto);
-      expect(errors.some((e) => e.property === 'page')).toBe(true);
-    });
-
-    it('rejects a non-numeric page', async () => {
-      const dto = build({ page: 'abc' });
-      const errors = await validate(dto);
-      expect(errors.some((e) => e.property === 'page')).toBe(true);
+      expect(errors.some((e) => e.property === 'cursor')).toBe(true);
     });
   });
 

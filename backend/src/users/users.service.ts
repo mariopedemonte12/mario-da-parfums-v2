@@ -4,7 +4,7 @@ import {
   Injectable,
   NotFoundException,
 } from '@nestjs/common';
-import { and, count, eq, ilike } from 'drizzle-orm';
+import { and, asc, count, eq, ilike } from 'drizzle-orm';
 import { DRIZZLE } from '../database/database.module.js';
 import type { Database } from '../database/database.module.js';
 import {
@@ -48,6 +48,7 @@ export class UsersService {
         .select()
         .from(users)
         .where(where)
+        .orderBy(asc(users.id))
         .limit(query.limit)
         .offset(offset),
       this.db.select({ value: count() }).from(users).where(where),
