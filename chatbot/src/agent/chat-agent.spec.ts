@@ -8,6 +8,8 @@ vi.mock('../logger.js', () => ({
 
 const { runTurn } = await import('./chat-agent.js');
 const { log } = await import('../logger.js');
+const { PRESENT_FRAGRANCES_TOOL, PRESENT_FRAGRANCES_TOOL_NAME } =
+  await import('./present-fragrances-tool.js');
 
 type Chunk = {
   text?: string;
@@ -69,6 +71,7 @@ function baseParams(
     maxIterations: 5,
     onStatus: vi.fn(),
     onToken: vi.fn(),
+    onFragrances: vi.fn(),
     mcpManager: { callTool: vi.fn() } as unknown as McpManager,
     ...overrides,
   };
@@ -374,22 +377,75 @@ describe('runTurn — Gemini call failures', () => {
 });
 
 describe('runTurn — tool declarations passed to Gemini', () => {
-  it('omits the `tools` config entirely when no MCP tools are available', async () => {
+  it('always offers the local present_fragrances tool, even with zero MCP tools available', async () => {
     const { ai, generateContentStream } = fakeAi(() => [textChunk('ok')]);
     await runTurn(baseParams({ ai, tools: [] }));
     const call = generateContentStream.mock.calls[0][0] as {
-      config: { tools?: unknown };
+      config: { tools?: { functionDeclarations: unknown }[] };
     };
-    expect(call.config.tools).toBeUndefined();
+    expect(call.config.tools).toEqual([
+      { functionDeclarations: [PRESENT_FRAGRANCES_TOOL] },
+    ]);
   });
 
-  it('passes tool declarations under functionDeclarations when tools are available', async () => {
+  it('passes MCP tool declarations under functionDeclarations alongside present_fragrances', async () => {
     const { ai, generateContentStream } = fakeAi(() => [textChunk('ok')]);
     const tools = [{ name: 'catalog.search', description: 'x' }];
     await runTurn(baseParams({ ai, tools: tools as never }));
     const call = generateContentStream.mock.calls[0][0] as {
       config: { tools?: { functionDeclarations: unknown }[] };
     };
-    expect(call.config.tools).toEqual([{ functionDeclarations: tools }]);
+    expect(call.config.tools).toEqual([
+      { functionDeclarations: [...tools, PRESENT_FRAGRANCES_TOOL] },
+    ]);
+  });
+});
+
+describe('runTurn — present_fragrances (local presentation tool)', () => {
+  it('intercepts a present_fragrances call without dispatching it through mcpManager, and reports it via onFragrances', async () => {
+    const item = {
+      id: 'f1',
+      name: 'Sauvage',
+      brand: 'Dior',
+      price: 81990,
+      imageUrl: null,
+    };
+    const { ai } = fakeAi((call) =>
+      call === 0
+        ? [fnCallChunk(PRESENT_FRAGRANCES_TOOL_NAME, 'c1', { items: [item] })]
+        : [textChunk('Te recomiendo Sauvage.')],
+    );
+    const callTool = vi.fn();
+    const onFragrances = vi.fn();
+    const result = await runTurn(
+      baseParams({
+        ai,
+        onFragrances,
+        mcpManager: { callTool } as unknown as McpManager,
+      }),
+    );
+
+    expect(callTool).not.toHaveBeenCalled();
+    expect(onFragrances).toHaveBeenCalledWith([item]);
+    expect(result.ok).toBe(true);
+  });
+
+  it('feeds an error back to Gemini instead of throwing when present_fragrances args fail validation', async () => {
+    const { ai, generateContentStream } = fakeAi((call) =>
+      call === 0
+        ? [fnCallChunk(PRESENT_FRAGRANCES_TOOL_NAME, 'c1', { items: [] })]
+        : [textChunk('ok')],
+    );
+    const onFragrances = vi.fn();
+    const result = await runTurn(baseParams({ ai, onFragrances }));
+
+    expect(onFragrances).not.toHaveBeenCalled();
+    expect(result.ok).toBe(true);
+    const secondCallArgs = generateContentStream.mock.calls[1][0] as {
+      contents: { parts: { functionResponse?: { response: unknown } }[] }[];
+    };
+    expect(
+      secondCallArgs.contents.at(-1)?.parts[0]?.functionResponse?.response,
+    ).toEqual({ error: 'Argumentos inválidos para present_fragrances.' });
   });
 });

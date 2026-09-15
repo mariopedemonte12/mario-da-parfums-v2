@@ -1,6 +1,8 @@
 import type { Metadata } from "next";
 import { Cormorant_Garamond, Jost } from "next/font/google";
 
+import ChatPanel from "@/features/chatbot-widget/components/ChatPanel";
+import { ChatbotWidgetProvider } from "@/features/chatbot-widget/components/ChatbotWidgetProvider";
 import Navbar from "@/features/layout/components/Navbar"
 import Footer from "@/features/layout/components/Footer";
 import { AuthProvider } from "@/features/auth/hooks/useAuth";
@@ -35,13 +37,17 @@ export default function RootLayout({
     >
       <body className="min-h-full flex flex-col">
         <AuthProvider>
-          <Navbar />
+          <ChatbotWidgetProvider>
+            <Navbar />
 
-          <main className="flex-1">
-            {children}
-          </main>
+            <main className="flex-1">
+              {children}
+            </main>
 
-          <Footer />
+            <Footer />
+
+            <ChatPanel />
+          </ChatbotWidgetProvider>
         </AuthProvider>
       </body>
     </html>

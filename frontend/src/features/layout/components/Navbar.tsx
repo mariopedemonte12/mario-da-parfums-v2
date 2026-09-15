@@ -5,6 +5,7 @@ import { useRef, useState } from "react";
 import type { MouseEvent as ReactMouseEvent, PointerEvent as ReactPointerEvent } from "react";
 
 import WindLines from "@/components/ui/WindLines";
+import { useChatbotWidget } from "@/features/chatbot-widget/components/ChatbotWidgetProvider";
 import WindGustLink from "@/features/common/components/WindGustLink";
 import { useAuth } from "@/features/auth/hooks/useAuth";
 
@@ -176,6 +177,7 @@ export default function Navbar() {
   const [menuOpen, setMenuOpen] = useState(false);
   const { user, logout } = useAuth();
   const mobileNavItems = buildMobileNavItems(Boolean(user), logout);
+  const { isOpen, toggle } = useChatbotWidget();
 
   return (
     <header className="relative bg-background">
@@ -202,7 +204,9 @@ export default function Navbar() {
           <WindGustLink href="/">Inicio</WindGustLink>
           <WindGustLink href="/fragrances">Perfumes</WindGustLink>
           <span>Notas</span>
-          <WindGustLink>Sensei</WindGustLink>
+          <WindGustLink onClick={toggle} ariaExpanded={isOpen}>
+            Sensei
+          </WindGustLink>
         </div>
 
         {user ? (

@@ -22,7 +22,9 @@ function baseConfig(overrides: Partial<ChatbotConfig> = {}): ChatbotConfig {
   return {
     geminiApiKey: 'k',
     agentModel: 'agent-model',
+    agentFallbackModel: 'agent-fallback-model',
     classifierModel: 'classifier-model',
+    classifierFallbackModel: 'classifier-fallback-model',
     wsHost: '127.0.0.1',
     wsPort: 0,
     agentHistoryTurns: 12,
@@ -283,9 +285,12 @@ describe('websocket-server — full round trips', () => {
   it('surfaces a turn-level Gemini failure as an `error` frame and keeps the connection usable', async () => {
     const generateContent = vi.fn(async () => ({ text: '{"in_scope": true}' }));
     let call = 0;
+    // Fails the first two attempts (the primary model call, then its
+    // automatic fallback-model retry — see src/gemini/model-fallback.ts) so
+    // the turn genuinely errors out, then succeeds from the third call on.
     const generateContentStream = vi.fn(async () => {
       call++;
-      if (call === 1) throw new Error('rate limited');
+      if (call <= 2) throw new Error('rate limited');
       return streamOf([{ text: 'ok' }]);
     });
     const ai = {

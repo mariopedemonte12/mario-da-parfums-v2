@@ -95,14 +95,23 @@ function loadMcpServers(path: string): McpServerConfig[] {
 export function loadConfig(): ChatbotConfig {
   return {
     geminiApiKey: requireEnv('GEMINI_API_KEY'),
-    agentModel: process.env.GEMINI_AGENT_MODEL ?? 'gemini-2.5-flash',
+    agentModel: process.env.GEMINI_AGENT_MODEL ?? 'gemini-3.5-flash-lite',
+    agentFallbackModel:
+      process.env.GEMINI_AGENT_FALLBACK_MODEL ?? 'gemini-3.1-flash-lite',
     classifierModel:
-      process.env.GEMINI_CLASSIFIER_MODEL ?? 'gemini-2.5-flash-lite',
+      process.env.GEMINI_CLASSIFIER_MODEL ?? 'gemini-3.5-flash-lite',
+    classifierFallbackModel:
+      process.env.GEMINI_CLASSIFIER_FALLBACK_MODEL ?? 'gemini-3.1-flash-lite',
     wsHost: process.env.CHATBOT_WS_HOST ?? '0.0.0.0',
     wsPort: intEnv('CHATBOT_WS_PORT', 8081),
     agentHistoryTurns: intEnv('CHATBOT_AGENT_HISTORY_TURNS', 12),
     classifierHistoryTurns: intEnv('CHATBOT_CLASSIFIER_HISTORY_TURNS', 4),
-    maxToolIterations: intEnv('CHATBOT_MAX_TOOL_ITERATIONS', 5),
+    // 5 was enough before present_fragrances existed; that tool adds one more
+    // mandatory round-trip (its own function_call + function_response) on
+    // top of whatever catalog lookups already ran, so a 2+-fragrance answer
+    // (search + per-item price lookup + present_fragrances + final text) can
+    // need more room — see agent/present-fragrances-tool.ts.
+    maxToolIterations: intEnv('CHATBOT_MAX_TOOL_ITERATIONS', 8),
     rejectionMessage:
       process.env.CHATBOT_REJECTION_MESSAGE ?? DEFAULT_REJECTION_MESSAGE,
     mcpServers: loadMcpServers(
