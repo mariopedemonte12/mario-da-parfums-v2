@@ -23,15 +23,21 @@ function getInitials(name: string): string {
   return (first + last).toUpperCase();
 }
 
-type MobileNavItem = { key: string; label: string; href?: string };
+type MobileNavItem = { key: string; label: string; href?: string; onClick?: () => void };
 
-const MOBILE_NAV_ITEMS: MobileNavItem[] = [
-  { key: "inicio", label: "Inicio", href: "/" },
-  { key: "perfumes", label: "Perfumes", href: "/fragrances" },
-  { key: "notas", label: "Notas" },
-  { key: "sensei", label: "Sensei" },
-  { key: "entrar", label: "Entrar", href: "/login" },
-];
+// The session-dependent item (entrar/salir) is built per-render from auth state in Navbar, not
+// hardcoded here — see the bug this fixes: a static "Entrar" item never became "Salir" once logged in.
+function buildMobileNavItems(isLoggedIn: boolean, logout: () => void): MobileNavItem[] {
+  return [
+    { key: "inicio", label: "Inicio", href: "/" },
+    { key: "perfumes", label: "Perfumes", href: "/fragrances" },
+    { key: "notas", label: "Notas" },
+    { key: "sensei", label: "Sensei" },
+    isLoggedIn
+      ? { key: "salir", label: "Salir", onClick: logout }
+      : { key: "entrar", label: "Entrar", href: "/login" },
+  ];
+}
 
 // Distance between pill centers while dragging/settled, in px — tuned to the pill sizes below.
 const SLOT_WIDTH = 108;
@@ -45,7 +51,13 @@ const DRAG_THRESHOLD = 6;
 // duplicated DOM items or scroll-jump trick needed for the infinite loop.
 type DragState = { activeIndex: number; dragOffset: number; isDragging: boolean };
 
-function MobileNavCarousel({ onNavigate }: { onNavigate: () => void }) {
+function MobileNavCarousel({
+  items,
+  onNavigate,
+}: {
+  items: MobileNavItem[];
+  onNavigate: () => void;
+}) {
   const [drag, setDrag] = useState<DragState>({ activeIndex: 0, dragOffset: 0, isDragging: false });
   // Plain refs for values never read during render — safe under React Compiler's rule against
   // reading ref.current while rendering. The actual position (activeIndex/dragOffset/isDragging)
@@ -56,7 +68,7 @@ function MobileNavCarousel({ onNavigate }: { onNavigate: () => void }) {
   const dragStartXRef = useRef(0);
   const draggedRef = useRef(false);
 
-  const length = MOBILE_NAV_ITEMS.length;
+  const length = items.length;
 
   function circularOffset(index: number) {
     let diff = index - drag.activeIndex - drag.dragOffset;
@@ -92,6 +104,10 @@ function MobileNavCarousel({ onNavigate }: { onNavigate: () => void }) {
       return;
     }
     if (item.href) onNavigate();
+    if (item.onClick) {
+      item.onClick();
+      onNavigate();
+    }
   }
 
   return (
@@ -102,7 +118,7 @@ function MobileNavCarousel({ onNavigate }: { onNavigate: () => void }) {
       onPointerUp={endDrag}
       onPointerCancel={endDrag}
     >
-      {MOBILE_NAV_ITEMS.map((item, index) => {
+      {items.map((item, index) => {
         const offset = circularOffset(index);
         const isActive = Math.round(offset) === 0;
         const distance = Math.abs(offset);
@@ -133,6 +149,20 @@ function MobileNavCarousel({ onNavigate }: { onNavigate: () => void }) {
           );
         }
 
+        if (item.onClick) {
+          return (
+            <button
+              key={item.key}
+              type="button"
+              className={className}
+              style={style}
+              onClick={(event) => handleItemClick(event, item)}
+            >
+              {item.label}
+            </button>
+          );
+        }
+
         return (
           <span key={item.key} className={className} style={style}>
             {item.label}
@@ -146,6 +176,7 @@ function MobileNavCarousel({ onNavigate }: { onNavigate: () => void }) {
 export default function Navbar() {
   const [menuOpen, setMenuOpen] = useState(false);
   const { user, logout } = useAuth();
+  const mobileNavItems = buildMobileNavItems(Boolean(user), logout);
   const { isOpen, toggle } = useChatbotWidget();
 
   return (
@@ -173,14 +204,9 @@ export default function Navbar() {
           <WindGustLink href="/">Inicio</WindGustLink>
           <WindGustLink href="/fragrances">Perfumes</WindGustLink>
           <span>Notas</span>
-          <button
-            type="button"
-            onClick={toggle}
-            aria-expanded={isOpen}
-            className="cursor-pointer uppercase"
-          >
+          <WindGustLink onClick={toggle} ariaExpanded={isOpen}>
             Sensei
-          </button>
+          </WindGustLink>
         </div>
 
         {user ? (
@@ -215,7 +241,7 @@ export default function Navbar() {
 
       {menuOpen && (
         <div className="border-t border-border py-5 md:hidden">
-          <MobileNavCarousel onNavigate={() => setMenuOpen(false)} />
+          <MobileNavCarousel items={mobileNavItems} onNavigate={() => setMenuOpen(false)} />
         </div>
       )}
 
