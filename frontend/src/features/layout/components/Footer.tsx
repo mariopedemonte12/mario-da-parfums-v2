@@ -1,3 +1,5 @@
+import Link from "next/link";
+
 import WindLines from "@/components/ui/WindLines";
 
 export default function Footer() {
@@ -7,13 +9,21 @@ export default function Footer() {
 
       <span>© 2026 mario-da-parfumsv2</span>
 
-      <span className="md:hidden">Envíos · Notas · Contacto</span>
+      <span className="md:hidden">
+        Envíos · Notas · Contacto ·{" "}
+        <Link href="/terminos" className="underline-offset-2 hover:underline">
+          Términos y privacidad
+        </Link>
+      </span>
 
       <div className="hidden gap-7 md:flex">
         <span>Envíos</span>
         <span>Notas olfativas</span>
         <span>Contacto</span>
         <span>Instagram</span>
+        <Link href="/terminos" className="underline-offset-2 hover:underline">
+          Términos y privacidad
+        </Link>
       </div>
     </footer>
   );
