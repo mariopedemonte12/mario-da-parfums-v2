@@ -1,5 +1,5 @@
 import { Inject, Injectable, Logger, NotFoundException } from '@nestjs/common';
-import { and, count, eq, ilike } from 'drizzle-orm';
+import { and, asc, eq, gt, ilike } from 'drizzle-orm';
 import { plainToInstance } from 'class-transformer';
 import { DRIZZLE } from '../database/database.module.js';
 import type { Database } from '../database/database.module.js';
@@ -41,7 +41,7 @@ export class FragrancesService {
       olfactoryFamily,
       targetAudience,
       longevity,
-      page = 1,
+      cursor,
       limit = 20,
     } = query;
 
@@ -62,6 +62,7 @@ export class FragrancesService {
         ? eq(fragrances.targetAudience, targetAudience)
         : undefined,
       longevity ? eq(fragrances.longevity, longevity) : undefined,
+      cursor ? gt(fragrances.id, cursor) : undefined,
     ].filter(
       (condition): condition is NonNullable<typeof condition> =>
         condition !== undefined,
@@ -69,26 +70,17 @@ export class FragrancesService {
 
     const where = conditions.length > 0 ? and(...conditions) : undefined;
 
-    const [rows, totalRows] = await Promise.all([
-      this.db
-        .select()
-        .from(fragrances)
-        .where(where)
-        .limit(limit)
-        .offset((page - 1) * limit)
-        .execute(),
-      this.db
-        .select({ value: count() })
-        .from(fragrances)
-        .where(where)
-        .execute(),
-    ]);
+    const rows = await this.db
+      .select()
+      .from(fragrances)
+      .where(where)
+      .orderBy(asc(fragrances.id))
+      .limit(limit)
+      .execute();
 
     return {
       data: rows.map((row) => this.toResponseDto(row)),
-      total: totalRows[0]?.value ?? 0,
-      page,
-      limit,
+      nextCursor: rows.length === limit ? rows[rows.length - 1].id : null,
     };
   }
 

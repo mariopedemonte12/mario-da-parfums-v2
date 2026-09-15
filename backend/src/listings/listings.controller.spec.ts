@@ -122,19 +122,17 @@ describe('ListingsController (unit, mocked service)', () => {
   });
 
   describe('delegation to ListingsService', () => {
-    it('findAll delegates to the service and builds pagination meta', async () => {
-      service.findAll.mockResolvedValue({ data: [sampleListing], total: 42 });
-      const query = { page: 2, limit: 20 };
+    it('findAll delegates to the service and passes through the cursor', async () => {
+      service.findAll.mockResolvedValue({
+        data: [sampleListing],
+        nextCursor: 1,
+      });
+      const query = { cursor: 1, limit: 20 };
 
       const result = await controller.findAll(query as any);
 
       expect(service.findAll).toHaveBeenCalledWith(query);
-      expect(result.meta).toEqual({
-        page: 2,
-        limit: 20,
-        total: 42,
-        totalPages: 3,
-      });
+      expect(result.nextCursor).toBe(1);
       expect(result.data).toHaveLength(1);
       expect(result.data[0]).toMatchObject({
         id: 1,
@@ -145,22 +143,20 @@ describe('ListingsController (unit, mocked service)', () => {
     it('findAll response only exposes ResponseListingDto fields', async () => {
       service.findAll.mockResolvedValue({
         data: [{ ...sampleListing, internalScraperNotes: 'do-not-leak' }],
-        total: 1,
+        nextCursor: null,
       });
 
-      const result = await controller.findAll({ page: 1, limit: 20 } as any);
+      const result = await controller.findAll({ limit: 20 } as any);
 
       expect(result.data[0]).not.toHaveProperty('internalScraperNotes');
     });
 
-    // Boundary: totalPages is a ceiling division — total: 0 is the boundary
-    // where Math.ceil(0/limit) still yields 0, not 1.
-    it('computes totalPages: 0 when there are no matching rows', async () => {
-      service.findAll.mockResolvedValue({ data: [], total: 0 });
+    it('returns nextCursor: null when the page is shorter than the limit', async () => {
+      service.findAll.mockResolvedValue({ data: [], nextCursor: null });
 
-      const result = await controller.findAll({ page: 1, limit: 20 } as any);
+      const result = await controller.findAll({ limit: 20 } as any);
 
-      expect(result.meta.totalPages).toBe(0);
+      expect(result.nextCursor).toBeNull();
     });
 
     it('findOne delegates to the service with the parsed numeric id', async () => {
@@ -235,7 +231,7 @@ describe('ListingsController (HTTP, real guards + validation pipe)', () => {
 
   beforeEach(async () => {
     service = {
-      findAll: vi.fn().mockResolvedValue({ data: [], total: 0 }),
+      findAll: vi.fn().mockResolvedValue({ data: [], nextCursor: null }),
       findOne: vi.fn(),
       createMany: vi.fn().mockResolvedValue([{ id: 1, success: true }]),
       updateMany: vi.fn().mockResolvedValue([{ id: 1, success: true }]),
@@ -289,7 +285,7 @@ describe('ListingsController (HTTP, real guards + validation pipe)', () => {
           inStock: 'true',
           minPrice: '1000',
           maxPrice: '100000',
-          page: '1',
+          cursor: '5',
           limit: '10',
         })
         .expect(200);
@@ -301,7 +297,7 @@ describe('ListingsController (HTTP, real guards + validation pipe)', () => {
           inStock: true,
           minPrice: 1000,
           maxPrice: 100000,
-          page: 1,
+          cursor: 5,
           limit: 10,
         }),
       );
@@ -342,18 +338,18 @@ describe('ListingsController (HTTP, real guards + validation pipe)', () => {
         .expect(400);
     });
 
-    // BVA on FindListingsDto: page @Min(1); limit @Min(1)/@Max(100);
+    // BVA on FindListingsDto: cursor @Min(1); limit @Min(1)/@Max(100);
     // minPrice/maxPrice @Min(0).
     it.each([
-      ['page=1 (boundary, valid)', { page: '1' }, 200],
-      ['page=0 (across boundary, invalid)', { page: '0' }, 400],
-      ['page=-1 (invalid)', { page: '-1' }, 400],
+      ['cursor=1 (boundary, valid)', { cursor: '1' }, 200],
+      ['cursor=0 (across boundary, invalid)', { cursor: '0' }, 400],
+      ['cursor=-1 (invalid)', { cursor: '-1' }, 400],
       ['limit=1 (boundary, valid)', { limit: '1' }, 200],
       ['limit=0 (across boundary, invalid)', { limit: '0' }, 400],
       ['limit=100 (boundary, valid)', { limit: '100' }, 200],
       ['limit=101 (across boundary, invalid)', { limit: '101' }, 400],
-      ['non-numeric page (invalid)', { page: 'abc' }, 400],
-      ['non-integer page (invalid)', { page: '1.5' }, 400],
+      ['non-numeric cursor (invalid)', { cursor: 'abc' }, 400],
+      ['non-integer cursor (invalid)', { cursor: '1.5' }, 400],
       ['minPrice=0 (boundary, valid)', { minPrice: '0' }, 200],
       ['minPrice=-1 (across boundary, invalid)', { minPrice: '-1' }, 400],
       ['maxPrice=0 (boundary, valid)', { maxPrice: '0' }, 200],
@@ -365,11 +361,14 @@ describe('ListingsController (HTTP, real guards + validation pipe)', () => {
         .expect(expectedStatus);
     });
 
-    it('applies documented defaults (page 1, limit 20) when omitted', async () => {
+    it('applies the documented default limit (20), no cursor, when omitted', async () => {
       await request(app.getHttpServer()).get('/listings').expect(200);
 
       expect(service.findAll).toHaveBeenCalledWith(
-        expect.objectContaining({ page: 1, limit: 20 }),
+        expect.objectContaining({ limit: 20 }),
+      );
+      expect(service.findAll).toHaveBeenCalledWith(
+        expect.not.objectContaining({ cursor: expect.anything() }),
       );
     });
   });

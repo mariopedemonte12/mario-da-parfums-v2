@@ -64,7 +64,11 @@ export function registerCatalogTools(
           .string()
           .optional()
           .describe('Exact concentration match'),
-        page: z.number().int().min(1).optional(),
+        cursor: z
+          .string()
+          .uuid()
+          .optional()
+          .describe('Keyset cursor: the id of the last item from the previous page'),
         limit: z.number().int().min(1).max(100).optional(),
       },
     },

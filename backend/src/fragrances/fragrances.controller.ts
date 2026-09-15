@@ -40,7 +40,8 @@ export class FragrancesController {
 
   @Get()
   @ApiOperation({
-    summary: 'List fragrances with server-side filtering and pagination',
+    summary:
+      'List fragrances with server-side filtering and keyset (cursor) pagination',
   })
   @ApiResponse({ status: 200, type: PaginatedFragranceDto })
   @ApiResponse({ status: 400, description: 'Validation failed' })

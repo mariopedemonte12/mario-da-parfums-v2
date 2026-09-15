@@ -10,9 +10,9 @@ function build(query: Record<string, string>) {
 }
 
 describe('FindListingsDto', () => {
-  it('applies documented defaults when page/limit are omitted', () => {
+  it('applies the documented default limit when omitted, with no cursor', () => {
     const dto = build({});
-    expect(dto.page).toBe(1);
+    expect(dto.cursor).toBeUndefined();
     expect(dto.limit).toBe(20);
   });
 
@@ -112,34 +112,39 @@ describe('FindListingsDto', () => {
     });
   });
 
-  describe('page boundary (Min(1))', () => {
+  describe('cursor boundary (Min(1))', () => {
+    it('passes when omitted (first page)', async () => {
+      const dto = build({});
+      expect(await validate(dto)).toHaveLength(0);
+    });
+
     it('accepts the boundary value 1', async () => {
-      const dto = build({ page: '1' });
+      const dto = build({ cursor: '1' });
       expect(await validate(dto)).toHaveLength(0);
     });
 
     it('rejects the neighbor below the boundary, 0', async () => {
-      const dto = build({ page: '0' });
+      const dto = build({ cursor: '0' });
       const errors = await validate(dto);
-      expect(errors.some((e) => e.property === 'page')).toBe(true);
+      expect(errors.some((e) => e.property === 'cursor')).toBe(true);
     });
 
-    it('rejects a negative page', async () => {
-      const dto = build({ page: '-1' });
+    it('rejects a negative cursor', async () => {
+      const dto = build({ cursor: '-1' });
       const errors = await validate(dto);
-      expect(errors.some((e) => e.property === 'page')).toBe(true);
+      expect(errors.some((e) => e.property === 'cursor')).toBe(true);
     });
 
-    it('rejects a non-integer page', async () => {
-      const dto = build({ page: '1.5' });
+    it('rejects a non-integer cursor', async () => {
+      const dto = build({ cursor: '1.5' });
       const errors = await validate(dto);
-      expect(errors.some((e) => e.property === 'page')).toBe(true);
+      expect(errors.some((e) => e.property === 'cursor')).toBe(true);
     });
 
-    it('rejects a non-numeric page', async () => {
-      const dto = build({ page: 'abc' });
+    it('rejects a non-numeric cursor', async () => {
+      const dto = build({ cursor: 'abc' });
       const errors = await validate(dto);
-      expect(errors.some((e) => e.property === 'page')).toBe(true);
+      expect(errors.some((e) => e.property === 'cursor')).toBe(true);
     });
   });
 

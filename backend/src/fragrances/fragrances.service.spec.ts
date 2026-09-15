@@ -42,28 +42,21 @@ describe('FragrancesService', () => {
     updatedAt: new Date('2026-01-01T00:00:00Z'),
   };
 
-  // Mocks the select().from().where().limit().offset().execute() chain used
-  // by findAll, resolving rows and the parallel count() query separately.
-  function mockSelectChain(rows: unknown[], total: number) {
+  // Mocks the select().from().where().orderBy().limit().execute() chain used
+  // by findAll — cursor pagination needs only one query, no paired count().
+  function mockSelectChain(rows: unknown[]) {
     const whereMock = vi.fn();
-    let call = 0;
     db.select.mockImplementation(() => ({
       from: vi.fn().mockReturnValue({
         where: (...args: unknown[]) => {
           whereMock(...args);
-          call += 1;
-          if (call === 1) {
-            // rows query: .limit().offset().execute()
-            return {
+          return {
+            orderBy: vi.fn().mockReturnValue({
               limit: vi.fn().mockReturnValue({
-                offset: vi.fn().mockReturnValue({
-                  execute: vi.fn().mockResolvedValue(rows),
-                }),
+                execute: vi.fn().mockResolvedValue(rows),
               }),
-            };
-          }
-          // count query: .execute()
-          return { execute: vi.fn().mockResolvedValue([{ value: total }]) };
+            }),
+          };
         },
       }),
     }));
@@ -93,14 +86,13 @@ describe('FragrancesService', () => {
   });
 
   describe('findAll', () => {
-    it('returns rows mapped to ResponseFragranceDto shape, plus total/page/limit', async () => {
-      mockSelectChain([sampleRow], 1);
+    it('returns rows mapped to ResponseFragranceDto shape, plus nextCursor', async () => {
+      mockSelectChain([sampleRow]);
 
-      const result = await service.findAll({ page: 1, limit: 20 });
+      const result = await service.findAll({ limit: 20 });
 
-      expect(result.total).toBe(1);
-      expect(result.page).toBe(1);
-      expect(result.limit).toBe(20);
+      // A page shorter than `limit` means there's nothing more to fetch.
+      expect(result.nextCursor).toBeNull();
       expect(result.data).toEqual([
         {
           id: sampleRow.id,
@@ -118,57 +110,50 @@ describe('FragrancesService', () => {
       ]);
     });
 
-    it('excludes fields not declared on ResponseFragranceDto (e.g. a leftover db-only field)', async () => {
-      mockSelectChain([{ ...sampleRow, internalNotes: 'secret' }], 1);
+    it('returns nextCursor as the last row id when a full page comes back', async () => {
+      const rows = Array.from({ length: 2 }, (_, i) => ({
+        ...sampleRow,
+        id: `id-${i}`,
+      }));
+      mockSelectChain(rows);
 
-      const result = await service.findAll({ page: 1, limit: 20 });
+      const result = await service.findAll({ limit: 2 });
+
+      expect(result.nextCursor).toBe('id-1');
+    });
+
+    it('excludes fields not declared on ResponseFragranceDto (e.g. a leftover db-only field)', async () => {
+      mockSelectChain([{ ...sampleRow, internalNotes: 'secret' }]);
+
+      const result = await service.findAll({ limit: 20 });
 
       expect(result.data[0]).not.toHaveProperty('internalNotes');
     });
 
-    it('applies documented pagination math: limit and (page-1)*limit offset', async () => {
-      // call is declared outside mockImplementation's callback so it is
-      // shared across both concurrent db.select() invocations (rows query +
-      // count query) in findAll's Promise.all — the rows query resolves its
-      // chain first (evaluated first in the array literal), so call===1 is
-      // reliably the rows branch and call===2 the count branch.
-      let call = 0;
+    it('applies the documented limit and orders by id ascending', async () => {
       let limitArg: number | undefined;
-      let offsetArg: number | undefined;
       db.select.mockImplementation(() => ({
         from: vi.fn().mockReturnValue({
-          where: () => {
-            call += 1;
-            if (call === 1) {
-              return {
-                limit: (l: number) => {
-                  limitArg = l;
-                  return {
-                    offset: (o: number) => {
-                      offsetArg = o;
-                      return {
-                        execute: vi.fn().mockResolvedValue([sampleRow]),
-                      };
-                    },
-                  };
-                },
-              };
-            }
-            return { execute: vi.fn().mockResolvedValue([{ value: 1 }]) };
-          },
+          where: () => ({
+            orderBy: vi.fn().mockReturnValue({
+              limit: (l: number) => {
+                limitArg = l;
+                return { execute: vi.fn().mockResolvedValue([sampleRow]) };
+              },
+            }),
+          }),
         }),
       }));
 
-      await service.findAll({ page: 3, limit: 10 });
+      await service.findAll({ limit: 10 });
 
       expect(limitArg).toBe(10);
-      expect(offsetArg).toBe(20); // (page 3 - 1) * limit 10
     });
 
-    it('builds no filter condition (where: undefined) when no filters are given', async () => {
-      const whereMock = mockSelectChain([], 0);
+    it('builds no filter condition (where: undefined) when no filters/cursor are given', async () => {
+      const whereMock = mockSelectChain([]);
 
-      await service.findAll({ page: 1, limit: 20 });
+      await service.findAll({ limit: 20 });
 
       expect(whereMock).toHaveBeenCalledWith(undefined);
     });
@@ -180,22 +165,23 @@ describe('FragrancesService', () => {
       ['olfactoryFamily', { olfactoryFamily: 'Woody Spicy' }],
       ['targetAudience', { targetAudience: 'Male' }],
       ['longevity', { longevity: 'Medium-Strong' }],
+      ['cursor', { cursor: sampleRow.id }],
     ])(
       'builds a defined filter condition when %s is given',
       async (_label, filter) => {
-        const whereMock = mockSelectChain([], 0);
+        const whereMock = mockSelectChain([]);
 
-        await service.findAll({ page: 1, limit: 20, ...filter });
+        await service.findAll({ limit: 20, ...filter });
 
-        expect(whereMock).toHaveBeenCalledTimes(2);
+        expect(whereMock).toHaveBeenCalledTimes(1);
         expect(whereMock.mock.calls[0][0]).toBeDefined();
       },
     );
 
     it('filters name as a case-insensitive partial (contains) match, not exact', async () => {
-      mockSelectChain([], 0);
+      mockSelectChain([]);
 
-      await service.findAll({ page: 1, limit: 20, name: 'Chanel' });
+      await service.findAll({ limit: 20, name: 'Chanel' });
 
       expect(ilike).toHaveBeenCalledWith(fragrances.name, '%Chanel%');
       expect(eq).not.toHaveBeenCalledWith(fragrances.name, 'Chanel');
@@ -239,19 +225,18 @@ describe('FragrancesService', () => {
       ['targetAudience', 'targetAudience' as const],
       ['longevity', 'longevity' as const],
     ])('filters %s as an exact match', async (_label, field) => {
-      mockSelectChain([], 0);
+      mockSelectChain([]);
 
-      await service.findAll({ page: 1, limit: 20, [field]: 'Chanel' });
+      await service.findAll({ limit: 20, [field]: 'Chanel' });
 
       expect(eq).toHaveBeenCalledWith(fragrances[field], 'Chanel');
       expect(ilike).not.toHaveBeenCalled();
     });
 
     it('builds a defined filter condition when name, brand and concentration are all given', async () => {
-      const whereMock = mockSelectChain([], 0);
+      const whereMock = mockSelectChain([]);
 
       await service.findAll({
-        page: 1,
         limit: 20,
         name: 'Chanel',
         brand: 'Chanel',

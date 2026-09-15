@@ -40,9 +40,9 @@ describe('UsersService', () => {
     updatedAt: new Date(),
   };
 
-  // Mocks the select().from().where().limit().offset() chain used by
-  // findAll: rows resolve directly off .offset(), the parallel count query
-  // resolves directly off .where() — neither branch calls .execute(),
+  // Mocks the select().from().where().orderBy().limit().offset() chain used
+  // by findAll: rows resolve directly off .offset(), the parallel count
+  // query resolves directly off .where() — neither branch calls .execute(),
   // matching UsersService.findAll's actual query shape.
   function mockSelectChain(rows: unknown[], total: number) {
     const whereMock = vi.fn();
@@ -54,8 +54,10 @@ describe('UsersService', () => {
           call += 1;
           if (call === 1) {
             return {
-              limit: vi.fn().mockReturnValue({
-                offset: vi.fn().mockResolvedValue(rows),
+              orderBy: vi.fn().mockReturnValue({
+                limit: vi.fn().mockReturnValue({
+                  offset: vi.fn().mockResolvedValue(rows),
+                }),
               }),
             };
           }
@@ -181,15 +183,17 @@ describe('UsersService', () => {
             call += 1;
             if (call === 1) {
               return {
-                limit: (l: number) => {
-                  limitArg = l;
-                  return {
-                    offset: (o: number) => {
-                      offsetArg = o;
-                      return Promise.resolve([sampleUser]);
-                    },
-                  };
-                },
+                orderBy: () => ({
+                  limit: (l: number) => {
+                    limitArg = l;
+                    return {
+                      offset: (o: number) => {
+                        offsetArg = o;
+                        return Promise.resolve([sampleUser]);
+                      },
+                    };
+                  },
+                }),
               };
             }
             return Promise.resolve([{ value: 1 }]);

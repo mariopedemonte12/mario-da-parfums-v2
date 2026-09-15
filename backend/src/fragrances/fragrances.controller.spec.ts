@@ -93,11 +93,9 @@ describe('FragrancesController', () => {
     it('findAll delegates to service.findAll with the query', async () => {
       service.findAll.mockResolvedValue({
         data: [],
-        total: 0,
-        page: 1,
-        limit: 20,
+        nextCursor: null,
       });
-      const query = { page: 1, limit: 20 };
+      const query = { cursor: '3fa85f64-5717-4562-b3fc-2c963f66afa6', limit: 20 };
 
       await controller.findAll(query as any);
 
