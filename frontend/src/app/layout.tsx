@@ -6,6 +6,7 @@ import { ChatbotWidgetProvider } from "@/features/chatbot-widget/components/Chat
 import Navbar from "@/features/layout/components/Navbar"
 import Footer from "@/features/layout/components/Footer";
 import { AuthProvider } from "@/features/auth/hooks/useAuth";
+import { FavoritesProvider } from "@/features/favorites/hooks/useFavorites";
 
 import "./globals.css";
 
@@ -37,17 +38,19 @@ export default function RootLayout({
     >
       <body className="min-h-full flex flex-col">
         <AuthProvider>
-          <ChatbotWidgetProvider>
-            <Navbar />
+          <FavoritesProvider>
+            <ChatbotWidgetProvider>
+              <Navbar />
 
-            <main className="flex-1">
-              {children}
-            </main>
+              <main className="flex-1">
+                {children}
+              </main>
 
-            <Footer />
+              <Footer />
 
-            <ChatPanel />
-          </ChatbotWidgetProvider>
+              <ChatPanel />
+            </ChatbotWidgetProvider>
+          </FavoritesProvider>
         </AuthProvider>
       </body>
     </html>

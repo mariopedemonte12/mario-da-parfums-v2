@@ -4,6 +4,7 @@ import Link from "next/link";
 import type { Ref } from "react";
 import { motion } from "motion/react";
 import WindLines from "@/components/ui/WindLines";
+import FavoriteHeart from "@/features/favorites/components/FavoriteHeart";
 import { emergeItem } from "@/lib/motion";
 import type { Fragrance } from "@/features/fragrances/types/fragrance.types";
 
@@ -27,6 +28,12 @@ export default function FragranceCard({ fragrance, ref }: FragranceCardProps) {
           <WindLines
             variant="sw"
             className="pointer-events-none absolute inset-x-0 bottom-4 h-6 w-full opacity-40"
+          />
+
+          <FavoriteHeart
+            fragranceId={fragrance.id}
+            size="sm"
+            className="absolute top-3 right-3"
           />
         </div>
 

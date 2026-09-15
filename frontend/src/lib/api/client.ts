@@ -47,5 +47,22 @@ export function createApiClient(baseUrl: string) {
 
       return response.json();
     },
+
+    async delete<T>(endpoint: string, body?: unknown): Promise<T> {
+      const response = await fetch(`${baseUrl}${endpoint}`, {
+        method: "DELETE",
+        credentials: "include",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(body ?? {}),
+      });
+
+      if (!response.ok) {
+        throw await parseErrorResponse(response);
+      }
+
+      return response.json();
+    },
   };
 }
