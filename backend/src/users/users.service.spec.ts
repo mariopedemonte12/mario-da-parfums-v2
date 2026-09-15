@@ -136,6 +136,29 @@ describe('UsersService', () => {
 
       expect(result).toEqual(sampleUser);
     });
+
+    it('inserts through the given transaction handle instead of the pooled db when one is passed', async () => {
+      const txInsert = vi.fn().mockReturnValue({
+        values: vi.fn().mockReturnValue({
+          returning: vi.fn().mockResolvedValue([sampleUser]),
+        }),
+      });
+      const tx = { insert: txInsert } as unknown as typeof db;
+
+      const result = await service.create(
+        {
+          name: sampleUser.name,
+          email: sampleUser.email,
+          passwordHash: sampleUser.passwordHash,
+          role: Role.USER,
+        },
+        tx,
+      );
+
+      expect(result).toEqual(sampleUser);
+      expect(txInsert).toHaveBeenCalledWith(users);
+      expect(db.insert).not.toHaveBeenCalled();
+    });
   });
 
   describe('findAll', () => {
