@@ -8,6 +8,8 @@ type WindGustCommonProps = {
   className?: string;
   /** Keeps the gust drawn in permanently (e.g. the current tab/page), instead of only on hover. */
   isActive?: boolean;
+  /** For non-text content (e.g. an avatar) where the visible children don't already describe the link. */
+  ariaLabel?: string;
 };
 
 type WindGustLinkProps = WindGustCommonProps & {
@@ -38,6 +40,7 @@ export default function WindGustLink({
   children,
   className,
   isActive,
+  ariaLabel,
   href,
   onClick,
   onNavigate,
@@ -54,7 +57,7 @@ export default function WindGustLink({
     }
 
     return (
-      <Link href={href} onClick={handleClick} className={sharedClassName}>
+      <Link href={href} onClick={handleClick} aria-label={ariaLabel} className={sharedClassName}>
         {children}
         <Gust />
       </Link>
@@ -62,7 +65,7 @@ export default function WindGustLink({
   }
 
   return (
-    <button type="button" onClick={onClick} className={sharedClassName}>
+    <button type="button" onClick={onClick} aria-label={ariaLabel} className={sharedClassName}>
       {children}
       <Gust />
     </button>

@@ -1,48 +1,52 @@
-# chatbot-widget — testing handoff
+# Testing handoff — user-profile
 
-Estado al 2026-09-14, fin de sesión. Todavía **no arrancó el testing formal** (black-box contra `specs/chatbot-widget.md`) — esta sesión se fue en dejar el entorno funcionando. Retomar desde acá.
+Session: independent testing session, spec `specs/user-profile.md`, worktree `worktree-user-profile`. Date: 2026-09-14.
 
-## Qué se hizo en esta sesión
+## Pre-testing: merged master in
 
-1. **Merge de master** (`80d8ed8`) — trae CORS fix, auth-pages (Navbar session state) y home-search (layout mobile). Conflictos resueltos en `layout.tsx` (anidar `AuthProvider` + `ChatbotWidgetProvider`) y `Navbar.tsx` (combinar hooks de auth y de toggle del chat). El trabajo de implementación que estaba sin commitear en el worktree se checkpointeó primero en `bdc3585`.
-2. **Fix: modelos Gemini deprecados** (`a6c34a9`) — `gemini-2.5-flash`/`-lite` (defaults de `chatbot/src/config.ts`) devuelven 404 ("no longer available to new users"). Bug de infra de `chatbot-server`, no del propio `chatbot-widget`, pero bloqueaba cualquier prueba. Nuevos defaults: `gemini-3.5-flash-lite` con fallback automático a `gemini-3.1-flash-lite` (retry transparente, ver `chatbot/src/gemini/model-fallback.ts`). **Este fix es local a este worktree — `master` todavía tiene los defaults rotos.**
-3. **Fix: bug real de chatbot-widget** (`fb9aba7`) — `useChatbotSession.ts` mutaba `streamingIdRef.current` dentro del updater de `setMessages`, lo que React Strict Mode (activo en `next dev`) rompía al invocar el updater dos veces: la respuesta del bot llegaba bien por el socket pero nunca se renderizaba. Encontrado con un repro real vía Playwright (ver abajo). Mismo patrón corregido preventivamente en `ChatbotWidgetProvider.tsx`'s `toggle()`.
+Brought in master's `bf7c013` (auth-pages), `59dec0b` (layout/navbar), `77b7395` (home-search) — see the two merge/fix commits ahead of this one for full detail. Auth files (`useAuth.tsx`, `auth.api.ts`, `user.types.ts`, `lib/api/client.ts`) resolved in favor of master's real implementation, which supersedes this worktree's stopgap. Fixed the resulting `ApiError` import/property fallout in `useProfile.ts` (`statusCode`, not `status`; moved to `lib/api/errors.ts`).
 
-Typecheck, lint (`oxlint` en `chatbot/`, `eslint` en `frontend/`) y los 98 tests unitarios de `chatbot/` pasan.
+Servers run on the **default** ports for this session (per user request, to match `main.ts`'s CORS default without an env override): backend `PORT=4003`, frontend port `3010` (`main.ts`'s CORS origin defaults to `http://localhost:3010`).
 
-## Confirmado funcionando (verificado, no asumido)
+**Environment gap found**: `JWT_SECRET` was not set in this worktree's `.env`, nor documented in `.env.example` (on this worktree or on master) — register/login 500'd with `secretOrPrivateKey must have a value` until the user added it manually. Pre-existing gap, unrelated to user-profile; worth fixing `.env.example` at some point but out of this feature's scope.
 
-Repro real con Playwright (chromium headless, no el MCP — ver memoria `playwright-available-locally`) contra los servers reales corriendo en `localhost:3015` / `ws://localhost:8081`: abrir panel → conexión WS perezosa se abre → enviar mensaje → tokens llegan por el socket → respuesta se renderiza incrementalmente → `done` deshabilita el turno. Screenshot y logs de frames en `/tmp/.../scratchpad/pw-check/` (session-local, no persiste).
+## Bug found and fixed (with user approval): premature session-expired redirect
 
-## Qué NO se verificó todavía — pendiente del testing formal
+**`/profile` always redirected a logged-in user to `/login`, on every realistic visit.** Root cause: `Navbar.tsx` has no link to `/profile` (the logged-in avatar is a `<span>`, not a `<Link>` — see "out-of-scope observation" below), so the *only* way to reach `/profile` is a full page load (typed URL, bookmark, refresh). `useProfile.ts` destructured only `{ user, logout }` from `useAuth()`, ignoring the `isHydrating` flag master's real `useAuth` exposes specifically so callers can distinguish "still reading the cached session from localStorage" from "definitely logged out" (see `features/auth/NOTES.md`). On the first render after a full page load, `user` is `null` while hydration is still async; `useProfile`'s `if (!user) return sessionExpiredState` fired synchronously on that first render (child effects run before parent effects, so this beat `AuthProvider`'s own hydration effect), and `ProfilePage` redirected to `/login` immediately.
 
-Ningún caso de la lista original (todos en `specs/chatbot-widget.md`, sección por sección):
+Confirmed via network trace: `GET /users/:id` and `GET /favorites` both came back `200` with correct data milliseconds later — the fetch was already in flight when the redirect fired. 100% reproducible across repeated runs (not a timing flake).
 
-- Conexión perezosa real (confirmar con devtools que NO conecta hasta el primer click, ni en `/`, `/fragrances`, etc.)
-- Persistencia del historial al cerrar/reabrir el panel (socket + historial sobreviven, según spec)
-- Reset completo al recargar la página
-- Estado vacío exacto (sensei cuerpo completo + copy estática, NO mensaje del bot) — **ya confirmado que está en el spec y ya implementado (`ChatPanel.tsx` líneas ~114-126), no hace falta implementar nada más acá, solo probarlo**
-- Transición estado vacío → con conversación, unidireccional dentro de la sesión del panel
-- Un turno a la vez (input/botón deshabilitados; intentar mandar un segundo mensaje en curso)
-- Mensaje vacío/solo espacios no se envía
-- Indicador de 3 puntos (aparece hasta el primer `token`, respeta `status` opcional)
-- Error de turno (`{"type":"error"}`): no cierra conexión, entrada distinguible, descarta parcial, rehabilita input
-- Pérdida de conexión a mitad de turno (matar el proceso de `chatbot/` durante un turno): error genérico, sin streaming parcial, reconexión automática en el siguiente envío, **sin** retry/backoff en segundo plano
-- Reconexión = sesión nueva en el servidor (pierde contexto) pero historial visual del cliente se mantiene — comportamiento esperado, no reportar como bug
-- `prefers-reduced-motion`: respiración del sensei y pulso de los 3 puntos estáticos
-- Confirmar fuera de alcance: chips de sugerencia, persistencia entre reloads/tabs, auth, markdown/links/imágenes, indicador persistente de conexión
+**Fix applied** (`frontend/src/features/profile/hooks/useProfile.ts`, commit `3eaf23a`): wait for `isHydrating` to resolve before deciding `sessionExpired`. Verified fix resolves the issue — `/profile` now renders correctly on a fresh page load with a valid session.
 
-Usar la skill `testing` — cobertura 0-switch de las transiciones de turno (idle→enviando→streaming→done/error) y de conexión (idle→connecting→open→closed/error), per la instrucción original de la tarea.
+## Spec scenarios tested (all pass, post-fix)
 
-## Estado del entorno al cerrar
+- **Identity block**: name, "Miembro desde <mes> de <año>" (from `createdAt`), email — real data from `GET /users/:id`. ✅
+- **Favorites, populated**: 25 favorited fragrances (via `POST /favorites/batch`) render name/brand/olfactory-family; shows "+5 MÁS" (25 total − 20 returned), no pagination controls. ✅ matches spec exactly.
+- **Favorites, empty**: site-voice empty-state copy ("Todavía no guardaste ningún perfume...") — not an empty grid. ✅
+- **`photoS3Key: null`**: diagonal-stripe placeholder circle, never a broken `<img>`. ✅
+- **401 on `/users/:id` or `/favorites`**: tampered session cookie → both calls 401 → `logout()` called (localStorage cache cleared, confirmed `null`) → clean redirect to `/login`, no generic error banner. `POST /auths/logout` itself 404s (documented pre-existing gap in `auth-pages`, not a user-profile bug) but doesn't block the redirect. ✅
+- **Generic error** (mocked 500 on `/users/:id`): "No se pudo cargar tu perfil." shown, **no redirect**, stays on `/profile`, session intact (navbar still shows "Salir"). ✅
+- **`user === null` at mount** (no session, fresh tab): redirects to `/login`, zero API calls. ✅
+- **Register → `/profile`** and **Login → `/profile`**: both work end-to-end, `session` cookie set `httpOnly`, `SameSite=Lax`. ✅
+- **Mobile viewport** (390×844): clean single-column stack, no overflow. ✅
+- **Confirmed NOT implemented** (per spec's explicit cut list): no estela/afinidad %, no pedidos-entregados/perfume-más-buscado tiles, no sidebar tabs, no `PATCH /users/:id` call anywhere in the feature — grepped clean. ✅
 
-- `chatbot/` corriendo en background (`pnpm dev`, `tsx watch`, puerto 8081) — **revisar si sigue vivo al retomar**, puede haberse caído junto con la sesión de Claude Code. Si no: `cd chatbot && pnpm dev`.
-- `frontend/` corriendo en background (`pnpm dev --port 3015`) — mismo caso, si no: `cd frontend && pnpm dev --port 3015`.
-- `chatbot/.env` con `GEMINI_API_KEY` real ya cargado por el usuario (no tocar, es secreto — no lo leí en ningún momento de la sesión).
-- No usar `chop` para levantar estos servers (bufferea la salida de procesos long-running y no la muestra nunca) — usar `pnpm dev` directo en background.
+## Out-of-scope items fixed at explicit user request (commit `cd585b6`)
 
-## Notas para la próxima sesión
+These touch `features/auth` and `features/layout` (owned by `auth-pages`, not `user-profile`) — done because the user asked directly, not on this session's own initiative:
 
-- Este worktree NO tiene PR ni merge a master todavía — no se pidió.
-- No borrar el worktree.
-- El fix de Gemini (`a6c34a9`) es puntual a este worktree; si en algún momento se sincroniza con `master` o con el propio worktree de `chatbot-server`, avisar que ese fix necesita aplicarse ahí también (ver memoria `gemini-2.5-models-retired`).
+1. **Navbar avatar now links to `/profile`.** Was a plain `<span>` with initials — no way to reach `/profile` from the UI at all (this is what made the isHydrating bug above hit on *every* visit, since a full page load was the only path in). Both the mobile and desktop avatar now use `WindGustLink` (extended with an `ariaLabel` prop, since initials alone don't describe the link) to navigate to `/profile`, responsive by construction since it's one shared component at both breakpoints, and picks up the same hover gust-underline as the rest of the navbar for free. Verified: click navigates correctly at both viewport sizes, hover draws the gust in under the avatar exactly like "Inicio"/"Perfumes"/"Salir".
+2. **`useAuth.tsx`'s `logout()` now catches the `POST /auths/logout` 404.** It re-threw past its `finally` before, so `Navbar`'s `onClick={logout}` produced an uncaught promise rejection — visible as a Next.js dev "Runtime Error" overlay when clicking "Salir". Local state already cleared correctly regardless (confirmed); now the failure itself is caught so it doesn't propagate. Verified: no `pageerror` after clicking "Salir" anymore — only the browser's own unavoidable network-log line for the 404 itself remains.
+
+## Backend fixes — tracked in their own branch, not this one
+
+The two backend issues flagged earlier in this doc (`POST /auths/logout` missing, misleading `23505` conflict message) briefly showed up as uncommitted changes in this worktree mid-session and were committed here (`02b65c4`), then **reverted** (`66ffc3e`) once it became clear they already exist as their own committed, dedicated feature: worktree `auth-logout-conflict-messages` (branch `worktree-auth-logout-conflict-messages`, commit `8813cdb`, spec `specs/auth-logout-conflict-messages.md`), awaiting its own separate testing session. Keeping them out of `user-profile`'s branch avoids a duplicate/conflicting commit when that branch merges on its own. Re-tested `useAuth`'s `logout()` end-to-end against that worktree's real endpoint before reverting here — 0 console/page errors (the `catch` from commit `cd585b6` in *this* branch handles the 404 regardless of whether that endpoint exists yet).
+
+## Lint / type-check
+
+- `frontend`: `pnpm tsc --noEmit` clean, `pnpm lint` clean.
+- `backend`: `pnpm tsc --noEmit` has pre-existing, out-of-scope errors (missing `supertest/types` module, a few unrelated e2e-spec type mismatches) — already present on `master`, not introduced here. `pnpm lint` only pre-existing unused-import warnings in unrelated schema files.
+
+## Status
+
+Feature matches spec. One in-scope bug found and fixed (isHydrating race, with explicit user sign-off); two out-of-scope frontend items fixed at explicit user request (navbar avatar link, logout error handling). The two backend issues this session flagged are fixed in their own dedicated branch (`worktree-auth-logout-conflict-messages`), kept out of this one. Pushed and PR opened at explicit user request.

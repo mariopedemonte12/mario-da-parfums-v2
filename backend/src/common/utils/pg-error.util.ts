@@ -1,5 +1,6 @@
 interface PgError {
   code?: string;
+  constraint?: string;
 }
 
 function isPgError(value: unknown): value is PgError {
@@ -15,5 +16,15 @@ function isPgError(value: unknown): value is PgError {
 export function getPgErrorCode(err: unknown): string | undefined {
   if (isPgError(err) && err.code) return err.code;
   if (err instanceof Error && isPgError(err.cause)) return err.cause.code;
+  return undefined;
+}
+
+// Same drizzle-wrapping problem as getPgErrorCode, but for the violated
+// constraint's name (e.g. 'users_email_unique') — node-postgres populates
+// this from the driver error's `constraint` field. Lets a 23505 handler
+// tell *which* unique index collided instead of guessing from column order.
+export function getPgErrorConstraint(err: unknown): string | undefined {
+  if (isPgError(err) && err.constraint) return err.constraint;
+  if (err instanceof Error && isPgError(err.cause)) return err.cause.constraint;
   return undefined;
 }

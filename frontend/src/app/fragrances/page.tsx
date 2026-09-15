@@ -1,61 +1,119 @@
 "use client";
 
-import { useSearchParams } from "next/navigation";
-import { useState } from "react";
+import { useRef, useState } from "react";
 
+import FragranceFilters from "@/features/fragrances/components/FragranceFilters";
 import FragranceList from "@/features/fragrances/components/FragranceList";
+import FragrancePagination from "@/features/fragrances/components/FragrancePagination";
 import FragranceSearch from "@/features/fragrances/components/FragranceSearch";
 import { useFragrances } from "@/features/fragrances/hooks/useFragrance";
 import { useDebounce } from "@/features/common/hooks/useDebounce";
 
+const LIMIT = 20;
+
 export default function FragrancesPage() {
-  const searchParams = useSearchParams();
-  // Deep-link from e.g. the chatbot's fragrance cards (?q=<name>) — only
-  // used to seed the initial value, the search box takes over from there.
-  const [search, setSearch] = useState(() => searchParams.get("q") ?? "");
+  const [name, setName] = useState("");
+  const [brand, setBrand] = useState("");
+  const [concentration, setConcentration] = useState<string | undefined>();
+  const [targetAudience, setTargetAudience] = useState<string | undefined>();
+  const [longevity, setLongevity] = useState<string | undefined>();
+  const [page, setPage] = useState(1);
+  const resultsTopRef = useRef<HTMLHeadingElement>(null);
 
-  const debouncedSearch = useDebounce(search, 500);
+  const debouncedName = useDebounce(name, 500);
+  const debouncedBrand = useDebounce(brand, 500);
 
-  const {
-    fragrances,
-    loading,
-    error,
-  } = useFragrances(debouncedSearch);
+  const { fragrances, total, totalPages, loading, error } = useFragrances({
+    name: debouncedName || undefined,
+    brand: debouncedBrand || undefined,
+    concentration,
+    targetAudience,
+    longevity,
+    page,
+    limit: LIMIT,
+  });
+
+  function handleNameChange(value: string) {
+    setName(value);
+    setPage(1);
+  }
+
+  function handleBrandChange(value: string) {
+    setBrand(value);
+    setPage(1);
+  }
+
+  function handleConcentrationChange(value: string | undefined) {
+    setConcentration(value);
+    setPage(1);
+  }
+
+  function handleTargetAudienceChange(value: string | undefined) {
+    setTargetAudience(value);
+    setPage(1);
+  }
+
+  function handleLongevityChange(value: string | undefined) {
+    setLongevity(value);
+    setPage(1);
+  }
+
+  function handlePageChange(nextPage: number) {
+    setPage(nextPage);
+    resultsTopRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
+  }
 
   return (
-    <main className="mx-auto w-full max-w-7xl px-6 py-10">
-      <section className="mx-auto max-w-5xl">
-        <h1 className="mb-2 text-3xl font-bold text-primary">
-          Fragrancias
+    <div className="mx-auto w-full max-w-7xl px-6 py-8 sm:px-10 lg:px-14">
+      <div className="flex flex-col items-start justify-between gap-6 pb-6 sm:flex-row sm:items-end">
+        <h1
+          ref={resultsTopRef}
+          className="font-serif text-4xl sm:text-5xl lg:text-6xl"
+        >
+          Todos los perfumes{" "}
+          <span className="ml-3 align-middle font-sans text-sm tracking-[0.14em] text-text-muted">
+            {total}
+          </span>
         </h1>
 
-        <p className="mb-8 text-text-muted">
-          Explora nuestra colección de perfumes.
-        </p>
+        <FragranceSearch value={name} onChange={handleNameChange} />
+      </div>
 
-        <div className="mb-8">
-          <FragranceSearch
-            value={search}
-            onChange={setSearch}
-          />
+      <div className="grid grid-cols-1 gap-10 lg:grid-cols-[220px_1fr] lg:gap-12">
+        <FragranceFilters
+          brand={brand}
+          onBrandChange={handleBrandChange}
+          concentration={concentration}
+          onConcentrationChange={handleConcentrationChange}
+          targetAudience={targetAudience}
+          onTargetAudienceChange={handleTargetAudienceChange}
+          longevity={longevity}
+          onLongevityChange={handleLongevityChange}
+        />
+
+        <div>
+          {loading && fragrances.length === 0 && (
+            <p className="py-16 text-center text-text-muted">Cargando...</p>
+          )}
+
+          {error && (
+            <p className="rounded-lg border border-border bg-surface p-4 text-center text-text">
+              {error}
+            </p>
+          )}
+
+          {!error && !(loading && fragrances.length === 0) && (
+            <>
+              <FragranceList fragrances={fragrances} />
+              <FragrancePagination
+                page={page}
+                totalPages={totalPages}
+                onPageChange={handlePageChange}
+              />
+            </>
+          )}
         </div>
-
-        {loading && (
-          <p className="text-center text-text-muted">
-            Cargando...
-          </p>
-        )}
-
-        {error && (
-          <p className="rounded-lg border border-border bg-surface p-4 text-center text-text">
-            {error}
-          </p>
-        )}
-
-        {!loading && !error && (
-          <FragranceList fragrances={fragrances} />
-        )}
-      </section>
-    </main>
+      </div>
+    </div>
   );
 }
