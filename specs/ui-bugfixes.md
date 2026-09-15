@@ -21,6 +21,15 @@ migrated when the other two items got their `href`.
   since the CSS hover rule doesn't care what element it's on. This is the
   minimal change to reuse the shared component instead of duplicating its
   markup for a label with no action.
+- **Updated while merging master**: PR #30 (chatbot-widget) landed on master
+  while this branch was open and turned "Sensei" into a real button that
+  toggles the chatbot panel (`useChatbotWidget()`'s `toggle`/`isOpen`),
+  replacing the plain `<span>` this fix originally targeted. Resolved by
+  giving `WindGustLink`'s `onClick` variant an optional `ariaExpanded` prop,
+  so "Sensei" keeps both: the chatbot toggle + `aria-expanded` from master,
+  and the hover-gust underline from this fix. Verified together via
+  Playwright (hover still draws the gust in; click still flips
+  `aria-expanded` and opens the panel).
 
 ### Out of scope
 
