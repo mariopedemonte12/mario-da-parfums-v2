@@ -30,8 +30,12 @@ export class UsersService {
     return user;
   }
 
-  async create(data: NewUser): Promise<User> {
-    const [user] = await this.db.insert(users).values(data).returning();
+  // Accepts an optional transaction handle so a caller (e.g. AuthsService.
+  // register) can run this insert as part of a larger transaction it can
+  // roll back — defaults to the regular pooled connection for every other
+  // caller.
+  async create(data: NewUser, tx: Database = this.db): Promise<User> {
+    const [user] = await tx.insert(users).values(data).returning();
     return user;
   }
 

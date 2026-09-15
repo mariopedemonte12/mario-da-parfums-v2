@@ -6,6 +6,12 @@ import { UsersService } from '../users/users.service.js';
 import { PasswordsService } from '../passwords/passwords.service.js';
 import { JwtService } from '@nestjs/jwt';
 import { Role } from '../shared/enums/role.enums.js';
+import { DRIZZLE } from '../database/database.module.js';
+
+// Fake tx handle passed to usersService.create() inside the transaction —
+// its identity is what register()'s tests assert against, its shape is
+// irrelevant since UsersService itself is mocked in this file.
+const FAKE_TX = { __fakeTx: true };
 
 describe('AuthsService', () => {
   let service: AuthsService;
@@ -18,6 +24,7 @@ describe('AuthsService', () => {
     verify: ReturnType<typeof vi.fn>;
   };
   let jwtService: { sign: ReturnType<typeof vi.fn> };
+  let db: { transaction: ReturnType<typeof vi.fn> };
 
   const sampleUser = {
     id: 1,
@@ -34,6 +41,10 @@ describe('AuthsService', () => {
     usersService = { findByEmail: vi.fn(), create: vi.fn() };
     passwordsService = { hash: vi.fn(), verify: vi.fn() };
     jwtService = { sign: vi.fn().mockReturnValue('signed-jwt') };
+    // Mimics real drizzle transaction semantics closely enough for these
+    // unit tests: runs the callback with a fake tx handle and lets a thrown
+    // error propagate as a rejection, same as a real rolled-back tx would.
+    db = { transaction: vi.fn((callback: (tx: unknown) => unknown) => callback(FAKE_TX)) };
 
     const module: TestingModule = await Test.createTestingModule({
       providers: [
@@ -41,6 +52,7 @@ describe('AuthsService', () => {
         { provide: UsersService, useValue: usersService },
         { provide: PasswordsService, useValue: passwordsService },
         { provide: JwtService, useValue: jwtService },
+        { provide: DRIZZLE, useValue: db },
       ],
     }).compile();
 
@@ -63,12 +75,16 @@ describe('AuthsService', () => {
         password: 'Str0ng!Pass',
       });
 
-      expect(usersService.create).toHaveBeenCalledWith({
-        name: 'Jane Doe',
-        email: 'jane@example.com',
-        passwordHash: 'hashed-password',
-        role: Role.USER,
-      });
+      expect(db.transaction).toHaveBeenCalledTimes(1);
+      expect(usersService.create).toHaveBeenCalledWith(
+        {
+          name: 'Jane Doe',
+          email: 'jane@example.com',
+          passwordHash: 'hashed-password',
+          role: Role.USER,
+        },
+        FAKE_TX,
+      );
       expect(jwtService.sign).toHaveBeenCalledWith({
         sub: sampleUser.id,
         email: sampleUser.email,
@@ -78,6 +94,52 @@ describe('AuthsService', () => {
         accessToken: 'signed-jwt',
         user: expect.objectContaining({ email: sampleUser.email }),
       });
+    });
+
+    it('rolls back (rejects, does not swallow) when JWT signing fails after the user row is inserted', async () => {
+      // Regression test: user.id (the JWT's `sub`) is only known after the
+      // insert, so signing can't happen before it — but a signing failure
+      // (e.g. a misconfigured JWT_SECRET) must not leave the row committed
+      // with the caller believing registration failed outright.
+      usersService.findByEmail.mockResolvedValue(undefined);
+      passwordsService.hash.mockResolvedValue('hashed-password');
+      usersService.create.mockResolvedValue(sampleUser);
+      const signingError = new Error('secretOrPrivateKey must have a value');
+      jwtService.sign.mockImplementation(() => {
+        throw signingError;
+      });
+
+      await expect(
+        service.register({
+          name: 'Jane Doe',
+          email: 'jane@example.com',
+          password: 'Str0ng!Pass',
+        }),
+      ).rejects.toBe(signingError);
+
+      // The insert did happen (inside the transaction) — it's the
+      // transaction's job to roll it back, which this unit test can't
+      // observe directly against a mocked db.transaction, but it confirms
+      // the error isn't swallowed and reaches the caller unchanged.
+      expect(usersService.create).toHaveBeenCalledWith(
+        expect.objectContaining({ email: 'jane@example.com' }),
+        FAKE_TX,
+      );
+    });
+
+    it('propagates a db insert failure (e.g. a 23505 the optimistic check missed) instead of ignoring it', async () => {
+      usersService.findByEmail.mockResolvedValue(undefined);
+      passwordsService.hash.mockResolvedValue('hashed-password');
+      usersService.create.mockRejectedValue({ code: '23505' });
+
+      await expect(
+        service.register({
+          name: 'Jane Doe',
+          email: 'jane@example.com',
+          password: 'Str0ng!Pass',
+        }),
+      ).rejects.toBeInstanceOf(ConflictException);
+      expect(jwtService.sign).not.toHaveBeenCalled();
     });
 
     it('throws a conflict when the email is already registered', async () => {

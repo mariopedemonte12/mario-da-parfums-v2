@@ -78,6 +78,28 @@ describe('AdminCreateUserDto', () => {
     });
   });
 
+  // Security-hardening: stored-XSS payloads in free-text fields, per
+  // specs/security-hardening.md §5.
+  describe('markup rejection (name)', () => {
+    it('rejects a <script> tag with CONTAINS_MARKUP', async () => {
+      expect(
+        await codesForField(
+          { ...VALID_PAYLOAD, name: '<script>alert(1)</script>' },
+          'name',
+        ),
+      ).toEqual(expect.arrayContaining([ValidationErrorCode.CONTAINS_MARKUP]));
+    });
+
+    it('rejects an <img onerror=...> tag with CONTAINS_MARKUP', async () => {
+      expect(
+        await codesForField(
+          { ...VALID_PAYLOAD, name: '<img src=x onerror=alert(1)>' },
+          'name',
+        ),
+      ).toEqual(expect.arrayContaining([ValidationErrorCode.CONTAINS_MARKUP]));
+    });
+  });
+
   describe('password', () => {
     it('is required: missing fails with PASSWORD_REQUIRED', async () => {
       const { password: _password, ...rest } = VALID_PAYLOAD;

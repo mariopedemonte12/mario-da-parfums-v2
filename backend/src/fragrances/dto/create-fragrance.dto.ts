@@ -5,6 +5,7 @@ import { IsRequired } from '../../validators/wrappers/is-not-empty.wrapper.js';
 import { IsStringField } from '../../validators/wrappers/is-string.wrapper.js';
 import { MaxLen } from '../../validators/wrappers/is-length.wrapper.js';
 import { IsImageUrl } from '../../validators/is-image-url.validator.js';
+import { IsNotMarkup } from '../../validators/is-not-markup.validator.js';
 
 // Length limits mirror the DB columns (fragrance.schema.ts) so an
 // oversized value fails DTO validation (400, per-field FieldError) instead
@@ -51,6 +52,7 @@ export class CreateFragranceDto {
   @ApiPropertyOptional({ example: 'A woody aromatic fragrance...' })
   @IsOptional()
   @IsStringField(ValidationErrorCode.DESCRIPTION_INVALID_TYPE)
+  @IsNotMarkup()
   description?: string;
 
   @ApiPropertyOptional({

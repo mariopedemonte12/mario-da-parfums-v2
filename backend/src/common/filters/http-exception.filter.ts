@@ -16,12 +16,34 @@ interface ErrorResponseBody {
   timestamp: string;
 }
 
+// body-parser (via raw-body/http-errors) throws a plain Error for an
+// oversized body, not a Nest HttpException — it carries `type:
+// 'entity.too.large'` rather than extending HttpException, so it would
+// otherwise fall into the generic 500 branch below.
+function isPayloadTooLargeError(exception: unknown): boolean {
+  return (
+    typeof exception === 'object' &&
+    exception !== null &&
+    (exception as { type?: unknown }).type === 'entity.too.large'
+  );
+}
+
 @Catch()
 export class AllExceptionsFilter implements ExceptionFilter {
   private readonly logger = new Logger(AllExceptionsFilter.name);
 
   catch(exception: unknown, host: ArgumentsHost) {
     const response = host.switchToHttp().getResponse<Response>();
+
+    if (isPayloadTooLargeError(exception)) {
+      const payload: ErrorResponseBody = {
+        statusCode: HttpStatus.PAYLOAD_TOO_LARGE,
+        message: 'Payload too large',
+        timestamp: new Date().toISOString(),
+      };
+      response.status(HttpStatus.PAYLOAD_TOO_LARGE).json(payload);
+      return;
+    }
 
     if (exception instanceof HttpException) {
       const status = exception.getStatus();

@@ -2,6 +2,7 @@ import { ApiPropertyOptional } from '@nestjs/swagger';
 import { IsOptional, Matches } from 'class-validator';
 import { ValidationErrorCode } from '../../shared/enums/validation-error-code.enums.js';
 import { IsNotProfane } from '../../validators/is-not-profane.validator.js';
+import { IsNotMarkup } from '../../validators/is-not-markup.validator.js';
 import { IsStringField } from '../../validators/wrappers/is-string.wrapper.js';
 import { IsEmailField } from '../../validators/wrappers/is-email.wrapper.js';
 import { MaxLen } from '../../validators/wrappers/is-length.wrapper.js';
@@ -20,12 +21,14 @@ export class UpdateUserDto {
   @IsOptional()
   @IsStringField(ValidationErrorCode.NAME_INVALID_TYPE)
   @IsNotProfane()
+  @IsNotMarkup()
   name?: string;
 
   @ApiPropertyOptional({ example: 'jane@example.com' })
   @IsOptional()
   @IsEmailField(ValidationErrorCode.EMAIL_INVALID_FORMAT)
   @IsNotProfane()
+  @IsNotMarkup()
   email?: string;
 
   @ApiPropertyOptional({

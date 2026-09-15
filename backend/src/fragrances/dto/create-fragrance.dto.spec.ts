@@ -131,6 +131,33 @@ describe('CreateFragranceDto', () => {
         ),
       ).toEqual([ValidationErrorCode.DESCRIPTION_INVALID_TYPE]);
     });
+
+    // Security-hardening: stored-XSS payloads in free-text fields, per
+    // specs/security-hardening.md §5.
+    it('rejects a <script> tag with CONTAINS_MARKUP', async () => {
+      expect(
+        await codesForField(
+          { ...VALID_PAYLOAD, description: '<script>alert(1)</script>' },
+          'description',
+        ),
+      ).toEqual(
+        expect.arrayContaining([ValidationErrorCode.CONTAINS_MARKUP]),
+      );
+    });
+
+    it('rejects an <img onerror=...> tag with CONTAINS_MARKUP', async () => {
+      expect(
+        await codesForField(
+          {
+            ...VALID_PAYLOAD,
+            description: '<img src=x onerror=alert(1)>',
+          },
+          'description',
+        ),
+      ).toEqual(
+        expect.arrayContaining([ValidationErrorCode.CONTAINS_MARKUP]),
+      );
+    });
   });
 
   describe('imageUrl (optional)', () => {
