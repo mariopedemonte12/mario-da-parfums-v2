@@ -151,6 +151,20 @@ describe('VendorsService', () => {
       expect(whereCalls[1]).toEqual(whereCalls[0]);
     });
 
+    // Regression: a literal `%`/`_` in the search term used to be sent
+    // straight into the ILIKE pattern and interpreted as a SQL wildcard
+    // instead of a literal character — see common/utils/sql-like.util.ts.
+    it('escapes literal `%`/`_` in the name filter before building the pattern', async () => {
+      const { select, whereCalls } = makeSelectMock([], 0);
+      await build({ select });
+
+      await service.findAll({ name: '50%_off', page: 1, limit: 20 });
+
+      expect(whereCalls[0]).toEqual(
+        and(ilike(vendors.name, '%50\\%\\_off%')),
+      );
+    });
+
     it('builds a case-insensitive partial-match filter when only websiteUrl is given', async () => {
       const { select, whereCalls } = makeSelectMock([], 0);
       await build({ select });

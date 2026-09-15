@@ -12,6 +12,7 @@ import { UpdateVendorItemDto } from './dto/batch-update-vendors.dto.js';
 import { FindVendorsDto } from './dto/find-vendors.dto.js';
 import { BatchItemResultDto } from './dto/batch-result.dto.js';
 import { getPgErrorCode } from '../common/utils/pg-error.util.js';
+import { containsPattern } from '../common/utils/sql-like.util.js';
 
 function describeWriteError(err: unknown): string {
   const code = getPgErrorCode(err);
@@ -68,9 +69,12 @@ export class VendorsService {
     query: FindVendorsDto,
   ): Promise<{ data: Vendor[]; total: number }> {
     const conditions = [];
-    if (query.name) conditions.push(ilike(vendors.name, `%${query.name}%`));
+    if (query.name)
+      conditions.push(ilike(vendors.name, containsPattern(query.name)));
     if (query.websiteUrl)
-      conditions.push(ilike(vendors.websiteUrl, `%${query.websiteUrl}%`));
+      conditions.push(
+        ilike(vendors.websiteUrl, containsPattern(query.websiteUrl)),
+      );
     const where = conditions.length ? and(...conditions) : undefined;
 
     const offset = (query.page - 1) * query.limit;
