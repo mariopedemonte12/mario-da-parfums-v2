@@ -8,6 +8,7 @@ import {
   UseGuards,
 } from '@nestjs/common';
 import type { CookieOptions, Response } from 'express';
+import { Throttle } from '@nestjs/throttler';
 import { AuthsService } from './auths.service.js';
 import { RegisterDto } from './dto/register.dto.js';
 import { LoginDto } from './dto/login.dto.js';
@@ -22,6 +23,9 @@ import { SESSION_COOKIE_NAME } from './constants.js';
 export class AuthsController {
   constructor(private readonly authsService: AuthsService) {}
 
+  // Stricter than the global ThrottlerGuard limit — these are the
+  // brute-forceable endpoints (see specs/security-hardening.md, §1).
+  @Throttle({ default: { limit: 5, ttl: 60_000 } })
   @Post('register')
   async register(
     @Body() dto: RegisterDto,
@@ -39,6 +43,7 @@ export class AuthsController {
     return this.authsService.adminCreate(dto);
   }
 
+  @Throttle({ default: { limit: 5, ttl: 60_000 } })
   @Post('login')
   @HttpCode(HttpStatus.OK)
   async login(
