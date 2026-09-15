@@ -15,6 +15,7 @@ import {
 import { UpdateUserDto } from './dto/update-user.dto.js';
 import { FindUsersDto } from './dto/find-users.dto.js';
 import { getPgErrorCode } from '../common/utils/pg-error.util.js';
+import { containsPattern } from '../common/utils/sql-like.util.js';
 
 @Injectable()
 export class UsersService {
@@ -36,8 +37,10 @@ export class UsersService {
 
   async findAll(query: FindUsersDto): Promise<{ data: User[]; total: number }> {
     const conditions = [];
-    if (query.name) conditions.push(ilike(users.name, `%${query.name}%`));
-    if (query.email) conditions.push(ilike(users.email, `%${query.email}%`));
+    if (query.name)
+      conditions.push(ilike(users.name, containsPattern(query.name)));
+    if (query.email)
+      conditions.push(ilike(users.email, containsPattern(query.email)));
     if (query.role) conditions.push(eq(users.role, query.role));
     const where = conditions.length ? and(...conditions) : undefined;
 

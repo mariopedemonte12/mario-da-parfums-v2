@@ -5,6 +5,7 @@ import type { McpManager } from './mcp/mcp-manager.js';
 import {
   doneMessage,
   errorMessage,
+  fragrancesMessage,
   parseClientMessage,
   statusMessage,
   tokenMessage,
@@ -60,6 +61,7 @@ export function startWebSocketServer(
       void session.handleUserMessage(text, {
         onStatus: (statusText) => send(socket, statusMessage(statusText)),
         onToken: (tokenText) => send(socket, tokenMessage(tokenText)),
+        onFragrances: (items) => send(socket, fragrancesMessage(items)),
         onDone: () => send(socket, doneMessage()),
         onError: (errorText) => send(socket, errorMessage(errorText)),
       });

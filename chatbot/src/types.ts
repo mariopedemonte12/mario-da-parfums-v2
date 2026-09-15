@@ -17,7 +17,9 @@ export type McpServerConfig = StdioMcpServerConfig | HttpMcpServerConfig;
 export type ChatbotConfig = {
   geminiApiKey: string;
   agentModel: string;
+  agentFallbackModel: string;
   classifierModel: string;
+  classifierFallbackModel: string;
   wsHost: string;
   wsPort: number;
   agentHistoryTurns: number;

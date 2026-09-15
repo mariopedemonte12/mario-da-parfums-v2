@@ -205,6 +205,19 @@ describe('UsersService', () => {
       expect(ilike).toHaveBeenCalledWith(users.email, '%jane@%');
     });
 
+    // Regression: a literal `%`/`_` in the search term used to be sent
+    // straight into the ILIKE pattern and interpreted as a SQL wildcard
+    // instead of a literal character (e.g. an email local-part with a real
+    // underscore) — see common/utils/sql-like.util.ts.
+    it('escapes literal `%`/`_` in the name/email filters before building the pattern', async () => {
+      mockSelectChain([], 0);
+
+      await service.findAll({ page: 1, limit: 20, name: 'A_B', email: 'x%y' });
+
+      expect(ilike).toHaveBeenCalledWith(users.name, '%A\\_B%');
+      expect(ilike).toHaveBeenCalledWith(users.email, '%x\\%y%');
+    });
+
     it('filters role as an exact match, not a partial one', async () => {
       mockSelectChain([], 0);
 

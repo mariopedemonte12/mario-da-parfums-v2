@@ -201,8 +201,39 @@ describe('FragrancesService', () => {
       expect(eq).not.toHaveBeenCalledWith(fragrances.name, 'Chanel');
     });
 
+    // Regression: literal `%`/`_` in a search term used to be interpreted as
+    // SQL wildcards instead of the characters the caller typed (e.g. a
+    // fragrance actually named "50%" would match on any name containing
+    // "50" followed by anything) — see common/utils/sql-like.util.ts.
+    it('escapes literal `%`, `_` and `\\` in the name filter before building the ILIKE pattern', async () => {
+      mockSelectChain([], 0);
+
+      await service.findAll({ page: 1, limit: 20, name: '50%_off\\x' });
+
+      expect(ilike).toHaveBeenCalledWith(
+        fragrances.name,
+        '%50\\%\\_off\\\\x%',
+      );
+    });
+
+    it('filters brand as an exact match, case-insensitively (ilike with no wildcards), not a case-sensitive eq', async () => {
+      mockSelectChain([], 0);
+
+      await service.findAll({ page: 1, limit: 20, brand: 'giorgio armani' });
+
+      expect(ilike).toHaveBeenCalledWith(fragrances.brand, 'giorgio armani');
+      expect(eq).not.toHaveBeenCalledWith(fragrances.brand, expect.anything());
+    });
+
+    it('escapes literal `%`/`_` in the brand filter too', async () => {
+      mockSelectChain([], 0);
+
+      await service.findAll({ page: 1, limit: 20, brand: 'A_B%C' });
+
+      expect(ilike).toHaveBeenCalledWith(fragrances.brand, 'A\\_B\\%C');
+    });
+
     it.each([
-      ['brand', 'brand' as const],
       ['concentration', 'concentration' as const],
       ['olfactoryFamily', 'olfactoryFamily' as const],
       ['targetAudience', 'targetAudience' as const],

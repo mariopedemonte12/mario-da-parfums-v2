@@ -7,7 +7,9 @@ import { loadConfig } from './config.js';
 const ENV_KEYS = [
   'GEMINI_API_KEY',
   'GEMINI_AGENT_MODEL',
+  'GEMINI_AGENT_FALLBACK_MODEL',
   'GEMINI_CLASSIFIER_MODEL',
+  'GEMINI_CLASSIFIER_FALLBACK_MODEL',
   'CHATBOT_WS_HOST',
   'CHATBOT_WS_PORT',
   'CHATBOT_AGENT_HISTORY_TURNS',
@@ -63,13 +65,15 @@ describe('loadConfig — GEMINI_API_KEY (requireEnv)', () => {
 describe('loadConfig — defaults', () => {
   it('falls back to documented defaults when optional env vars are unset', () => {
     const config = loadConfig();
-    expect(config.agentModel).toBe('gemini-2.5-flash');
-    expect(config.classifierModel).toBe('gemini-2.5-flash-lite');
+    expect(config.agentModel).toBe('gemini-3.5-flash-lite');
+    expect(config.agentFallbackModel).toBe('gemini-3.1-flash-lite');
+    expect(config.classifierModel).toBe('gemini-3.5-flash-lite');
+    expect(config.classifierFallbackModel).toBe('gemini-3.1-flash-lite');
     expect(config.wsHost).toBe('0.0.0.0');
     expect(config.wsPort).toBe(8081);
     expect(config.agentHistoryTurns).toBe(12);
     expect(config.classifierHistoryTurns).toBe(4);
-    expect(config.maxToolIterations).toBe(5);
+    expect(config.maxToolIterations).toBe(8);
   });
 
   it('uses explicit overrides instead of defaults when provided', () => {
