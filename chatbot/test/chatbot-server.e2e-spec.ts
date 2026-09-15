@@ -15,8 +15,12 @@ import type { ChatbotConfig } from '../src/types.js';
 
 const config: ChatbotConfig = {
   geminiApiKey: process.env.GEMINI_API_KEY!,
-  agentModel: process.env.GEMINI_AGENT_MODEL ?? 'gemini-2.5-flash',
-  classifierModel: process.env.GEMINI_CLASSIFIER_MODEL ?? 'gemini-2.5-flash-lite',
+  agentModel: process.env.GEMINI_AGENT_MODEL ?? 'gemini-3.5-flash-lite',
+  agentFallbackModel:
+    process.env.GEMINI_AGENT_FALLBACK_MODEL ?? 'gemini-3.1-flash-lite',
+  classifierModel: process.env.GEMINI_CLASSIFIER_MODEL ?? 'gemini-3.5-flash-lite',
+  classifierFallbackModel:
+    process.env.GEMINI_CLASSIFIER_FALLBACK_MODEL ?? 'gemini-3.1-flash-lite',
   wsHost: '127.0.0.1',
   wsPort: 0,
   agentHistoryTurns: 12,

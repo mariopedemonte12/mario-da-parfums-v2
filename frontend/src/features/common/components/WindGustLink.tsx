@@ -22,8 +22,23 @@ type WindGustLinkProps = WindGustCommonProps & {
    * (open in new tab, etc.) still fall through to normal `Link` navigation.
    */
   onNavigate?: (href: string) => void;
+  ariaExpanded?: never;
 };
-type WindGustButtonProps = WindGustCommonProps & { href?: never; onClick: () => void; onNavigate?: never };
+type WindGustButtonProps = WindGustCommonProps & {
+  href?: never;
+  onClick: () => void;
+  onNavigate?: never;
+  /** For a toggle button (e.g. Navbar's "Sensei" opening the chatbot panel). */
+  ariaExpanded?: boolean;
+};
+// Neither href nor onClick: a static label (e.g. a nav item with no destination yet) that still
+// gets the hover-only gust underline — `.nav-link:hover` in globals.css doesn't care what element it's on.
+type WindGustStaticProps = WindGustCommonProps & {
+  href?: never;
+  onClick?: never;
+  onNavigate?: never;
+  ariaExpanded?: never;
+};
 
 // Shared "wind gust" underline: a gust that spawns beneath the link/button
 // on hover — two short strokes drawn in from nothing via stroke-dashoffset,
@@ -44,7 +59,8 @@ export default function WindGustLink({
   href,
   onClick,
   onNavigate,
-}: WindGustLinkProps | WindGustButtonProps) {
+  ariaExpanded,
+}: WindGustLinkProps | WindGustButtonProps | WindGustStaticProps) {
   const sharedClassName = cn("nav-link relative inline-block", isActive && "is-active", className);
 
   if (href) {
@@ -64,11 +80,26 @@ export default function WindGustLink({
     );
   }
 
+  if (onClick) {
+    return (
+      <button
+        type="button"
+        onClick={onClick}
+        aria-label={ariaLabel}
+        aria-expanded={ariaExpanded}
+        className={sharedClassName}
+      >
+        {children}
+        <Gust />
+      </button>
+    );
+  }
+
   return (
-    <button type="button" onClick={onClick} aria-label={ariaLabel} className={sharedClassName}>
+    <span aria-label={ariaLabel} className={sharedClassName}>
       {children}
       <Gust />
-    </button>
+    </span>
   );
 }
 
