@@ -213,6 +213,53 @@ describe('MCP catalog server (e2e, real Postgres, real HTTP)', () => {
     expect(ids).not.toContain(fragranceEmpty.id); // no concentration set
   });
 
+  // specs/query-performance.md section 3: search_fragrances now takes
+  // `cursor` (uuid) instead of `page`, matching the REST DTO change — end
+  // to end over the real MCP transport, not just the zod schema shape.
+  it('search_fragrances paginates via cursor end to end, with no duplicate or skipped rows', async () => {
+    const seen: string[] = [];
+    let cursor: string | undefined;
+    for (let i = 0; i < 10; i++) {
+      const result = await client.callTool({
+        name: 'search_fragrances',
+        arguments: {
+          brand: 'MCP E2E Brand',
+          limit: 1,
+          ...(cursor ? { cursor } : {}),
+        },
+      });
+      expect(result.isError).toBeFalsy();
+      const body = jsonOf(result) as {
+        data: Array<{ id: string }>;
+        nextCursor: string | null;
+      };
+      // With limit=1, nextCursor is still set on the page that happens to
+      // be the true last one (it came back exactly `limit` long) — the
+      // empty page on the *following* call is what actually signals the
+      // end, per the documented rule. So collect whatever this page has
+      // and only stop once a page (usually empty) has no nextCursor.
+      seen.push(...body.data.map((f) => f.id));
+      cursor = body.nextCursor ?? undefined;
+      if (!body.nextCursor) break;
+    }
+
+    expect(new Set(seen)).toEqual(
+      new Set([fragranceA.id, fragranceEmpty.id, fragranceOutOfStockOnly.id]),
+    );
+    expect(seen).toHaveLength(3);
+  });
+
+  it('search_fragrances rejects a non-uuid cursor as a tool error, not a crash', async () => {
+    const result = await client.callTool({
+      name: 'search_fragrances',
+      arguments: { cursor: 'not-a-uuid' },
+    });
+
+    expect(result.isError).toBe(true);
+    const tools = await client.listTools();
+    expect(tools.tools.length).toBe(5);
+  });
+
   it('get_fragrance returns the real row for an existing id', async () => {
     const result = await client.callTool({
       name: 'get_fragrance',

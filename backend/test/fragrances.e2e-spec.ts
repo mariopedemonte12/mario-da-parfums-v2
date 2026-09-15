@@ -301,39 +301,144 @@ describe('Fragrances (e2e, real Postgres)', () => {
         expect(res.body.data[0].brand).toBe(brandX);
       });
 
-      it('paginates: limit constrains page size, total/totalPages reflect full filtered count', async () => {
-        const page1 = await request(app.getHttpServer())
-          .get('/fragrances')
-          .set('Authorization', `Bearer ${adminToken}`)
-          .query({ brand: brandX, limit: 1, page: 1 })
-          .expect(200);
-        const page2 = await request(app.getHttpServer())
-          .get('/fragrances')
-          .set('Authorization', `Bearer ${adminToken}`)
-          .query({ brand: brandX, limit: 1, page: 2 })
-          .expect(200);
-
-        expect(page1.body.data).toHaveLength(1);
-        expect(page1.body.total).toBe(2);
-        expect(page2.body.data).toHaveLength(1);
-        expect(page1.body.data[0].id).not.toBe(page2.body.data[0].id);
-      });
-
-      it('a page beyond the available data returns an empty array with correct total', async () => {
+      // specs/query-performance.md section 3: cursor pagination replaces
+      // page/total for fragrances. nextCursor is set exactly when the page
+      // comes back with `limit` rows (regardless of whether a further page
+      // would actually have data) and null exactly when it comes back
+      // shorter — these two cases are the two sides of that boundary.
+      it('nextCursor is set when the page is exactly full (limit === filtered count)', async () => {
         const res = await request(app.getHttpServer())
           .get('/fragrances')
           .set('Authorization', `Bearer ${adminToken}`)
-          .query({ brand: brandX, limit: 1, page: 999 })
+          .query({ brand: brandX, limit: 2 })
           .expect(200);
 
-        expect(res.body.data).toEqual([]);
-        expect(res.body.total).toBe(2);
+        expect(res.body.data).toHaveLength(2);
+        expect(res.body.nextCursor).toBe(res.body.data[1].id);
+        expect(res.body).not.toHaveProperty('total');
+        expect(res.body).not.toHaveProperty('page');
+      });
+
+      it('nextCursor is null when the page comes back shorter than limit', async () => {
+        const res = await request(app.getHttpServer())
+          .get('/fragrances')
+          .set('Authorization', `Bearer ${adminToken}`)
+          .query({ brand: brandX, limit: 100 })
+          .expect(200);
+
+        expect(res.body.data).toHaveLength(2);
+        expect(res.body.nextCursor).toBeNull();
+      });
+
+      it('following nextCursor advances to the next page with no duplicate or skipped rows, then terminates', async () => {
+        const page1 = await request(app.getHttpServer())
+          .get('/fragrances')
+          .set('Authorization', `Bearer ${adminToken}`)
+          .query({ brand: brandX, limit: 1 })
+          .expect(200);
+        expect(page1.body.data).toHaveLength(1);
+        expect(page1.body.nextCursor).toBe(page1.body.data[0].id);
+
+        const page2 = await request(app.getHttpServer())
+          .get('/fragrances')
+          .set('Authorization', `Bearer ${adminToken}`)
+          .query({ brand: brandX, limit: 1, cursor: page1.body.nextCursor })
+          .expect(200);
+        expect(page2.body.data).toHaveLength(1);
+        expect(page2.body.data[0].id).not.toBe(page1.body.data[0].id);
+
+        // brandX only has 2 matching rows total, but page2 still came back
+        // exactly `limit` long, so per the documented rule nextCursor is
+        // still set here (not a lookahead check) — following it one more
+        // time is what actually reveals the end.
+        const page3 = await request(app.getHttpServer())
+          .get('/fragrances')
+          .set('Authorization', `Bearer ${adminToken}`)
+          .query({ brand: brandX, limit: 1, cursor: page2.body.nextCursor })
+          .expect(200);
+        expect(page3.body.data).toEqual([]);
+        expect(page3.body.nextCursor).toBeNull();
+      });
+
+      it('the cursor condition composes with existing filters via AND (page 2 still respects the brand filter)', async () => {
+        // brandY has one matching row that would appear right after brandX's
+        // two if the cursor condition ignored the brand filter.
+        const page1 = await request(app.getHttpServer())
+          .get('/fragrances')
+          .set('Authorization', `Bearer ${adminToken}`)
+          .query({ brand: brandX, limit: 1 })
+          .expect(200);
+
+        const page2 = await request(app.getHttpServer())
+          .get('/fragrances')
+          .set('Authorization', `Bearer ${adminToken}`)
+          .query({ brand: brandX, limit: 10, cursor: page1.body.nextCursor })
+          .expect(200);
+
+        expect(
+          page2.body.data.every((f: any) => f.brand === brandX),
+        ).toBe(true);
+      });
+
+      it('paginating without any filter enumerates every row exactly once (no gaps, no duplicates)', async () => {
+        let cursor: string | undefined;
+        const seen: string[] = [];
+        for (let i = 0; i < 10; i++) {
+          const res = await request(app.getHttpServer())
+            .get('/fragrances')
+            .set('Authorization', `Bearer ${adminToken}`)
+            .query({ name: `aventus${suffix}`, limit: 1, ...(cursor ? { cursor } : {}) })
+            .expect(200);
+          seen.push(...res.body.data.map((f: any) => f.id));
+          cursor = res.body.nextCursor ?? undefined;
+          if (!res.body.nextCursor) break;
+        }
+        expect(new Set(seen).size).toBe(seen.length);
+        expect(seen).toHaveLength(2);
+      });
+
+      // Cursor edge cases (specs/query-performance.md section 3). Nested
+      // here (not a sibling describe) so brandX/the fixture rows from this
+      // block's beforeEach stay in scope.
+      describe('cursor validation and edge cases', () => {
+        it('rejects a non-uuid cursor with 400', async () => {
+          await request(app.getHttpServer())
+            .get('/fragrances')
+            .set('Authorization', `Bearer ${adminToken}`)
+            .query({ cursor: 'not-a-uuid' })
+            .expect(400);
+        });
+
+        it("a well-formed but non-existent cursor id does not error (gt() doesn't require existence)", async () => {
+          await request(app.getHttpServer())
+            .get('/fragrances')
+            .set('Authorization', `Bearer ${adminToken}`)
+            .query({ brand: brandX, cursor: randomUUID(), limit: 10 })
+            .expect(200);
+        });
+
+        it('the cursor of the last real item returns an empty page with nextCursor: null', async () => {
+          const full = await request(app.getHttpServer())
+            .get('/fragrances')
+            .set('Authorization', `Bearer ${adminToken}`)
+            .query({ brand: brandX, limit: 100 })
+            .expect(200);
+          const lastId = full.body.data[full.body.data.length - 1].id;
+
+          const res = await request(app.getHttpServer())
+            .get('/fragrances')
+            .set('Authorization', `Bearer ${adminToken}`)
+            .query({ brand: brandX, cursor: lastId, limit: 100 })
+            .expect(200);
+
+          expect(res.body.data).toEqual([]);
+          expect(res.body.nextCursor).toBeNull();
+        });
       });
     });
 
-    // BVA (two-point) on FindFragranceDto's page/limit: @Min(1) and
-    // @Max(100) on limit, @Min(1) on page.
-    describe('page/limit boundaries', () => {
+    // BVA (two-point) on FindFragranceDto's limit: @Min(1) and @Max(100).
+    describe('limit boundaries', () => {
       it('limit=1 (valid boundary) is accepted', async () => {
         await request(app.getHttpServer())
           .get('/fragrances')
@@ -363,22 +468,6 @@ describe('Fragrances (e2e, real Postgres)', () => {
           .get('/fragrances')
           .set('Authorization', `Bearer ${adminToken}`)
           .query({ limit: 101 })
-          .expect(400);
-      });
-
-      it('page=1 (valid boundary) is accepted', async () => {
-        await request(app.getHttpServer())
-          .get('/fragrances')
-          .set('Authorization', `Bearer ${adminToken}`)
-          .query({ page: 1 })
-          .expect(200);
-      });
-
-      it('page=0 (invalid neighbor) is rejected with 400', async () => {
-        await request(app.getHttpServer())
-          .get('/fragrances')
-          .set('Authorization', `Bearer ${adminToken}`)
-          .query({ page: 0 })
           .expect(400);
       });
     });

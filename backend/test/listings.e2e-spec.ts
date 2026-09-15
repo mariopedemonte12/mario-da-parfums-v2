@@ -142,7 +142,9 @@ describe('Listings (e2e, real Postgres)', () => {
         .expect(200);
 
       expect(res.body).toHaveProperty('data');
-      expect(res.body).toHaveProperty('meta');
+      expect(res.body).toHaveProperty('nextCursor');
+      expect(res.body).not.toHaveProperty('meta');
+      expect(res.body).not.toHaveProperty('total');
     });
 
     it('GET /listings/:id requires no Authorization header and returns the real row', async () => {
@@ -646,36 +648,102 @@ describe('Listings (e2e, real Postgres)', () => {
       });
     });
 
-    it('paginates: limit constrains page size and total reflects the full filtered count', async () => {
+    // vendorA has exactly 3 rows in this block's fixture (prices
+    // 10000/20000/15000). specs/query-performance.md section 3: cursor
+    // pagination replaces page/meta.total for listings; nextCursor is set
+    // exactly when the page comes back with `limit` rows, null exactly when
+    // shorter.
+    it('nextCursor is set when the page is exactly full, and following it exhausts the rows with no dup/skip', async () => {
       const page1 = await request(app.getHttpServer())
         .get('/listings')
-        .query({ vendorId: vendorA.id, limit: 2, page: 1 })
+        .query({ vendorId: vendorA.id, limit: 2 })
         .expect(200);
+      expect(page1.body.data).toHaveLength(2);
+      expect(page1.body.nextCursor).toBe(page1.body.data[1].id);
+      expect(page1.body).not.toHaveProperty('meta');
+
       const page2 = await request(app.getHttpServer())
         .get('/listings')
-        .query({ vendorId: vendorA.id, limit: 2, page: 2 })
+        .query({
+          vendorId: vendorA.id,
+          limit: 2,
+          cursor: page1.body.nextCursor,
+        })
         .expect(200);
-
-      expect(page1.body.data).toHaveLength(2);
-      expect(page1.body.meta.total).toBe(3);
-      expect(page1.body.meta.totalPages).toBe(2);
-      expect(page2.body.data.length).toBeGreaterThanOrEqual(1);
+      expect(page2.body.data).toHaveLength(1);
+      expect(page2.body.nextCursor).toBeNull();
 
       const idsPage1 = page1.body.data.map((l: any) => l.id);
       const idsPage2 = page2.body.data.map((l: any) => l.id);
       expect(idsPage1.some((id: number) => idsPage2.includes(id))).toBe(
         false,
       );
+      expect([...idsPage1, ...idsPage2].sort()).toEqual(
+        idsPage1.concat(idsPage2).sort(),
+      );
     });
 
-    it('a page beyond the available data returns an empty data array with correct meta', async () => {
+    it('the cursor of the last real row returns an empty page with nextCursor: null', async () => {
+      const full = await request(app.getHttpServer())
+        .get('/listings')
+        .query({ vendorId: vendorA.id, limit: 100 })
+        .expect(200);
+      expect(full.body.nextCursor).toBeNull();
+      const lastId = full.body.data[full.body.data.length - 1].id;
+
       const res = await request(app.getHttpServer())
         .get('/listings')
-        .query({ vendorId: vendorA.id, limit: 2, page: 999 })
+        .query({ vendorId: vendorA.id, cursor: lastId, limit: 100 })
         .expect(200);
 
       expect(res.body.data).toEqual([]);
-      expect(res.body.meta.total).toBe(3);
+      expect(res.body.nextCursor).toBeNull();
+    });
+
+    it('the cursor condition composes with vendorId + minPrice via AND', async () => {
+      const page1 = await request(app.getHttpServer())
+        .get('/listings')
+        .query({ vendorId: vendorA.id, minPrice: 10000, limit: 1 })
+        .expect(200);
+
+      const page2 = await request(app.getHttpServer())
+        .get('/listings')
+        .query({
+          vendorId: vendorA.id,
+          minPrice: 10000,
+          limit: 10,
+          cursor: page1.body.nextCursor,
+        })
+        .expect(200);
+
+      expect(
+        page2.body.data.every(
+          (l: any) => l.vendorId === vendorA.id && l.price >= 10000,
+        ),
+      ).toBe(true);
+    });
+  });
+
+  describe('GET /listings — cursor validation', () => {
+    it('rejects a non-integer cursor with 400', async () => {
+      await request(app.getHttpServer())
+        .get('/listings')
+        .query({ cursor: 'not-an-int' })
+        .expect(400);
+    });
+
+    it('rejects cursor=0 (below the @Min(1) boundary) with 400', async () => {
+      await request(app.getHttpServer())
+        .get('/listings')
+        .query({ cursor: 0 })
+        .expect(400);
+    });
+
+    it('a well-formed but non-existent cursor id does not error', async () => {
+      await request(app.getHttpServer())
+        .get('/listings')
+        .query({ cursor: 999_999_999 })
+        .expect(200);
     });
   });
 
