@@ -5,6 +5,7 @@ import Link from "next/link";
 import BottlePlaceholder from "@/components/ui/BottlePlaceholder";
 import WindLines from "@/components/ui/WindLines";
 import { Button } from "@/components/ui/button";
+import FavoriteHeart from "@/features/favorites/components/FavoriteHeart";
 import type { FragranceMatch, SearchStatus } from "../types/search.types";
 
 type SearchResultsProps = {
@@ -52,7 +53,13 @@ export default function SearchResults({
 
           <div className="relative grid w-full gap-10 md:grid-cols-[1.2fr_1fr] md:items-center md:gap-12">
             <div className="grid gap-8 sm:grid-cols-[220px_1fr] sm:items-center">
-              <BottlePlaceholder className="mx-auto h-[280px] w-[170px] md:h-[420px] md:w-[260px]" />
+              <div className="relative mx-auto">
+                <BottlePlaceholder className="h-[280px] w-[170px] md:h-[420px] md:w-[260px]" />
+                <FavoriteHeart
+                  fragranceId={protagonist.fragrance.id}
+                  className="absolute top-4 right-4"
+                />
+              </div>
 
               <div className="flex flex-col gap-4">
                 <p className="text-xs tracking-[0.28em] text-text-muted uppercase">
@@ -96,7 +103,7 @@ export default function SearchResults({
                   <Link
                     key={match.fragrance.id}
                     href={`/fragrances/${match.fragrance.id}`}
-                    className="grid grid-cols-[64px_1fr_auto] items-center gap-4 rounded-2xl border border-border bg-background/70 p-3.5 transition-colors hover:border-primary"
+                    className="grid grid-cols-[64px_1fr_auto_auto] items-center gap-4 rounded-2xl border border-border bg-background/70 p-3.5 transition-colors hover:border-primary"
                   >
                     <BottlePlaceholder className="h-24 w-16" />
                     <div>
@@ -112,6 +119,7 @@ export default function SearchResults({
                     <div className="text-xs tracking-[0.1em] text-text-muted">
                       {match.affinity}%
                     </div>
+                    <FavoriteHeart fragranceId={match.fragrance.id} size="sm" />
                   </Link>
                 ))}
               </div>

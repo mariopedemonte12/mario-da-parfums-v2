@@ -4,6 +4,7 @@ import { motion, useReducedMotion } from "motion/react";
 
 import { Button } from "@/components/ui/button";
 import WindLines from "@/components/ui/WindLines";
+import FavoriteHeart from "@/features/favorites/components/FavoriteHeart";
 import { emergeContainer, emergeItem } from "@/lib/motion";
 import { cn, formatCurrencyCLP } from "@/lib/utils";
 import type { FragranceDetail } from "@/features/fragrances/types/fragrance.types";
@@ -50,6 +51,11 @@ export default function FragranceHero({
             fotografía · frasco
           </div>
         )}
+
+        <FavoriteHeart
+          fragranceId={fragrance.id}
+          className="absolute top-4 right-4"
+        />
       </div>
 
       <motion.div
