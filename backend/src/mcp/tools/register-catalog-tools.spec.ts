@@ -454,6 +454,27 @@ describe('registerCatalogTools (unit, mocked services, real MCP dispatch)', () =
       expect(tools.tools.length).toBeGreaterThan(0);
     });
 
+    // Security-hardening finding: this tool built its DTO with
+    // Object.assign(new FindListingsDto(), args), skipping class-validator
+    // entirely — so only the zod inputSchema's `z.string().uuid()` ran,
+    // which accepts ANY RFC4122 UUID version. The DTO's own
+    // @IsUUID('4') is stricter (version 4 only), same as the equivalent
+    // REST query param goes through the global ValidationPipe. A
+    // well-formed v1 UUID is the concrete case that tells them apart:
+    // zod-valid, DTO-invalid. Proves validateDtoInput() now runs the DTO's
+    // rules on MCP input, not just the (looser) wire schema.
+    it('rejects a well-formed non-v4 UUID that only the DTO, not the zod schema, catches', async () => {
+      const v1FragranceId = 'f47ac10b-58cc-1372-8567-0e02b2c3d479';
+
+      const result = await client.callTool({
+        name: 'get_listings_for_fragrance',
+        arguments: { fragranceId: v1FragranceId },
+      });
+
+      expect(result.isError).toBe(true);
+      expect(services.listingsService.findAll).not.toHaveBeenCalled();
+    });
+
     it('returns an error result when the service rejects', async () => {
       services.listingsService.findAll.mockRejectedValue(new Error('down'));
 

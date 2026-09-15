@@ -16,8 +16,8 @@ Being implemented in stages (own commits), tracked here as each lands:
 
 1. **Rate limiting** — done.
 2. **Security headers (`helmet`)** — done.
-3. **Payload size limits (body size + 413 handling + batch `@ArrayMaxSize`)** — done, this pass.
-4. MCP tool input validation parity with HTTP DTOs — not started.
+3. **Payload size limits (body size + 413 handling + batch `@ArrayMaxSize`)** — done.
+4. **MCP tool input validation parity with HTTP DTOs** — done, this pass.
 5. HTML/markup sanitization on free-text fields — not started.
 
 ## 1. Rate limiting
@@ -208,12 +208,73 @@ no cap on array length beyond the (now-explicit) body size itself.
   `X-Powered-By`); normal-sized requests to `GET /fragrances` and `/docs`
   (plus its `swagger-ui-bundle.js` asset) still return `200` unaffected.
 
-## 4–5. Not yet implemented
+## 4. MCP tool input validation parity
 
-See `TODO.md` item 7 (points 4–5) for the findings and planned design of MCP
-validation parity and HTML sanitization. This section will be filled in with
-the actual design decisions as each is implemented, in a later session
-against this same worktree/branch (`feature/security-hardening`).
+### Finding
+
+`backend/src/mcp/tools/register-catalog-tools.ts` built DTOs with
+`Object.assign(new FindFragranceDto(), args)` (and the same for
+`FindVendorsDto`/`FindListingsDto`), which never runs `class-validator`'s
+decorators — only the tool's zod `inputSchema` did. Not exploitable today
+(Drizzle parametrizes the query either way), but an inconsistency: the same
+DTO's rules apply via HTTP (through the global `ValidationPipe`) but not via
+MCP.
+
+### Design
+
+Chose **option (b)** from the two the finding laid out: reuse the DTOs'
+own `class-validator` rules via the library's standalone `validate()`,
+rather than hand-enriching the zod schemas to duplicate those rules.
+Rationale: single source of truth (a DTO rule added later — e.g. a future
+`@MaxLen` — applies to MCP automatically, no separate zod edit to remember),
+and it fits `specs/backend-mcp-server.md`'s existing decision that the
+*wire* schema stays zod/JSON-schema, not `class-validator`-bound — this adds
+an internal safety-net layer without changing what's advertised to the LLM
+client.
+
+- **New helper** `backend/src/mcp/tools/validate-dto-input.ts`
+  (`validateDtoInput(cls, args)`): `plainToInstance(cls, args)` +
+  `validate()`; on success returns the validated/transformed instance, on
+  failure returns a ready-made `errorResult(...)` (error codes from
+  `parseConstraintMessage`, the same helper `customValidationPipe` uses —
+  see its own comment: "shared by ... any service that validates DTO
+  instances outside the global pipe").
+- **Applied to** the three tools that build a DTO from raw, still-untrusted
+  `args`: `search_fragrances` (`FindFragranceDto`), `list_vendors`
+  (`FindVendorsDto`), `get_listings_for_fragrance` (`FindListingsDto`).
+  **Not applied to** `get_cheapest_listing`: it builds its `FindListingsDto`
+  from an already-schema-validated `fragranceId` plus internal constants
+  (`inStock: true`, a fixed scan limit) — no raw user input reaches
+  `Object.assign` there, so there's nothing for the extra layer to catch.
+- **Concrete gap this closes** (used as the test case, not just a
+  theoretical inconsistency): zod's `.uuid()` accepts any RFC4122 UUID
+  version, but `FindListingsDto.fragranceId`'s `@IsUUID('4')` only accepts
+  v4. A well-formed **v1** UUID (`f47ac10b-58cc-1372-8567-0e02b2c3d479`)
+  passes `get_listings_for_fragrance`'s zod schema but is now rejected by
+  the DTO layer — verified both that it fails post-fix and that it would
+  have reached the service pre-fix (confirmed `isUUID(v1, '4')` returns
+  `false` and `.uuid().safeParse(v1)` returns `true` directly against the
+  installed `zod`/`class-validator` versions before writing the test).
+- `backend/src/mcp/NOTES.md` updated to record the two-layer validation
+  design and why `get_cheapest_listing` is the deliberate exception.
+
+### Verification done this pass
+
+- Full unit (`pnpm test`, 632 — 1 new MCP test) and e2e (`pnpm test:e2e`,
+  235) suites pass unchanged.
+- Extended `register-catalog-tools.spec.ts` with the v1-UUID case above:
+  `get_listings_for_fragrance` returns `isError: true` and never calls
+  `listingsService.findAll` for that input — the exact "DTO-only-invalid
+  input rejected via MCP like it is via HTTP" proof the finding asked for
+  (the same DTO is applied to the equivalent REST query param through the
+  global `ValidationPipe`).
+
+## 5. Not yet implemented
+
+See `TODO.md` item 7 (point 5) for the finding and planned design of HTML
+sanitization. This section will be filled in with the actual design
+decisions once implemented, in a later session against this same
+worktree/branch (`feature/security-hardening`).
 
 ## Out of scope (all points)
 

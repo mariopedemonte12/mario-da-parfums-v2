@@ -10,6 +10,7 @@ import { FindFragranceDto } from '../../fragrances/dto/find-fragrance.dto.js';
 import { FindVendorsDto } from '../../vendors/dto/find-vendors.dto.js';
 import { FindListingsDto } from '../../listings/dto/find-listings.dto.js';
 import { jsonResult, errorResult } from './tool-result.js';
+import { validateDtoInput } from './validate-dto-input.js';
 
 // Every listing of one fragrance across all vendors, scanned to pick the
 // cheapest in-stock one — the catalog has too few vendors per fragrance for
@@ -68,9 +69,10 @@ export function registerCatalogTools(
       },
     },
     async (args) => {
+      const validated = await validateDtoInput(FindFragranceDto, args);
+      if (!validated.ok) return validated.result;
       try {
-        const query = Object.assign(new FindFragranceDto(), args);
-        return jsonResult(await fragrancesService.findAll(query));
+        return jsonResult(await fragrancesService.findAll(validated.value));
       } catch {
         return errorResult('Failed to search fragrances');
       }
@@ -111,8 +113,10 @@ export function registerCatalogTools(
       },
     },
     async (args) => {
+      const validated = await validateDtoInput(FindVendorsDto, args);
+      if (!validated.ok) return validated.result;
+      const query = validated.value;
       try {
-        const query = Object.assign(new FindVendorsDto(), args);
         const { data, total } = await vendorsService.findAll(query);
         return jsonResult({
           data: data.map(toVendorSummary),
@@ -140,9 +144,10 @@ export function registerCatalogTools(
       },
     },
     async (args) => {
+      const validated = await validateDtoInput(FindListingsDto, args);
+      if (!validated.ok) return validated.result;
       try {
-        const query = Object.assign(new FindListingsDto(), args);
-        const { data } = await listingsService.findAll(query);
+        const { data } = await listingsService.findAll(validated.value);
         return jsonResult(data.map(toListingSummary));
       } catch {
         return errorResult('Failed to get listings for fragrance');
