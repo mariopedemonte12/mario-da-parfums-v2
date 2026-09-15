@@ -68,4 +68,21 @@ describe('BatchUpdateListingsDto', () => {
     });
     expect(await validate(dto)).toHaveLength(0);
   });
+
+  // Boundary on the upper end: ArrayMaxSize(100) makes 100 items the valid
+  // boundary and 101 its invalid neighbor.
+  it('accepts exactly 100 items', async () => {
+    const dto = plainToInstance(BatchUpdateListingsDto, {
+      items: Array.from({ length: 100 }, (_, i) => ({ id: i + 1 })),
+    });
+    expect(await validate(dto)).toHaveLength(0);
+  });
+
+  it('rejects 101 items', async () => {
+    const dto = plainToInstance(BatchUpdateListingsDto, {
+      items: Array.from({ length: 101 }, (_, i) => ({ id: i + 1 })),
+    });
+    const errors = await validate(dto);
+    expect(errors.some((e) => e.property === 'items')).toBe(true);
+  });
 });

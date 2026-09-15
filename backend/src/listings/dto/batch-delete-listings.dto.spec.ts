@@ -31,4 +31,21 @@ describe('BatchDeleteListingsDto', () => {
     const errors = await validate(dto);
     expect(errors.some((e) => e.property === 'ids')).toBe(true);
   });
+
+  // Boundary on the upper end: ArrayMaxSize(100) makes 100 ids the valid
+  // boundary and 101 its invalid neighbor.
+  it('accepts exactly 100 ids', async () => {
+    const dto = plainToInstance(BatchDeleteListingsDto, {
+      ids: Array.from({ length: 100 }, (_, i) => i + 1),
+    });
+    expect(await validate(dto)).toHaveLength(0);
+  });
+
+  it('rejects 101 ids', async () => {
+    const dto = plainToInstance(BatchDeleteListingsDto, {
+      ids: Array.from({ length: 101 }, (_, i) => i + 1),
+    });
+    const errors = await validate(dto);
+    expect(errors.some((e) => e.property === 'ids')).toBe(true);
+  });
 });

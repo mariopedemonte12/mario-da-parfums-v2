@@ -15,8 +15,8 @@ This is an implementation-only spec. Verification of these fixes is a
 Being implemented in stages (own commits), tracked here as each lands:
 
 1. **Rate limiting** — done.
-2. **Security headers (`helmet`)** — done, this pass.
-3. Payload size limits (body size + 413 handling + batch `@ArrayMaxSize`) — not started.
+2. **Security headers (`helmet`)** — done.
+3. **Payload size limits (body size + 413 handling + batch `@ArrayMaxSize`)** — done, this pass.
 4. MCP tool input validation parity with HTTP DTOs — not started.
 5. HTML/markup sanitization on free-text fields — not started.
 
@@ -135,13 +135,85 @@ no CSP, `X-Content-Type-Options`, `X-Frame-Options`, HSTS, or
   `/docs` and all three `/docs/swagger-ui-*.js` assets (+ `.css`) return
   `200`.
 
-## 3–5. Not yet implemented
+## 3. Payload size limits
 
-See `TODO.md` item 7 (points 3–5) for the findings and planned design of
-payload size limits, MCP validation parity, and HTML sanitization. This
-section will be filled in with the actual design decisions as each is
-implemented, in a later session against this same worktree/branch
-(`feature/security-hardening`).
+### Finding
+
+A body over the accidental Express/body-parser default of 100kb threw a
+generic `500` instead of a `413` — `PayloadTooLargeError` isn't a Nest
+`HttpException`, so `AllExceptionsFilter` fell into its generic
+unknown-error branch (`backend/src/common/filters/http-exception.filter.ts`).
+Additionally, batch endpoints (`vendors`/`listings` create/update/delete) had
+no cap on array length beyond the (now-explicit) body size itself.
+
+### Design
+
+- **Explicit body-size cap**: `NestFactory.create(AppModule, { bodyParser:
+  false })` + `app.use(json({ limit: '256kb' }))` /
+  `app.use(urlencoded({ limit: '256kb', extended: true }))` in
+  `backend/src/main.ts`, replacing the implicit 100kb default with an
+  intentional, documented one. `256kb` was sized against the largest
+  legitimate payload today: a 100-item batch (the new `@ArrayMaxSize(100)`
+  cap below) of `CreateListingDto` at its longest fields (500-char `url`) is
+  ~70KB — `256kb` leaves headroom for JSON escaping/multi-byte content
+  without opening the door to multi-MB bodies. `express` was added as an
+  explicit dependency (previously only `@types/express` was declared,
+  pulled in transitively via `@nestjs/platform-express`) since `json`/
+  `urlencoded` are needed as runtime values, not just types.
+- **Middleware order**: `helmet()` is registered **before** the body-size
+  middleware. When `json()`/`urlencoded()` reject an oversized body, Express
+  routes the error straight to the exception filter, skipping any
+  *remaining* regular middleware in the chain — if helmet ran after, a
+  rejected request would ship without helmet's headers (confirmed this
+  concretely: `X-Powered-By: Express` leaked on the `413` response until
+  helmet was moved first).
+- **`AllExceptionsFilter` fix**: body-parser's oversized-body error (thrown
+  via `raw-body`/`http-errors`) is a plain `Error`, not an `HttpException`,
+  but carries `type: 'entity.too.large'`. Added an `isPayloadTooLargeError()`
+  check ahead of the `HttpException` branch that maps it to a real
+  `HttpStatus.PAYLOAD_TOO_LARGE` (413) with a clean `'Payload too large'`
+  message instead of leaking into the generic 500 path. Covered by a new
+  unit test in `http-exception.filter.spec.ts`.
+- **Batch array cap**: `@ArrayMaxSize(100)` added alongside the existing
+  `@ArrayMinSize(1)` on all six vendors/listings batch DTOs
+  (`batch-create-vendors.dto.ts`, `batch-update-vendors.dto.ts`,
+  `batch-delete-vendors.dto.ts`, `batch-create-listings.dto.ts`,
+  `batch-update-listings.dto.ts`, `batch-delete-listings.dto.ts`). `100` was
+  chosen to match this codebase's existing pagination `MAX_LIMIT`
+  convention (`find-fragrance.dto.ts`, `find-favorites.dto.ts`,
+  `find-listings.dto.ts`, `find-users.dto.ts`, `find-vendors.dto.ts` all cap
+  `limit` at 100) rather than inventing a new number. Added
+  boundary-pair tests (100 accepted / 101 rejected) to the three listings
+  batch DTO spec files, which already had `class-validator`-based DTO tests
+  in this exact style; vendors batch DTOs had no pre-existing spec files to
+  extend, so none were added net-new for this pass (the identical decorator,
+  used identically, is exercised by the listings tests).
+- **Deliberately not touched**: `CreateFragranceDto`/`UpdateFragranceDto`'s
+  `description` field has no `@MaxLen` at all (unlike every other free-text
+  field in this codebase), and fragrances' own batch DTOs
+  (`create-fragrance-batch.dto.ts`, `update-fragrance-batch.dto.ts`,
+  `delete-fragrance-batch.dto.ts`) have no `@ArrayMaxSize` either — same gap
+  shape as the vendors/listings ones just fixed. Out of scope here because
+  `TODO.md` item 7 names only the vendors/listings batch DTOs explicitly;
+  the body-size cap still bounds worst case exposure in the meantime, just
+  less precisely than an explicit per-field/per-array limit would.
+
+### Verification done this pass
+
+- Full unit (`pnpm test`, 631 — up from 624: 1 new filter test + 6 new
+  boundary tests) and e2e (`pnpm test:e2e`, 235) suites pass unchanged.
+- Manual verification against a running instance: a >256kb JSON body to
+  `POST /fragrances` returns `413` with `{"statusCode":413,"message":"Payload
+  too large",...}` and the full helmet header set (including no
+  `X-Powered-By`); normal-sized requests to `GET /fragrances` and `/docs`
+  (plus its `swagger-ui-bundle.js` asset) still return `200` unaffected.
+
+## 4–5. Not yet implemented
+
+See `TODO.md` item 7 (points 4–5) for the findings and planned design of MCP
+validation parity and HTML sanitization. This section will be filled in with
+the actual design decisions as each is implemented, in a later session
+against this same worktree/branch (`feature/security-hardening`).
 
 ## Out of scope (all points)
 

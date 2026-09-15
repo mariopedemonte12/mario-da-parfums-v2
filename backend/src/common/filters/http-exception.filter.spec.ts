@@ -61,6 +61,25 @@ describe('AllExceptionsFilter', () => {
     );
   });
 
+  it('maps a body-parser payload-too-large error to a real 413', () => {
+    const json = vi.fn();
+    const { host, status } = createHost(json);
+    const error = Object.assign(new Error('request entity too large'), {
+      type: 'entity.too.large',
+      status: 413,
+    });
+
+    filter.catch(error, host);
+
+    expect(status).toHaveBeenCalledWith(413);
+    expect(json).toHaveBeenCalledWith(
+      expect.objectContaining({
+        statusCode: 413,
+        message: 'Payload too large',
+      }),
+    );
+  });
+
   it('maps an unknown error to a generic 500 without leaking its message', () => {
     const json = vi.fn();
     const { host, status } = createHost(json);

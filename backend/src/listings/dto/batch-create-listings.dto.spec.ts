@@ -27,6 +27,23 @@ describe('BatchCreateListingsDto', () => {
     expect(await validate(dto)).toHaveLength(0);
   });
 
+  // Boundary on the upper end: ArrayMaxSize(100) makes 100 items the valid
+  // boundary and 101 its invalid neighbor.
+  it('accepts exactly 100 items', async () => {
+    const dto = plainToInstance(BatchCreateListingsDto, {
+      items: Array.from({ length: 100 }, () => VALID_ITEM),
+    });
+    expect(await validate(dto)).toHaveLength(0);
+  });
+
+  it('rejects 101 items', async () => {
+    const dto = plainToInstance(BatchCreateListingsDto, {
+      items: Array.from({ length: 101 }, () => VALID_ITEM),
+    });
+    const errors = await validate(dto);
+    expect(errors.some((e) => e.property === 'items')).toBe(true);
+  });
+
   it('accepts multiple valid items, even ones that would collide at the DB level', async () => {
     // DTO-level validation has no visibility into the unique-index
     // (vendorId, fragranceId, sizeMl) — two structurally-identical items
