@@ -5,6 +5,7 @@ import { IsStrongPassword } from '../../validators/is-password-strong.validator.
 import { IsEmailField } from '../../validators/wrappers/is-email.wrapper.js';
 import { IsEnumField } from '../../validators/wrappers/is-enum.wrapper.js';
 import { IsNotProfane } from '../../validators/is-not-profane.validator.js';
+import { IsNotMarkup } from '../../validators/is-not-markup.validator.js';
 import { IsRequired } from '../../validators/wrappers/is-not-empty.wrapper.js';
 
 // Admin-only account creation — the one difference from RegisterDto is
@@ -13,11 +14,13 @@ export class AdminCreateUserDto {
   @IsRequired(ValidationErrorCode.NAME_REQUIRED)
   @IsStringField(ValidationErrorCode.NAME_INVALID_TYPE)
   @IsNotProfane()
+  @IsNotMarkup()
   name: string;
 
   @IsRequired(ValidationErrorCode.EMAIL_REQUIRED)
   @IsEmailField(ValidationErrorCode.EMAIL_INVALID_FORMAT)
   @IsNotProfane()
+  @IsNotMarkup()
   email: string;
 
   @IsRequired(ValidationErrorCode.PASSWORD_REQUIRED)

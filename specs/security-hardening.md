@@ -12,13 +12,14 @@ This is an implementation-only spec. Verification of these fixes is a
 **separate testing session**, per this repo's implementation/testing split
 (root `CLAUDE.md`) — do not test-and-implement in the same session.
 
-Being implemented in stages (own commits), tracked here as each lands:
+All five stages are now implemented (own commits, tracked below as each
+landed):
 
 1. **Rate limiting** — done.
 2. **Security headers (`helmet`)** — done.
 3. **Payload size limits (body size + 413 handling + batch `@ArrayMaxSize`)** — done.
-4. **MCP tool input validation parity with HTTP DTOs** — done, this pass.
-5. HTML/markup sanitization on free-text fields — not started.
+4. **MCP tool input validation parity with HTTP DTOs** — done.
+5. **HTML/markup sanitization on free-text fields** — done, this pass.
 
 ## 1. Rate limiting
 
@@ -269,12 +270,66 @@ client.
   (the same DTO is applied to the equivalent REST query param through the
   global `ValidationPipe`).
 
-## 5. Not yet implemented
+## 5. HTML/markup sanitization
 
-See `TODO.md` item 7 (point 5) for the finding and planned design of HTML
-sanitization. This section will be filled in with the actual design
-decisions once implemented, in a later session against this same
-worktree/branch (`feature/security-hardening`).
+### Finding
+
+`name` (`RegisterDto`, `AdminCreateUserDto`, `UpdateUserDto`) and
+`description` (`CreateFragranceDto`) only passed through `@IsStringField` +
+`@IsNotProfane` — neither checks for markup. Confirmed dynamically:
+`POST /auths/register` with `name: "<script>alert(1)</script>"` returned
+`201` and persisted the value verbatim. Not reflected XSS (this is a JSON
+API, nothing renders HTML from it directly), but stored-XSS potential for
+any future consumer (frontend, admin panel, email/export) that renders the
+field without escaping.
+
+### Design
+
+- **Reject, not strip** — the finding's own suggested default, and
+  consistent with how `IsNotProfane` already behaves on this codebase: a
+  silent strip means the saved value silently differs from what was
+  submitted, with no error telling the caller why, which is worse than a
+  `400`.
+- **New validator** `backend/src/validators/is-not-markup.validator.ts`
+  (`IsNotMarkup`), same structure/pattern as `is-not-profane.validator.ts`
+  (opines on content only — a non-string value passes through to
+  `@IsStringField`, avoiding duplicate errors on the same field). One new
+  generic code, `ValidationErrorCode.CONTAINS_MARKUP`, alongside
+  `CONTAINS_PROFANITY` — no per-field variant needed, same reasoning as the
+  profanity code.
+- **Check is intentionally blunt**: rejects on the presence of a bare `<`
+  or `>` character anywhere in the string — not an HTML parser, and it also
+  rejects harmless text like `"5 > 3"`. This is the literal minimum bar the
+  finding asked for ("rechace ... caracteres de marcado (`<`, `>` como
+  mínimo)"); acceptable here because every field it's applied to is a short
+  free-text field (a name, an email, a product description) with no
+  legitimate need for literal angle brackets.
+- **Applied to**: `name` and `email` on `RegisterDto`, `AdminCreateUserDto`,
+  `UpdateUserDto` (`email` included per the finding's field list, even
+  though `@IsEmailField`'s format check already excludes `<`/`>` in
+  practice — defense-in-depth, no extra false-positive risk since a real
+  email address never contains those characters), and `description` on
+  `CreateFragranceDto` — `UpdateFragranceDto` inherits it automatically via
+  `PartialType(CreateFragranceDto)`, no separate edit needed.
+- **Not applied to**: any other free-text field not named in the finding
+  (e.g. `brand`, `concentration`, vendor `name`/`websiteUrl`) — out of
+  scope per `TODO.md` item 7's explicit field list; same scope discipline
+  as stage 3's batch `@ArrayMaxSize` (fragrances' own batch DTOs were left
+  alone for the same reason).
+
+### Verification done this pass
+
+- Full unit (`pnpm test`, 648 — 16 new tests: 7 in a new
+  `is-not-markup.validator.spec.ts`, plus 2 each in
+  `register.dto.spec.ts` (new file, mirroring the other auth DTOs' spec
+  style), `admin-create-user.dto.spec.ts`, `update-user.dto.spec.ts`, and
+  `create-fragrance.dto.spec.ts`) and e2e (`pnpm test:e2e`, 235) suites pass
+  unchanged.
+- Reproduced the audit's exact original finding against a running instance
+  post-fix: `POST /auths/register` with
+  `name: "<script>alert(1)</script>"` now returns `400` with
+  `{"errors":[{"field":"name","errors":[{"code":"CONTAINS_MARKUP"}]}]}`
+  instead of `201`.
 
 ## Out of scope (all points)
 
