@@ -1,9 +1,18 @@
 // Chatbot websocket protocol — see specs/chatbot-server.md.
 export type ChatbotClientMessage = { type: "message"; text: string };
 
+export type ChatbotFragranceCard = {
+  id: string;
+  name: string;
+  brand: string;
+  price: number | null;
+  imageUrl: string | null;
+};
+
 export type ChatbotServerMessage =
   | { type: "status"; text: string }
   | { type: "token"; text: string }
+  | { type: "fragrances"; items: ChatbotFragranceCard[] }
   | { type: "done" }
   | { type: "error"; text: string };
 
@@ -30,7 +39,11 @@ function isChatbotServerMessage(value: unknown): value is ChatbotServerMessage {
 
   const type = (value as { type: unknown }).type;
   return (
-    type === "status" || type === "token" || type === "done" || type === "error"
+    type === "status" ||
+    type === "token" ||
+    type === "fragrances" ||
+    type === "done" ||
+    type === "error"
   );
 }
 

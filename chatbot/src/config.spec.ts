@@ -73,7 +73,7 @@ describe('loadConfig — defaults', () => {
     expect(config.wsPort).toBe(8081);
     expect(config.agentHistoryTurns).toBe(12);
     expect(config.classifierHistoryTurns).toBe(4);
-    expect(config.maxToolIterations).toBe(5);
+    expect(config.maxToolIterations).toBe(8);
   });
 
   it('uses explicit overrides instead of defaults when provided', () => {

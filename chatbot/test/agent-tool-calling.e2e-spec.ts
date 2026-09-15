@@ -51,6 +51,7 @@ function run(userText: string) {
     maxIterations: 5,
     onStatus: () => {},
     onToken: () => {},
+    onFragrances: () => {},
   });
 }
 

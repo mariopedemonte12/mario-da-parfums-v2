@@ -95,6 +95,22 @@ export function useChatbotSession() {
           break;
         }
 
+        case "fragrances": {
+          const fragrances = message.items.map((item) => ({
+            id: item.id,
+            name: item.name,
+            brand: item.brand,
+            price: item.price,
+            imageUrl: item.imageUrl,
+            href: `/fragrances?q=${encodeURIComponent(item.name)}`,
+          }));
+          setMessages((prev) => [
+            ...prev,
+            { id: createMessageId(), role: "assistant", text: "", fragrances },
+          ]);
+          break;
+        }
+
         case "done":
           streamingIdRef.current = null;
           turnInProgressRef.current = false;

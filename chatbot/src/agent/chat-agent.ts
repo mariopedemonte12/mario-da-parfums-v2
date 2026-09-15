@@ -7,6 +7,12 @@ import {
 } from '@google/genai';
 import { log } from '../logger.js';
 import type { McpManager } from '../mcp/mcp-manager.js';
+import type { FragranceCard } from '../protocol.js';
+import {
+  PRESENT_FRAGRANCES_TOOL,
+  PRESENT_FRAGRANCES_TOOL_NAME,
+  presentFragrancesArgsSchema,
+} from './present-fragrances-tool.js';
 import { AGENT_SYSTEM_PROMPT } from './system-prompt.js';
 
 export type RunTurnParams = {
@@ -15,11 +21,13 @@ export type RunTurnParams = {
   /** Flattened history from prior turns (already truncated to the configured window), oldest first. */
   history: Content[];
   userText: string;
+  /** MCP tool declarations only — the local present_fragrances tool is added internally. */
   tools: FunctionDeclaration[];
   mcpManager: McpManager;
   maxIterations: number;
   onStatus: (text: string) => void;
   onToken: (text: string) => void;
+  onFragrances: (items: FragranceCard[]) => void;
 };
 
 export type RunTurnResult =
@@ -48,13 +56,17 @@ export async function runTurn(params: RunTurnParams): Promise<RunTurnResult> {
     maxIterations,
     onStatus,
     onToken,
+    onFragrances,
   } = params;
+
+  const allTools = [...tools, PRESENT_FRAGRANCES_TOOL];
 
   const newContents: Content[] = [
     { role: 'user', parts: [{ text: userText }] },
   ];
 
   for (let iteration = 0; iteration < maxIterations; iteration++) {
+    const iterationStart = Date.now();
     let stream;
     try {
       stream = await ai.models.generateContentStream({
@@ -62,8 +74,7 @@ export async function runTurn(params: RunTurnParams): Promise<RunTurnResult> {
         contents: [...history, ...newContents],
         config: {
           systemInstruction: AGENT_SYSTEM_PROMPT,
-          tools:
-            tools.length > 0 ? [{ functionDeclarations: tools }] : undefined,
+          tools: [{ functionDeclarations: allTools }],
         },
       });
     } catch (err) {
@@ -114,6 +125,14 @@ export async function runTurn(params: RunTurnParams): Promise<RunTurnResult> {
       };
     }
 
+    log.info(
+      `[iter ${iteration}] Gemini respondió en ${Date.now() - iterationStart}ms — ${
+        functionCalls.length > 0
+          ? functionCalls.map((c) => `${c.name}(${JSON.stringify(c.args)})`).join(', ')
+          : 'texto final'
+      }`,
+    );
+
     if (functionCalls.length === 0) {
       newContents.push({
         role: 'model',
@@ -126,6 +145,24 @@ export async function runTurn(params: RunTurnParams): Promise<RunTurnResult> {
 
     const functionResponseParts: Part[] = [];
     for (const call of functionCalls) {
+      if (call.name === PRESENT_FRAGRANCES_TOOL_NAME) {
+        const parsed = presentFragrancesArgsSchema.safeParse(call.args);
+        const responsePayload = parsed.success
+          ? { output: { presented: parsed.data.items.length } }
+          : { error: 'Argumentos inválidos para present_fragrances.' };
+        if (parsed.success) {
+          onFragrances(parsed.data.items);
+        }
+        functionResponseParts.push(
+          createPartFromFunctionResponse(
+            call.id ?? call.name,
+            call.name,
+            responsePayload,
+          ),
+        );
+        continue;
+      }
+
       onStatus(`Usando ${call.name}...`);
       const outcome = await mcpManager.callTool(call.name, call.args);
       const responsePayload = outcome.isError

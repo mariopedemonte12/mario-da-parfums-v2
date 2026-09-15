@@ -8,12 +8,14 @@ import {
 import { log } from './logger.js';
 import type { McpManager } from './mcp/mcp-manager.js';
 import type { ChatbotConfig } from './types.js';
+import type { FragranceCard } from './protocol.js';
 
 type AgentTurn = { contents: Content[] };
 
 export type SessionCallbacks = {
   onStatus: (text: string) => void;
   onToken: (text: string) => void;
+  onFragrances: (items: FragranceCard[]) => void;
   onDone: () => void;
   onError: (text: string) => void;
 };
@@ -90,6 +92,7 @@ export class ChatSession {
         maxIterations: this.config.maxToolIterations,
         onStatus: callbacks.onStatus,
         onToken: callbacks.onToken,
+        onFragrances: callbacks.onFragrances,
       });
 
       if (result.newContents.length > 0) {

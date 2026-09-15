@@ -1,5 +1,6 @@
 "use client";
 
+import { useSearchParams } from "next/navigation";
 import { useState } from "react";
 
 import FragranceList from "@/features/fragrances/components/FragranceList";
@@ -8,7 +9,10 @@ import { useFragrances } from "@/features/fragrances/hooks/useFragrance";
 import { useDebounce } from "@/features/common/hooks/useDebounce";
 
 export default function FragrancesPage() {
-  const [search, setSearch] = useState("");
+  const searchParams = useSearchParams();
+  // Deep-link from e.g. the chatbot's fragrance cards (?q=<name>) — only
+  // used to seed the initial value, the search box takes over from there.
+  const [search, setSearch] = useState(() => searchParams.get("q") ?? "");
 
   const debouncedSearch = useDebounce(search, 500);
 

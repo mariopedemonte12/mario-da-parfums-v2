@@ -120,6 +120,53 @@ combina ambos en dos estados, decisión de esta sesión:
   de los 3 puntos se desactivan (quedan estáticos) si el usuario tiene reducción
   de movimiento activada.
 
+## Formato de la burbuja de texto del asistente
+
+Decisión de esta sesión: la burbuja de texto del asistente (no las fichas de
+perfume, que son un componente aparte) renderiza markdown básico —
+**negrita**, listas con viñetas/numeradas — con `react-markdown`, en vez de
+texto plano. Encontrado en testing manual: Gemini emite markdown (`**...**`,
+listas con `*`) espontáneamente aunque el system prompt no se lo pide, y
+mostrarlo como texto plano dejaba los asteriscos literales visibles al
+usuario. Los mensajes del usuario y las entradas de `error` siguen siendo
+texto plano tal cual (no se interpreta markdown que el usuario haya tipeado,
+ni el copy fijo de error). Links no se renderizan como clickeables (ver
+"Fuera de alcance") — no hace falta, ya cubierto por las fichas de perfume.
+
+## Tarjetas de perfume estructuradas
+
+Decisión de esta sesión, en conjunto con `specs/chatbot-server.md`,
+"Tarjetas de perfume estructuradas": cuando llega un
+`{"type": "fragrances", "items": [...]}`, el cliente agrega una entrada al
+historial (no una burbuja de texto) con una ficha por perfume — nombre,
+marca, precio, la ilustración placeholder de botella del sistema de diseño
+(nunca `imageUrl` directamente, ver `frontend/CLAUDE.md`) y un link "ver en
+el catálogo".
+
+- `price: null` **no se muestra como "sin stock"** — ver
+  `specs/chatbot-server.md`, "Tarjetas de perfume estructuradas": el agente
+  manda `null` tanto si confirmó que no hay stock como si simplemente no
+  consultó el precio en ese turno (p. ej. el usuario solo pidió un listado).
+  El cliente no puede distinguir esos dos casos, así que para `price: null`
+  la ficha omite el monto y el link dice "ver precio y stock" en vez de "ver
+  en el catálogo" — nunca afirma que el perfume no tiene stock sin que una
+  tool lo haya confirmado.
+
+- Puede llegar más de una vez por turno (0 o más), siempre antes o
+  intercalado con los `token` de la respuesta final — se agrega en el orden
+  en que llega, como cualquier otro evento del turno.
+- **Link "ver en el catálogo" — decisión interina**: apunta a
+  `/fragrances?q=<nombre del perfume>`, reutilizando el buscador existente de
+  `/fragrances` (que ahora también lee `?q=` para precargar el filtro). Esto es
+  un puente hasta que exista `/fragrances/[id]` (artboard 1f, "Product
+  detail", todavía no implementado en este worktree) — cuando esa página
+  exista, el link debería apuntar ahí por id en vez de filtrar por nombre.
+  No es una limitación del protocolo (el payload ya incluye `id`), es que el
+  frontend todavía no tiene dónde llevarlo.
+- No hay reordenamiento ni deduplicación de fichas entre turnos — si el
+  agente vuelve a presentar el mismo perfume en un turno posterior, aparece
+  una ficha nueva, igual que una burbuja de texto repetida.
+
 ## Manejo de `error` de turno
 
 - Un `{"type": "error"}` de turno **no cierra la conexión** (`chatbot-server.md`).
@@ -164,9 +211,11 @@ combina ambos en dos estados, decisión de esta sesión:
   tab, igual que el servidor no persiste su contexto entre reconexiones.
 - **Autenticación / identidad de usuario en el chat** — ya fuera de alcance por
   `chatbot-server.md`/`platform-spec.md` §6.
-- **Renderizado enriquecido de la respuesta del asistente** (markdown, links,
-  imágenes de producto embebidas) — el texto del asistente se muestra como texto
-  plano; no hay ese formato en el protocolo actual.
+- **Links e imágenes embebidas en el texto del asistente** — Gemini no los emite
+  en la práctica para este dominio, y las fichas de perfume (`present_fragrances`,
+  ver arriba) ya cubren el caso de "perfume + link" de forma estructurada, así
+  que no hace falta parsear links del texto libre. Si `ReactMarkdown` recibe uno
+  igual, se renderiza como texto plano, no como link clickeable.
 - **Ilustración final del sensei** — se usa el boceto sumi-e del mock tal cual;
   el arte final se encarga aparte y se reemplaza sin tocar la lógica de
   animación/estado de este componente.

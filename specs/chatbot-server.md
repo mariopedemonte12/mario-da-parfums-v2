@@ -81,6 +81,15 @@ Mensajes JSON en ambas direcciones, un tipo de mensaje por línea de intención:
     final del asistente, en orden, a medida que Gemini los genera (streaming).
     Solo la respuesta final se streamea — los pasos intermedios de tool
     calling no se muestran token a token.
+  - `{"type": "fragrances", "items": [{"id", "name", "brand", "price", "imageUrl"}, ...]}`
+    — 0 o más por turno, cuando el agente llama a la tool local
+    `present_fragrances` (ver "Tarjetas de perfume estructuradas"). Igual que
+    `status`, es un evento informativo durante la resolución del turno, no
+    parte de la respuesta de texto — no reemplaza ni retrasa el streaming de
+    `token`. `price` viene en `null` si el agente no consultó el precio en
+    ese turno o si confirmó que no hay stock/listing — el cliente no asume
+    "sin stock" a partir de `null` solamente, ver "Tarjetas de perfume
+    estructuradas".
   - `{"type": "done"}` — fin del turno; el cliente puede volver a enviar un
     mensaje nuevo.
   - `{"type": "error", "text": "..."}` — error de turno (ver "Manejo de
@@ -205,6 +214,49 @@ Requisito central del usuario: poder agregar/quitar tools con comodidad.
   como crash de la conexión WS) — el agente debe comunicar en lenguaje
   natural que no pudo obtener ese dato, consistente con la etapa 2 del
   guardrail (no inventar el dato que faltó).
+
+## Tarjetas de perfume estructuradas (`present_fragrances`)
+
+Decisión de esta sesión (worktree `chatbot-widget`), para que la respuesta del
+agente se pueda mostrar como ficha de catálogo + link en vez de solo prosa:
+además del catálogo de tools agregado de los servidores MCP configurados, el
+agente principal siempre tiene disponible una tool local **no respaldada por
+ningún servidor MCP**, `present_fragrances` — deliberadamente con un nombre
+sin prefijo, para que nunca colisione con el namespacing `<serverId>.<tool>`
+de "Registro modular de tools multi-MCP".
+
+- Cuando la respuesta del agente va a mencionar o recomendar uno o más
+  perfumes concretos del catálogo, el agente llama primero a
+  `present_fragrances` con los datos de cada uno (`id`, `name`, `brand`,
+  `price`, `imageUrl`) — exactamente los valores que ya obtuvo de una tool de
+  catálogo en el mismo turno, nunca inventados. El servidor no vuelve a
+  consultar ningún MCP para armar la tarjeta: reenvía tal cual lo que
+  mandó el agente como `{"type": "fragrances", ...}` (ver protocolo). Esto es
+  deliberado — resolver la tarjeta del lado del servidor llamando de nuevo a
+  una tool de catálogo requeriría hardcodear qué servidor MCP la expone,
+  rompiendo la invariante de "sin código específico de servidor" del
+  registro modular.
+- `price` va en `null` cuando el agente no llamó a una tool de precio para
+  ese perfume en este turno (p. ej. el usuario solo pidió un listado, no
+  precios) **o** cuando sí la llamó y confirmó que no hay stock/listing — el
+  agente no distingue esos dos casos en el payload, y el cliente tampoco
+  debe inferir "sin stock" solo por ver `null` (ver
+  `specs/chatbot-widget.md`). Encontrado en testing: sin esta aclaración el
+  agente mandaba `null` para un listado simple ("qué perfumes de Dior
+  tenés") y la ficha lo mostraba como si estuvieran agotados, sin haber
+  consultado stock en absoluto.
+- Tras esa llamada, el agente sigue con su respuesta final en lenguaje
+  natural como siempre — puede referirse a los perfumes ya mostrados en la
+  ficha sin repetir sus datos crudos en el texto.
+- Si el agente no tiene datos concretos de catálogo para un perfume (p. ej.
+  una recomendación puramente general, sin resultado de tool), no llama a
+  esta tool — la respuesta queda como texto plano, igual que antes de esta
+  decisión.
+- Argumentos inválidos (falla la validación del lado del servidor) se
+  devuelven como error de la tool al propio Gemini, igual que una tool call
+  fallida de un MCP — no rompe el turno ni la conexión.
+- El link "ver en el catálogo" es una decisión del frontend, no del
+  protocolo — ver `specs/chatbot-widget.md`.
 
 ## Contexto conversacional y sesiones
 

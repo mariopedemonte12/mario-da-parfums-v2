@@ -37,6 +37,7 @@ function callbacks() {
   return {
     onStatus: vi.fn(),
     onToken: vi.fn(),
+    onFragrances: vi.fn(),
     onDone: vi.fn(),
     onError: vi.fn(),
   };
