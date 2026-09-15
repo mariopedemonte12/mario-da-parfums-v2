@@ -61,6 +61,14 @@
   * {
     @apply border-border outline-ring/50;
   }
+  /* The "emerge"/"sweep" motion variants (lib/motion.ts) translate content in/out past the
+     viewport edge on purpose (search results, pagination, auth panel swap). Without this, that
+     translateX temporarily grows html/body's scrollWidth and flashes a horizontal scrollbar for
+     the animation's duration — clip it here once instead of per animated component. */
+  html,
+  body {
+    overflow-x: hidden;
+  }
   body {
     @apply bg-background text-foreground;
   }
