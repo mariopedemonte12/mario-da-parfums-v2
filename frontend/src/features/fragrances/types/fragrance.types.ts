@@ -18,17 +18,15 @@ export type FindFragranceParams = {
   concentration?: string;
   targetAudience?: string;
   longevity?: string;
-  page?: number;
+  cursor?: string;
   limit?: number;
 };
 
-// Real backend shape (backend/src/fragrances/dto/paginated-fragrance.dto.ts):
-// flat { data, total, page, limit } — no `meta`, no `totalPages`.
+// Matches backend/src/fragrances/dto/paginated-fragrance.dto.ts: keyset/cursor
+// pagination, no total/page/meta — see specs/query-performance.md.
 export type PaginatedFragranceResponse = {
   data: Fragrance[];
-  total: number;
-  page: number;
-  limit: number;
+  nextCursor: string | null;
 };
 
 // Same shape as PaginatedFragranceResponse — kept as a separate alias because
