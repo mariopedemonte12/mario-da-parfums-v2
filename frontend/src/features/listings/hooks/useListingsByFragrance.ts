@@ -17,13 +17,14 @@ export function useListingsByFragrance(fragranceId: string) {
         setLoading(true);
         setError(null);
 
-        const first = await getListings({ fragranceId, limit: 100 });
-        let data = first.data;
+        let data: Listing[] = [];
+        let cursor: number | undefined;
 
-        for (let page = 2; page <= first.meta.totalPages; page++) {
-          const next = await getListings({ fragranceId, limit: 100, page });
-          data = data.concat(next.data);
-        }
+        do {
+          const response = await getListings({ fragranceId, limit: 100, cursor });
+          data = data.concat(response.data);
+          cursor = response.nextCursor ?? undefined;
+        } while (cursor !== undefined);
 
         if (!cancelled) {
           setListings(data);

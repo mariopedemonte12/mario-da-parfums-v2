@@ -10,15 +10,9 @@ export type Listing = {
     scrapedAt: string;
 }
 
-export type PaginationMeta = {
-    page: number;
-    limit: number;
-    total: number;
-    totalPages: number;
-}
-
-// Matches backend/src/listings/dto/paginated-listings.dto.ts (PaginatedListingsDto).
+// Matches backend/src/listings/dto/paginated-listings.dto.ts: keyset/cursor
+// pagination, no total/page/meta — see specs/query-performance.md.
 export type PaginatedListings = {
     data: Listing[];
-    meta: PaginationMeta;
+    nextCursor: number | null;
 }

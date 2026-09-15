@@ -7,7 +7,7 @@ export type FindListingsParams = {
     inStock?: boolean;
     minPrice?: number;
     maxPrice?: number;
-    page?: number;
+    cursor?: number;
     limit?: number;
 };
 
@@ -21,7 +21,7 @@ export async function getListings(
     if (params.inStock !== undefined) query.set("inStock", String(params.inStock));
     if (params.minPrice !== undefined) query.set("minPrice", String(params.minPrice));
     if (params.maxPrice !== undefined) query.set("maxPrice", String(params.maxPrice));
-    query.set("page", String(params.page ?? 1));
+    if (params.cursor !== undefined) query.set("cursor", String(params.cursor));
     query.set("limit", String(params.limit ?? 20));
 
     return backendApi.get<PaginatedListings>(`/listings?${query.toString()}`);

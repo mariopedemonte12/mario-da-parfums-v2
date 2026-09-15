@@ -28,8 +28,8 @@ export async function getFragrances(
   if (params.longevity) {
     searchParams.set("longevity", params.longevity);
   }
-  if (params.page) {
-    searchParams.set("page", String(params.page));
+  if (params.cursor) {
+    searchParams.set("cursor", params.cursor);
   }
   if (params.limit) {
     searchParams.set("limit", String(params.limit));
