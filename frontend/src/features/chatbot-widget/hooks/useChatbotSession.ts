@@ -102,7 +102,10 @@ export function useChatbotSession() {
             brand: item.brand,
             price: item.price,
             imageUrl: item.imageUrl,
-            href: `/fragrances?q=${encodeURIComponent(item.name)}`,
+            // /fragrances/[id] shipped (fragrance-detail, merged after this
+            // was first written as a `/fragrances?q=<name>` workaround) —
+            // link straight to it now.
+            href: `/fragrances/${item.id}`,
           }));
           setMessages((prev) => [
             ...prev,

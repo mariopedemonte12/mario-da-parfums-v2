@@ -155,14 +155,12 @@ el catálogo".
 - Puede llegar más de una vez por turno (0 o más), siempre antes o
   intercalado con los `token` de la respuesta final — se agrega en el orden
   en que llega, como cualquier otro evento del turno.
-- **Link "ver en el catálogo" — decisión interina**: apunta a
-  `/fragrances?q=<nombre del perfume>`, reutilizando el buscador existente de
-  `/fragrances` (que ahora también lee `?q=` para precargar el filtro). Esto es
-  un puente hasta que exista `/fragrances/[id]` (artboard 1f, "Product
-  detail", todavía no implementado en este worktree) — cuando esa página
-  exista, el link debería apuntar ahí por id en vez de filtrar por nombre.
-  No es una limitación del protocolo (el payload ya incluye `id`), es que el
-  frontend todavía no tiene dónde llevarlo.
+- **Link "ver en el catálogo"**: apunta a `/fragrances/<id>` (artboard 1f,
+  "Product detail" — mergeado a `master` por `fragrance-detail` mientras esta
+  sesión estaba en curso). Versión anterior de esta nota: antes de que esa
+  página existiera, el link apuntaba a `/fragrances?q=<nombre>` como puente
+  interino; quedó reemplazado en cuanto la página real llegó a este
+  worktree vía merge de `master`.
 - No hay reordenamiento ni deduplicación de fichas entre turnos — si el
   agente vuelve a presentar el mismo perfume en un turno posterior, aparece
   una ficha nueva, igual que una burbuja de texto repetida.
