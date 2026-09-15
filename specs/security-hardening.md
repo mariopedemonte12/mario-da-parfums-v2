@@ -14,8 +14,8 @@ This is an implementation-only spec. Verification of these fixes is a
 
 Being implemented in stages (own commits), tracked here as each lands:
 
-1. **Rate limiting** — done, this pass.
-2. Security headers (`helmet`) — not started.
+1. **Rate limiting** — done.
+2. **Security headers (`helmet`)** — done, this pass.
 3. Payload size limits (body size + 413 handling + batch `@ArrayMaxSize`) — not started.
 4. MCP tool input validation parity with HTTP DTOs — not started.
 5. HTML/markup sanitization on free-text fields — not started.
@@ -84,13 +84,64 @@ consecutive failed `POST /auths/login` attempts, no `429`, no backoff.
   client returns `429 Too Many Requests`; unrelated endpoints stay usable
   well past 5 requests, consistent with the global 100/min ceiling.
 
-## 2–5. Not yet implemented
+## 2. Security headers
 
-See `TODO.md` item 7 (points 2–5) for the findings and planned design of
-security headers, payload size limits, MCP validation parity, and HTML
-sanitization. This section will be filled in with the actual design
-decisions as each is implemented, in a later session against this same
-worktree/branch (`feature/security-hardening`).
+### Finding
+
+`curl -D -` against several endpoints showed only `X-Powered-By: Express` —
+no CSP, `X-Content-Type-Options`, `X-Frame-Options`, HSTS, or
+`Referrer-Policy` anywhere in the API.
+
+### Design
+
+- **Library**: `helmet@^8.3.0`, applied via `app.use(helmet({...}))` in
+  `backend/src/main.ts`, before `app.enableCors(...)`.
+- **CSP**: this is a JSON API with exactly one HTML surface, Swagger UI at
+  `/docs` (`SwaggerModule.setup`). A blanket `default-src 'none'` would break
+  it, so the directive set is helmet's own defaults
+  (`helmet.contentSecurityPolicy.getDefaultDirectives()`) with `default-src`
+  narrowed to `'self'` — no `'unsafe-inline'`/`'unsafe-eval'` added anywhere.
+  Verified this is sufficient: `/docs`'s generated HTML loads
+  `swagger-ui-bundle.js`, `swagger-ui-standalone-preset.js`, and
+  `swagger-ui-init.js` as same-origin `<script src="./docs/...">` tags (no
+  inline `<script>`), and `swagger-ui.css` as a same-origin stylesheet — all
+  satisfied by `script-src 'self'` / `style-src 'self' https: 'unsafe-inline'`
+  (the latter `'unsafe-inline'` is a helmet default, not something added for
+  Swagger). Confirmed against a running instance: `/docs` and its
+  `/docs/swagger-ui-*` assets all return `200` with the CSP header present,
+  and the page's own script tags are all same-origin.
+- **HSTS**: `hsts: process.env.NODE_ENV === 'production'` — forcing it in dev
+  would push plain-HTTP `localhost` into a browser's HSTS cache as
+  HTTPS-only. Confirmed via curl against a dev instance (`NODE_ENV`
+  unset) that no `Strict-Transport-Security` header is sent.
+- **`X-Powered-By`**: helmet removes it by default; confirmed via curl that
+  it's absent from every response after the change (present before).
+- Everything else uses helmet's defaults (`X-Content-Type-Options: nosniff`,
+  `X-Frame-Options: SAMEORIGIN`, `Referrer-Policy: no-referrer`,
+  `Cross-Origin-Opener-Policy`, etc.) — no per-app override needed for a pure
+  JSON API plus one same-origin-only HTML page.
+
+### Verification done this pass
+
+- Full unit (`pnpm test`, 624) and e2e (`pnpm test:e2e`, 235) suites pass
+  unchanged. Note: the e2e suites boot `AppModule` via
+  `Test.createTestingModule` directly (per stage 1's note), not through
+  `main.ts`'s `bootstrap()`, so they don't exercise `helmet()` itself —
+  header behavior was verified manually instead (below), consistent with how
+  stage 1 verified the throttler's live behavior.
+- Manual `curl -D -` against a running dev instance: `X-Powered-By` gone,
+  CSP header present on both `/docs` and a JSON endpoint
+  (`GET /fragrances?limit=1`), no `Strict-Transport-Security` header in dev,
+  `/docs` and all three `/docs/swagger-ui-*.js` assets (+ `.css`) return
+  `200`.
+
+## 3–5. Not yet implemented
+
+See `TODO.md` item 7 (points 3–5) for the findings and planned design of
+payload size limits, MCP validation parity, and HTML sanitization. This
+section will be filled in with the actual design decisions as each is
+implemented, in a later session against this same worktree/branch
+(`feature/security-hardening`).
 
 ## Out of scope (all points)
 
