@@ -1,9 +1,18 @@
 # Mario da Parfums — especificación de plataforma
 
+> **Aviso (borrador, pendiente de confirmar contra infra final).** Este documento es la intención original de producto y **varias secciones ya no describen el sistema implementado**. La descripción verificada contra el código está en [`docs/requirements.md`](docs/requirements.md) (ver también [`docs/architecture.md`](docs/architecture.md) y [`docs/limitations.md`](docs/limitations.md)), que lo reemplaza para efectos de lectura externa. Divergencias conocidas:
+>
+> - §2/§4.1: no hay worker semanal que scrapee Fragrantica; el catálogo se carga con un importador CLI bajo demanda desde un CSV de Kaggle, con descripciones inventadas. El servicio de similitud se documenta como `similarityServer` (hoy `perfumeCatalogImporter/`).
+> - §3/§4.2: el flag se llama `inStock` en el esquema (`isAvailable` solo en las tools MCP); los precios son simulados por `priceGenerator`, sin matching, reintentos ni delisting reales.
+> - §4.1: el backend no consume el servicio de similitud; lo llama el frontend directamente.
+> - §5.3: `GET /fragrances` no devuelve precios ni existe un endpoint REST de "más barato" (solo la tool MCP `get_cheapest_listing`).
+> - §6: el chatbot usa varios servidores MCP configurables (backend y similitud) más una tool local `present_fragrances`; `mcp-servers.json` está vacío por defecto.
+> - §9: hay búsqueda semántica por embeddings (no personalizada), que el chatbot puede usar para recomendar.
+
 Este documento es la ground-truth de **qué es** Mario da Parfums y **qué debe hacer**,
 independiente de cómo esté (o no esté) implementado hoy. Es el documento raíz del
 proyecto: cada spec de feature (`specs/<feature-slug>.md`, p.ej.
-[`vendors-crud.md`](./vendors-crud.md), [`fragrances-crud.md`](./fragrances-crud.md))
+[`vendors-crud.md`](./specs/vendors-crud.md), [`fragrances-crud.md`](./specs/fragrances-crud.md))
 debe ser consistente con lo que se define acá. Si una feature spec y este documento
 entran en conflicto, se actualiza este documento explícitamente (con el usuario) antes
 de seguir — nunca se asume que la feature spec más nueva "gana" en silencio.
@@ -59,10 +68,10 @@ No son nombres de tabla obligatorios, son las entidades que el negocio necesita:
 
 - **Vendor**: un retailer chileno del que se obtienen precios. Gestionado por un
   admin (crear/editar/borrar). Ya especificado en
-  [`vendors-crud.md`](./vendors-crud.md).
+  [`vendors-crud.md`](./specs/vendors-crud.md).
 - **Fragrance**: un perfume del catálogo canónico. Su fuente de verdad es
   Fragrantica (vía el job semanal); el CRUD admin sobre fragancias
-  ([`fragrances-crud.md`](./fragrances-crud.md)) es una vía de gestión manual, no la
+  ([`fragrances-crud.md`](./specs/fragrances-crud.md)) es una vía de gestión manual, no la
   vía principal de llenado de datos en operación normal.
 - **Listing**: el precio vigente de **una fragancia, en un tamaño puntual (p.ej.
   50ml, 100ml), en un vendor puntual**. Un mismo par fragancia-vendor puede tener
@@ -175,12 +184,12 @@ sirve y gestiona datos.
 
 ### 5.1 Gestión de vendors (admin)
 
-Ya especificado en [`vendors-crud.md`](./vendors-crud.md): CRUD batch, admin-only
+Ya especificado en [`vendors-crud.md`](./specs/vendors-crud.md): CRUD batch, admin-only
 para mutaciones, lectura pública.
 
 ### 5.2 Catálogo de fragancias (admin)
 
-Ya especificado en [`fragrances-crud.md`](./fragrances-crud.md): CRUD batch,
+Ya especificado en [`fragrances-crud.md`](./specs/fragrances-crud.md): CRUD batch,
 admin-only. En operación normal el job semanal es quien mantiene el catálogo al
 día; el CRUD admin es una vía de corrección/gestión manual, no el flujo principal.
 
