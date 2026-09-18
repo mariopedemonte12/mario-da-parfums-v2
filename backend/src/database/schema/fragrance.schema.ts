@@ -24,7 +24,7 @@ export const fragrances = pgTable(
     imageUrl: varchar('image_url', { length: 500 }),
     // olfactoryFamily/targetAudience/longevity: sourced from the Kaggle
     // dataset's category/target_audience/longevity columns by
-    // perfumeCatalogImporter (see specs/fragrance-notes-enrichment.md) —
+    // similarityServer (see specs/fragrance-notes-enrichment.md) —
     // free-form varchar, not an enum, matching how `concentration` already
     // holds a small-but-open vocabulary rather than a closed one.
     olfactoryFamily: varchar('olfactory_family', { length: 128 }),

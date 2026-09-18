@@ -119,7 +119,10 @@ describe('AdminCreateUserDto', () => {
     it('accepts a password at the 8-char minimum length boundary, given the other strength rules', async () => {
       // "Str0ng!P" = 8 chars, upper+lower+digit+special.
       expect(
-        await codesForField({ ...VALID_PAYLOAD, password: 'Str0ng!P' }, 'password'),
+        await codesForField(
+          { ...VALID_PAYLOAD, password: 'Str0ng!P' },
+          'password',
+        ),
       ).toEqual([]);
     });
 

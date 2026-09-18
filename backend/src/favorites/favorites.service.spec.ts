@@ -177,11 +177,9 @@ describe('FavoritesService', () => {
         }
         return {
           from: vi.fn().mockReturnValue({
-            where: vi
-              .fn()
-              .mockReturnValue({
-                execute: vi.fn().mockResolvedValue([{ value: 0 }]),
-              }),
+            where: vi.fn().mockReturnValue({
+              execute: vi.fn().mockResolvedValue([{ value: 0 }]),
+            }),
           }),
         };
       });
@@ -224,11 +222,9 @@ describe('FavoritesService', () => {
                 where: vi.fn().mockReturnValue({
                   orderBy: vi.fn().mockReturnValue({
                     limit: vi.fn().mockReturnValue({
-                      offset: vi
-                        .fn()
-                        .mockReturnValue({
-                          execute: vi.fn().mockResolvedValue([]),
-                        }),
+                      offset: vi.fn().mockReturnValue({
+                        execute: vi.fn().mockResolvedValue([]),
+                      }),
                     }),
                   }),
                 }),

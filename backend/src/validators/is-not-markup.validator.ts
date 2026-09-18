@@ -14,7 +14,7 @@ import { ValidationErrorCode } from '../shared/enums/validation-error-code.enums
 const MARKUP_PATTERN = /[<>]/;
 
 export function IsNotMarkup(validationOptions?: ValidationOptions) {
-  return function (object: Object, propertyName: string) {
+  return function (object: object, propertyName: string) {
     registerDecorator({
       name: 'isNotMarkup',
       target: object.constructor,

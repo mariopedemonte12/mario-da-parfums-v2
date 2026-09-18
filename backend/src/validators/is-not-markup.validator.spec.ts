@@ -33,9 +33,9 @@ describe('IsNotMarkup', () => {
   });
 
   it('rejects an <img onerror=...> tag', async () => {
-    expect(
-      await errorCodesFor('<img src=x onerror=alert(1)>'),
-    ).toEqual([ValidationErrorCode.CONTAINS_MARKUP]);
+    expect(await errorCodesFor('<img src=x onerror=alert(1)>')).toEqual([
+      ValidationErrorCode.CONTAINS_MARKUP,
+    ]);
   });
 
   it('rejects a lone "<" with no closing tag', async () => {

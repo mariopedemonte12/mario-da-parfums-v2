@@ -37,9 +37,6 @@ const THROTTLE_LIMIT = process.env.NODE_ENV === 'test' ? 100_000 : 100;
     McpModule,
   ],
   controllers: [AppController],
-  providers: [
-    AppService,
-    { provide: APP_GUARD, useClass: ThrottlerGuard },
-  ],
+  providers: [AppService, { provide: APP_GUARD, useClass: ThrottlerGuard }],
 })
 export class AppModule {}

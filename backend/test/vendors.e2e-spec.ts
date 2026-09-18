@@ -33,9 +33,8 @@ const { AppModule } = await import('../src/app.module.js');
 const { DRIZZLE } = await import('../src/database/database.module.js');
 const { vendors } = await import('../src/database/schema/vendor.schema.js');
 const { listings } = await import('../src/database/schema/listing.schema.js');
-const { fragrances } = await import(
-  '../src/database/schema/fragrance.schema.js'
-);
+const { fragrances } =
+  await import('../src/database/schema/fragrance.schema.js');
 const { Role } = await import('../src/shared/enums/role.enums.js');
 
 describe('Vendors (e2e, real Postgres)', () => {
@@ -54,12 +53,10 @@ describe('Vendors (e2e, real Postgres)', () => {
     }).compile();
 
     app = moduleFixture.createNestApplication();
-    const { customValidationPipe } = await import(
-      '../src/pipes/custom-validation.pipe.js'
-    );
-    const { AllExceptionsFilter } = await import(
-      '../src/common/filters/http-exception.filter.js'
-    );
+    const { customValidationPipe } =
+      await import('../src/pipes/custom-validation.pipe.js');
+    const { AllExceptionsFilter } =
+      await import('../src/common/filters/http-exception.filter.js');
     app.useGlobalPipes(customValidationPipe);
     app.useGlobalFilters(new AllExceptionsFilter());
     await app.init();
@@ -85,9 +82,7 @@ describe('Vendors (e2e, real Postgres)', () => {
     // sweep keeps failures in one test from leaking fixture rows (and name
     // collisions) into the next.
     if (createdVendorIds.length > 0) {
-      await db
-        .delete(vendors)
-        .where(inArray(vendors.id, createdVendorIds));
+      await db.delete(vendors).where(inArray(vendors.id, createdVendorIds));
       createdVendorIds.length = 0;
     }
   });
@@ -146,17 +141,19 @@ describe('Vendors (e2e, real Postgres)', () => {
     });
 
     it('GET /vendors/:id returns 404 for a non-existent id', async () => {
-      await request(app.getHttpServer())
-        .get('/vendors/2147483647')
-        .expect(404);
+      await request(app.getHttpServer()).get('/vendors/2147483647').expect(404);
     });
 
     // Two distinct rows makes the id filter's own correctness observable —
     // with only a single fixture row present, a mutant that dropped the id
     // filter entirely would still pass.
     it('returns the row matching :id specifically, not just any row', async () => {
-      const first = await insertVendor({ websiteUrl: 'https://first.example.com' });
-      const second = await insertVendor({ websiteUrl: 'https://second.example.com' });
+      const first = await insertVendor({
+        websiteUrl: 'https://first.example.com',
+      });
+      const second = await insertVendor({
+        websiteUrl: 'https://second.example.com',
+      });
 
       const res = await request(app.getHttpServer())
         .get(`/vendors/${second.id}`)
@@ -450,9 +447,7 @@ describe('Vendors (e2e, real Postgres)', () => {
         .send({ items: [item] })
         .expect(201);
       expect(res.body.results[0].success).toBe(false);
-      expect(res.body.results[0].error).toMatch(
-        /VENDOR_WEBSITE_URL_REQUIRED/,
-      );
+      expect(res.body.results[0].error).toMatch(/VENDOR_WEBSITE_URL_REQUIRED/);
     });
 
     it('websiteUrl: an invalid format fails that item (VENDOR_WEBSITE_URL_INVALID_FORMAT)', async () => {
@@ -666,7 +661,11 @@ describe('Vendors (e2e, real Postgres)', () => {
         .set('Authorization', `Bearer ${adminToken}`)
         .send({
           items: [
-            { id: created.id, name: newName, websiteUrl: 'https://renamed.example.com' },
+            {
+              id: created.id,
+              name: newName,
+              websiteUrl: 'https://renamed.example.com',
+            },
           ],
         })
         .expect(200);
@@ -851,7 +850,9 @@ describe('Vendors (e2e, real Postgres)', () => {
           .expect(200);
       } finally {
         await db.delete(listings).where(inArray(listings.id, [listing.id]));
-        await db.delete(fragrances).where(inArray(fragrances.id, [fragrance.id]));
+        await db
+          .delete(fragrances)
+          .where(inArray(fragrances.id, [fragrance.id]));
       }
     });
 

@@ -26,7 +26,7 @@ chatbot/
     NOTES.md               # non-obvious implementation decisions the spec doesn't fix — read before touching agent/chat-agent.ts or session.ts's truncation logic
   dev-mcp-stub/            # THROWAWAY stub MCP server, NOT the real fragrances/vendors/pricing MCP — see its README.md
   mcp-servers.json         # declarative list of MCP servers to connect to (empty by default)
-  .env.example / .env      # same pattern as backend/ and perfumeCatalogImporter/
+  .env.example / .env      # same pattern as backend/ and similarityServer/
 ```
 
 ## Conventions

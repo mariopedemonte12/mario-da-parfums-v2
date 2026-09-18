@@ -1,0 +1,234 @@
+# Full Mario da Parfums stack. Copy .env.example to .env first (see specs/docker-infra.md).
+#
+#   docker compose up -d --build                      # postgres, migrate, backend, similarity, chatbot, frontend
+#   docker compose --profile seed up -d --build       # same + catalog import + price seed, correctly ordered
+#   docker compose --profile tools run --rm download-dataset   # fetch the Kaggle CSV (needs KAGGLE_* in .env)
+#
+# Every image is built from the repo root (build context ".") because the
+# Node services resolve dependencies through the root pnpm-lock.yaml.
+name: mario-da-parfums
+
+x-postgres-url: &database-url postgresql://${POSTGRES_USER:-mario_da_parfums}:${POSTGRES_PASSWORD:-mario_da_parfums}@postgres:5432/${POSTGRES_DB:-mario_da_parfums}
+
+services:
+  postgres:
+    image: postgres:16-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-mario_da_parfums}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-mario_da_parfums}
+      POSTGRES_DB: ${POSTGRES_DB:-mario_da_parfums}
+    ports:
+      # Loopback only: local tools/e2e tests can reach it, the network cannot.
+      - "127.0.0.1:${POSTGRES_HOST_PORT:-5432}:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $${POSTGRES_USER} -d $${POSTGRES_DB}"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+      start_period: 5s
+
+  # One-shot: applies backend/drizzle/*.sql. Idempotent (drizzle tracks applied
+  # migrations), so it is safe to run on every `up`.
+  migrate:
+    build:
+      context: .
+      dockerfile: backend/Dockerfile
+      target: migrate
+    environment:
+      DATABASE_URL: *database-url
+    depends_on:
+      postgres:
+        condition: service_healthy
+    restart: "no"
+
+  backend:
+    build:
+      context: .
+      dockerfile: backend/Dockerfile
+      target: runtime
+    restart: unless-stopped
+    environment:
+      DATABASE_URL: *database-url
+      JWT_SECRET: ${JWT_SECRET:?Set JWT_SECRET in .env (see .env.example)}
+      JWT_EXPIRES_IN: ${JWT_EXPIRES_IN:-15m}
+      # Public origin of the frontend, as the BROWSER sees it (CORS allow-list
+      # with credentials). If it does not match the URL in the address bar,
+      # login fails silently in the browser.
+      FRONTEND_URL: ${FRONTEND_URL:-http://localhost:3010}
+      # `production` makes the session cookie `Secure` (browsers accept it on
+      # http://localhost, but not on other plain-http hosts) and enables HSTS.
+      NODE_ENV: ${BACKEND_NODE_ENV:-production}
+      PORT: "3000"
+    ports:
+      - "${BACKEND_HOST_PORT:-3000}:3000"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      migrate:
+        condition: service_completed_successfully
+    healthcheck:
+      test: ["CMD", "node", "-e", "fetch('http://127.0.0.1:3000/').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))"]
+      interval: 10s
+      timeout: 5s
+      retries: 6
+      start_period: 15s
+
+  similarity:
+    build:
+      context: .
+      dockerfile: similarityServer/Dockerfile
+    restart: unless-stopped
+    environment:
+      DATABASE_URL: *database-url
+      FRONTEND_URL: ${FRONTEND_URL:-http://localhost:3010}
+      SIMILARITY_MODEL_NAME: ${SIMILARITY_MODEL_NAME:-paraphrase-multilingual-MiniLM-L12-v2}
+      SIMILARITY_LOG_LEVEL: ${SIMILARITY_LOG_LEVEL:-info}
+      SIMILARITY_HOST: 0.0.0.0
+      SIMILARITY_PORT: "8001"
+      SIMILARITY_EMBEDDINGS_PATH: /data/embeddings.npz
+    ports:
+      - "${SIMILARITY_HOST_PORT:-8001}:8001"
+    volumes:
+      # embeddings.npz + embeddings.hnsw: survive restarts, so only new/changed
+      # fragrances are re-encoded on the next startup.
+      - similarity_data:/data
+    depends_on:
+      postgres:
+        condition: service_healthy
+      migrate:
+        condition: service_completed_successfully
+      # Only enforced when the `seed` profile is active: the index is built from
+      # `fragrances` at startup, so with seeding it must start after the import.
+      seed-catalog:
+        condition: service_completed_successfully
+        required: false
+    healthcheck:
+      # /health answers only after the startup index sync finished.
+      test: ["CMD", "python", "-c", "import urllib.request,sys; sys.exit(0 if urllib.request.urlopen('http://127.0.0.1:8001/health', timeout=4).status == 200 else 1)"]
+      interval: 15s
+      timeout: 6s
+      retries: 10
+      start_period: 300s
+
+  chatbot:
+    build:
+      context: .
+      dockerfile: chatbot/Dockerfile
+    # Exits at startup if GEMINI_API_KEY is empty (explicit error in the logs);
+    # a bounded retry avoids an endless crash loop in that case.
+    restart: on-failure:3
+    environment:
+      GEMINI_API_KEY: ${GEMINI_API_KEY:-}
+      GEMINI_AGENT_MODEL: ${GEMINI_AGENT_MODEL:-gemini-3.5-flash-lite}
+      GEMINI_AGENT_FALLBACK_MODEL: ${GEMINI_AGENT_FALLBACK_MODEL:-gemini-3.1-flash-lite}
+      GEMINI_CLASSIFIER_MODEL: ${GEMINI_CLASSIFIER_MODEL:-gemini-3.5-flash-lite}
+      GEMINI_CLASSIFIER_FALLBACK_MODEL: ${GEMINI_CLASSIFIER_FALLBACK_MODEL:-gemini-3.1-flash-lite}
+      CHATBOT_WS_HOST: 0.0.0.0
+      CHATBOT_WS_PORT: "8081"
+      # Docker-internal MCP endpoints: http://backend:3000/mcp, http://similarity:8001/mcp
+      MCP_CONFIG_PATH: ./mcp-servers.docker.json
+    ports:
+      - "${CHATBOT_HOST_PORT:-8081}:8081"
+    depends_on:
+      backend:
+        condition: service_healthy
+      similarity:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "node", "-e", "require('net').connect(8081,'127.0.0.1').on('connect',()=>process.exit(0)).on('error',()=>process.exit(1))"]
+      interval: 10s
+      timeout: 5s
+      retries: 6
+      start_period: 15s
+
+  frontend:
+    build:
+      context: .
+      dockerfile: frontend/Dockerfile
+      args:
+        # Baked into the client bundle at build time: must be browser-reachable
+        # URLs (published host ports), NOT docker-internal names. Rebuild after
+        # changing them: docker compose build frontend
+        NEXT_PUBLIC_BACKEND_API_URL: ${NEXT_PUBLIC_BACKEND_API_URL:-http://localhost:3000}
+        NEXT_PUBLIC_QUERY_API_URL: ${NEXT_PUBLIC_QUERY_API_URL:-http://localhost:8001}
+        NEXT_PUBLIC_CHATBOT_WS_URL: ${NEXT_PUBLIC_CHATBOT_WS_URL:-ws://localhost:8081}
+    restart: unless-stopped
+    ports:
+      - "${FRONTEND_HOST_PORT:-3010}:3010"
+    depends_on:
+      backend:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "node", "-e", "fetch('http://127.0.0.1:3010/').then(r=>process.exit(r.status<500?0:1)).catch(()=>process.exit(1))"]
+      interval: 10s
+      timeout: 5s
+      retries: 6
+      start_period: 15s
+
+  # ---- jobs (profile `seed`): `docker compose --profile seed up -d` ------------
+
+  # Imports similarityServer/data/perfumes_dataset.csv into `fragrances`
+  # (idempotent upsert). The CSV is NOT in the repo: fetch it first with the
+  # `download-dataset` tool job or drop it into similarityServer/data/.
+  seed-catalog:
+    profiles: ["seed"]
+    build:
+      context: .
+      dockerfile: similarityServer/Dockerfile
+    command: ["python", "-m", "similarityServer.main"]
+    environment:
+      DATABASE_URL: *database-url
+      SIMILARITY_LOG_LEVEL: ${SIMILARITY_LOG_LEVEL:-info}
+    volumes:
+      - ./similarityServer/data:/app/similarityServer/data:ro
+    depends_on:
+      postgres:
+        condition: service_healthy
+      migrate:
+        condition: service_completed_successfully
+    restart: "no"
+
+  # Generates fake vendors + deterministic listings/prices for every fragrance
+  # (idempotent upsert), so it needs the catalog imported first.
+  seed-prices:
+    profiles: ["seed"]
+    build:
+      context: .
+      dockerfile: priceGenerator/Dockerfile
+    environment:
+      DATABASE_URL: *database-url
+      LOG_LEVEL: ${PRICE_GENERATOR_LOG_LEVEL:-INFO}
+    depends_on:
+      postgres:
+        condition: service_healthy
+      migrate:
+        condition: service_completed_successfully
+      seed-catalog:
+        condition: service_completed_successfully
+    restart: "no"
+
+  # ---- tools (profile `tools`): run on demand, never part of `up` -------------
+
+  # Downloads the Kaggle dataset into ./similarityServer/data (bind mount).
+  # Runs as your host uid/gid so the file is not root/uid-10001 owned.
+  download-dataset:
+    profiles: ["tools"]
+    build:
+      context: .
+      dockerfile: similarityServer/Dockerfile
+    command: ["python", "-m", "similarityServer.download_dataset"]
+    user: "${LOCAL_UID:-1000}:${LOCAL_GID:-1000}"
+    environment:
+      HOME: /tmp
+      KAGGLE_USERNAME: ${KAGGLE_USERNAME:-}
+      KAGGLE_KEY: ${KAGGLE_KEY:-}
+    volumes:
+      - ./similarityServer/data:/app/similarityServer/data
+    restart: "no"
+
+volumes:
+  postgres_data:
+  similarity_data:

@@ -516,11 +516,14 @@ describe('ListingsController (HTTP, real guards + validation pipe)', () => {
       ['vendorId', 'vendorId'],
       ['sizeMl', 'sizeMl'],
       ['price', 'price'],
-    ] as const)('accepts %s at its lower boundary, 1', async (_label, field) => {
-      await authed()
-        .send({ items: [{ ...VALID_ITEM, [field]: 1 }] })
-        .expect(201);
-    });
+    ] as const)(
+      'accepts %s at its lower boundary, 1',
+      async (_label, field) => {
+        await authed()
+          .send({ items: [{ ...VALID_ITEM, [field]: 1 }] })
+          .expect(201);
+      },
+    );
 
     it.each([
       ['vendorId', 'vendorId'],
@@ -574,7 +577,9 @@ describe('ListingsController (HTTP, real guards + validation pipe)', () => {
     });
 
     it('accepts inStock omitted', async () => {
-      await authed().send({ items: [VALID_ITEM] }).expect(201);
+      await authed()
+        .send({ items: [VALID_ITEM] })
+        .expect(201);
     });
 
     it.each([true, false])('accepts inStock: %s', async (inStock) => {

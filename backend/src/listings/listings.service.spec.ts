@@ -338,7 +338,11 @@ describe('ListingsService', () => {
       });
 
       await service.updateMany([
-        { id: sampleRow.id, fragranceId: 'c56a4180-65aa-42ec-a945-5fd21dec0538', vendorId: 2 },
+        {
+          id: sampleRow.id,
+          fragranceId: 'c56a4180-65aa-42ec-a945-5fd21dec0538',
+          vendorId: 2,
+        },
       ]);
 
       expect(setArg?.fragranceId).toBe('c56a4180-65aa-42ec-a945-5fd21dec0538');
@@ -354,9 +358,7 @@ describe('ListingsService', () => {
         }),
       });
 
-      const [result] = await service.updateMany([
-        { id: 999, price: 1000 },
-      ]);
+      const [result] = await service.updateMany([{ id: 999, price: 1000 }]);
 
       expect(result).toEqual({
         id: 999,

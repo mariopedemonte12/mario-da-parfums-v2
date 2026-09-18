@@ -44,7 +44,11 @@ describe('AuthsService', () => {
     // Mimics real drizzle transaction semantics closely enough for these
     // unit tests: runs the callback with a fake tx handle and lets a thrown
     // error propagate as a rejection, same as a real rolled-back tx would.
-    db = { transaction: vi.fn((callback: (tx: unknown) => unknown) => callback(FAKE_TX)) };
+    db = {
+      transaction: vi.fn((callback: (tx: unknown) => unknown) =>
+        callback(FAKE_TX),
+      ),
+    };
 
     const module: TestingModule = await Test.createTestingModule({
       providers: [

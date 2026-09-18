@@ -38,7 +38,7 @@ clasificador dedicado". Decisión acordada con el usuario en esta sesión:
 entrenado). Motivo: un clasificador dedicado requeriría dataset propio
 etiquetado, entrenamiento y versionado de un modelo — infraestructura nueva
 que hoy no existe para este propósito (el encoder de
-`perfumeCatalogImporter` está entrenado para similitud semántica de
+`similarityServer` está entrenado para similitud semántica de
 fragancias, no para moderación de conversación). Usar Gemini reutiliza el SDK
 y la API key que el proyecto ya va a tener para el agente principal, con cero
 infraestructura adicional, y la tolerancia se ajusta iterando el prompt del

@@ -250,14 +250,14 @@ describe('UsersController (HTTP, real guards + validation pipe)', () => {
         .expect(200);
     });
 
-    it('self token on someone else\'s id -> 403', async () => {
+    it("self token on someone else's id -> 403", async () => {
       await request(app.getHttpServer())
         .get('/users/999')
         .set('Authorization', `Bearer ${SELF_TOKEN}`)
         .expect(403);
     });
 
-    it('admin token on someone else\'s id -> 200 (admin bypass)', async () => {
+    it("admin token on someone else's id -> 200 (admin bypass)", async () => {
       await request(app.getHttpServer())
         .get('/users/999')
         .set('Authorization', `Bearer ${ADMIN_TOKEN}`)
@@ -394,7 +394,9 @@ describe('UsersController (HTTP, real guards + validation pipe)', () => {
     });
 
     it('rejects a photoS3Key with characters outside the S3 key charset', async () => {
-      await authedSelf().send({ photoS3Key: 'users/avatars/1.jpg?x=1' }).expect(400);
+      await authedSelf()
+        .send({ photoS3Key: 'users/avatars/1.jpg?x=1' })
+        .expect(400);
     });
 
     it('accepts an empty body (all fields optional)', async () => {

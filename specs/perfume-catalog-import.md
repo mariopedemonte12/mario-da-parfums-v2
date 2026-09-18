@@ -16,19 +16,20 @@ proyecto (nunca copiadas de Fragrantica ni de ninguna fuente editorial), y un
 componente chico de ML para hacerlo más interesante (búsqueda por similitud
 de texto).
 
-Sigue viviendo en `perfumeCatalogImporter/` (renombrado desde
-`fragranticaScraper/`) porque el rol del paquete es el mismo — poblar
+Sigue viviendo en `similarityServer/` (renombrado desde
+`fragranticaScraper/`, y luego desde `perfumeCatalogImporter/` en la feature
+`docker-infra`; el nombre viejo solo sobrevive en el historial de git) porque el rol del paquete es el mismo — poblar
 `fragrances` — solo cambió **de dónde sale el dato**. Referenciado como
 "worker de catálogo" en [`platform-spec.md`](../platform-spec.md) §4.1
 (actualizado para reflejar este cambio) y en `backend/src/fragrances/NOTES.md`.
 
 ## Qué hace
 
-1. **Fuente de datos**: `perfumeCatalogImporter/data/perfumes_dataset.csv`,
+1. **Fuente de datos**: `similarityServer/data/perfumes_dataset.csv`,
    un dataset estático (no red, no scraping) — ["Perfume
    Dataset"](https://www.kaggle.com/datasets/ayushghawana/perfume-dataset) de
    Ayush (Kaggle user `ayushghawana`), licencia **CC BY 4.0** (atribución
-   obligatoria — ver `perfumeCatalogImporter/data/README.md`, que es la
+   obligatoria — ver `similarityServer/data/README.md`, que es la
    atribución). Columnas: `brand`, `perfume`, `type`, `category`,
    `target_audience`, `longevity`. `brand`/`perfume` son marcas y nombres de
    perfumes reales; `category`/`target_audience`/`longevity` son metadatos

@@ -21,7 +21,7 @@ export default function FragranceSearch({
         <input
           value={value}
           onChange={(event) => onChange(event.target.value)}
-          placeholder="Buscar por nombre"
+          placeholder="Buscar por nombre o marca"
           className="w-full border-0 bg-transparent font-serif text-lg italic outline-none placeholder:text-text-muted placeholder:not-italic"
         />
       </div>

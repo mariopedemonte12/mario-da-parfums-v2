@@ -30,9 +30,8 @@ process.env.JWT_EXPIRES_IN ??= '15m';
 
 const { AppModule } = await import('../src/app.module.js');
 const { DRIZZLE } = await import('../src/database/database.module.js');
-const { fragrances } = await import(
-  '../src/database/schema/fragrance.schema.js'
-);
+const { fragrances } =
+  await import('../src/database/schema/fragrance.schema.js');
 const { listings } = await import('../src/database/schema/listing.schema.js');
 const { vendors } = await import('../src/database/schema/vendor.schema.js');
 const { Role } = await import('../src/shared/enums/role.enums.js');
@@ -70,12 +69,10 @@ describe('Fragrances (e2e, real Postgres)', () => {
     }).compile();
 
     app = moduleFixture.createNestApplication();
-    const { customValidationPipe } = await import(
-      '../src/pipes/custom-validation.pipe.js'
-    );
-    const { AllExceptionsFilter } = await import(
-      '../src/common/filters/http-exception.filter.js'
-    );
+    const { customValidationPipe } =
+      await import('../src/pipes/custom-validation.pipe.js');
+    const { AllExceptionsFilter } =
+      await import('../src/common/filters/http-exception.filter.js');
     app.useGlobalPipes(customValidationPipe);
     app.useGlobalFilters(new AllExceptionsFilter());
     await app.init();
@@ -229,12 +226,12 @@ describe('Fragrances (e2e, real Postgres)', () => {
         await createViaApi([
           validCreateItem({
             name: `Aventus${suffix} Cologne ${++nameCounter}`,
-            brand: brandX,
+            search: brandX,
             concentration: 'EDP',
           }),
           validCreateItem({
             name: `Aventus${suffix} Parfum ${++nameCounter}`,
-            brand: brandX,
+            search: brandX,
             concentration: 'EDT',
           }),
           validCreateItem({
@@ -245,11 +242,11 @@ describe('Fragrances (e2e, real Postgres)', () => {
         ]);
       });
 
-      it('filters by name (partial, case-insensitive contains)', async () => {
+      it('searches by text (partial, case-insensitive contains)', async () => {
         const res = await request(app.getHttpServer())
           .get('/fragrances')
           .set('Authorization', `Bearer ${adminToken}`)
-          .query({ name: `aventus${suffix}`.toUpperCase(), limit: 100 })
+          .query({ search: `aventus${suffix}`.toUpperCase(), limit: 100 })
           .expect(200);
 
         expect(res.body.data.length).toBe(2);
@@ -260,37 +257,35 @@ describe('Fragrances (e2e, real Postgres)', () => {
         ).toBe(true);
       });
 
-      it('filters by brand (exact match)', async () => {
+      it('searches by brand text', async () => {
         const res = await request(app.getHttpServer())
           .get('/fragrances')
           .set('Authorization', `Bearer ${adminToken}`)
-          .query({ brand: brandX, limit: 100 })
+          .query({ search: brandX, limit: 100 })
           .expect(200);
 
         expect(res.body.data.length).toBe(2);
-        expect(res.body.data.every((f: any) => f.brand === brandX)).toBe(
-          true,
-        );
+        expect(res.body.data.every((f: any) => f.brand === brandX)).toBe(true);
       });
 
       it('filters by concentration (exact match)', async () => {
         const res = await request(app.getHttpServer())
           .get('/fragrances')
           .set('Authorization', `Bearer ${adminToken}`)
-          .query({ brand: brandX, concentration: 'EDT', limit: 100 })
+          .query({ search: brandX, concentration: 'EDT', limit: 100 })
           .expect(200);
 
         expect(res.body.data).toHaveLength(1);
         expect(res.body.data[0].concentration).toBe('EDT');
       });
 
-      it('combines name + brand + concentration all at once', async () => {
+      it('combines search (name + brand tokens) + concentration all at once', async () => {
         const res = await request(app.getHttpServer())
           .get('/fragrances')
           .set('Authorization', `Bearer ${adminToken}`)
           .query({
             name: `aventus${suffix}`,
-            brand: brandX,
+            search: brandX,
             concentration: 'EDP',
             limit: 100,
           })
@@ -310,7 +305,7 @@ describe('Fragrances (e2e, real Postgres)', () => {
         const res = await request(app.getHttpServer())
           .get('/fragrances')
           .set('Authorization', `Bearer ${adminToken}`)
-          .query({ brand: brandX, limit: 2 })
+          .query({ search: brandX, limit: 2 })
           .expect(200);
 
         expect(res.body.data).toHaveLength(2);
@@ -323,7 +318,7 @@ describe('Fragrances (e2e, real Postgres)', () => {
         const res = await request(app.getHttpServer())
           .get('/fragrances')
           .set('Authorization', `Bearer ${adminToken}`)
-          .query({ brand: brandX, limit: 100 })
+          .query({ search: brandX, limit: 100 })
           .expect(200);
 
         expect(res.body.data).toHaveLength(2);
@@ -334,7 +329,7 @@ describe('Fragrances (e2e, real Postgres)', () => {
         const page1 = await request(app.getHttpServer())
           .get('/fragrances')
           .set('Authorization', `Bearer ${adminToken}`)
-          .query({ brand: brandX, limit: 1 })
+          .query({ search: brandX, limit: 1 })
           .expect(200);
         expect(page1.body.data).toHaveLength(1);
         expect(page1.body.nextCursor).toBe(page1.body.data[0].id);
@@ -342,7 +337,7 @@ describe('Fragrances (e2e, real Postgres)', () => {
         const page2 = await request(app.getHttpServer())
           .get('/fragrances')
           .set('Authorization', `Bearer ${adminToken}`)
-          .query({ brand: brandX, limit: 1, cursor: page1.body.nextCursor })
+          .query({ search: brandX, limit: 1, cursor: page1.body.nextCursor })
           .expect(200);
         expect(page2.body.data).toHaveLength(1);
         expect(page2.body.data[0].id).not.toBe(page1.body.data[0].id);
@@ -354,7 +349,7 @@ describe('Fragrances (e2e, real Postgres)', () => {
         const page3 = await request(app.getHttpServer())
           .get('/fragrances')
           .set('Authorization', `Bearer ${adminToken}`)
-          .query({ brand: brandX, limit: 1, cursor: page2.body.nextCursor })
+          .query({ search: brandX, limit: 1, cursor: page2.body.nextCursor })
           .expect(200);
         expect(page3.body.data).toEqual([]);
         expect(page3.body.nextCursor).toBeNull();
@@ -366,18 +361,18 @@ describe('Fragrances (e2e, real Postgres)', () => {
         const page1 = await request(app.getHttpServer())
           .get('/fragrances')
           .set('Authorization', `Bearer ${adminToken}`)
-          .query({ brand: brandX, limit: 1 })
+          .query({ search: brandX, limit: 1 })
           .expect(200);
 
         const page2 = await request(app.getHttpServer())
           .get('/fragrances')
           .set('Authorization', `Bearer ${adminToken}`)
-          .query({ brand: brandX, limit: 10, cursor: page1.body.nextCursor })
+          .query({ search: brandX, limit: 10, cursor: page1.body.nextCursor })
           .expect(200);
 
-        expect(
-          page2.body.data.every((f: any) => f.brand === brandX),
-        ).toBe(true);
+        expect(page2.body.data.every((f: any) => f.brand === brandX)).toBe(
+          true,
+        );
       });
 
       it('paginating without any filter enumerates every row exactly once (no gaps, no duplicates)', async () => {
@@ -387,7 +382,11 @@ describe('Fragrances (e2e, real Postgres)', () => {
           const res = await request(app.getHttpServer())
             .get('/fragrances')
             .set('Authorization', `Bearer ${adminToken}`)
-            .query({ name: `aventus${suffix}`, limit: 1, ...(cursor ? { cursor } : {}) })
+            .query({
+              search: `aventus${suffix}`,
+              limit: 1,
+              ...(cursor ? { cursor } : {}),
+            })
             .expect(200);
           seen.push(...res.body.data.map((f: any) => f.id));
           cursor = res.body.nextCursor ?? undefined;
@@ -413,7 +412,7 @@ describe('Fragrances (e2e, real Postgres)', () => {
           await request(app.getHttpServer())
             .get('/fragrances')
             .set('Authorization', `Bearer ${adminToken}`)
-            .query({ brand: brandX, cursor: randomUUID(), limit: 10 })
+            .query({ search: brandX, cursor: randomUUID(), limit: 10 })
             .expect(200);
         });
 
@@ -421,14 +420,14 @@ describe('Fragrances (e2e, real Postgres)', () => {
           const full = await request(app.getHttpServer())
             .get('/fragrances')
             .set('Authorization', `Bearer ${adminToken}`)
-            .query({ brand: brandX, limit: 100 })
+            .query({ search: brandX, limit: 100 })
             .expect(200);
           const lastId = full.body.data[full.body.data.length - 1].id;
 
           const res = await request(app.getHttpServer())
             .get('/fragrances')
             .set('Authorization', `Bearer ${adminToken}`)
-            .query({ brand: brandX, cursor: lastId, limit: 100 })
+            .query({ search: brandX, cursor: lastId, limit: 100 })
             .expect(200);
 
           expect(res.body.data).toEqual([]);
@@ -526,9 +525,7 @@ describe('Fragrances (e2e, real Postgres)', () => {
       // vendors.service.ts. Fixed in fragrances.service.ts to also check
       // `error.cause?.code`; this asserts the spec-documented message is
       // now actually reachable.
-      expect(res.body[1].error).toBe(
-        `Fragrance "${name}" already exists`,
-      );
+      expect(res.body[1].error).toBe(`Fragrance "${name}" already exists`);
     });
 
     // BVA (two-point) on the @MaxLen guards added to CreateFragranceDto so
@@ -721,9 +718,7 @@ describe('Fragrances (e2e, real Postgres)', () => {
       ];
 
       it.each(accepted)('accepts %s', async (imageUrl) => {
-        const [result] = await createViaApi([
-          validCreateItem({ imageUrl }),
-        ]);
+        const [result] = await createViaApi([validCreateItem({ imageUrl })]);
         expect(result.success).toBe(true);
       });
 
@@ -820,9 +815,7 @@ describe('Fragrances (e2e, real Postgres)', () => {
         .patch('/fragrances/batch')
         .set('Authorization', `Bearer ${adminToken}`)
         .send({
-          items: [
-            { id: toUpdate.id, name: (await getName(existing.id!)) },
-          ],
+          items: [{ id: toUpdate.id, name: await getName(existing.id!) }],
         })
         .expect(200);
 
@@ -1090,7 +1083,9 @@ describe('Fragrances (e2e, real Postgres)', () => {
     for (const op of operations) {
       for (const [roleLabel, getToken, fixedStatus] of roles) {
         const expected =
-          op.public || roleLabel === 'admin role' ? op.successStatus : fixedStatus;
+          op.public || roleLabel === 'admin role'
+            ? op.successStatus
+            : fixedStatus;
         it(`${op.name} as ${roleLabel} -> ${expected}`, async () => {
           await op.run(getToken()).expect(expected);
         });

@@ -5,11 +5,9 @@ import {
   serial,
   uuid,
   varchar,
-  text,
   integer,
   boolean,
   timestamp,
-  pgEnum,
   index,
   uniqueIndex,
 } from 'drizzle-orm/pg-core';

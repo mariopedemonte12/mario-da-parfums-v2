@@ -28,8 +28,6 @@ const LONGEVITIES = [
 ];
 
 type FragranceFiltersProps = {
-  brand: string;
-  onBrandChange: (value: string) => void;
   concentration: string | undefined;
   onConcentrationChange: (value: string | undefined) => void;
   targetAudience: string | undefined;
@@ -99,8 +97,6 @@ function ChipFilterSection({
 }
 
 export default function FragranceFilters({
-  brand,
-  onBrandChange,
   concentration,
   onConcentrationChange,
   targetAudience,
@@ -110,16 +106,6 @@ export default function FragranceFilters({
 }: FragranceFiltersProps) {
   return (
     <aside className="flex flex-col gap-7 font-sans text-sm font-light">
-      <div>
-        <SectionLabel>Marca</SectionLabel>
-        <input
-          value={brand}
-          onChange={(event) => onBrandChange(event.target.value)}
-          placeholder="Ej: Chanel"
-          className="h-9 w-full rounded-full border border-border bg-transparent px-4 text-sm outline-none placeholder:text-text-muted focus-visible:border-secondary"
-        />
-      </div>
-
       <ChipFilterSection
         label="Concentración"
         options={CONCENTRATIONS}

@@ -14,7 +14,7 @@ export function useFragrances(params: FragrancesFilterParams) {
   const [error, setError] = useState<string | null>(null);
   const requestIdRef = useRef(0);
 
-  const { name, brand, concentration, targetAudience, longevity, limit } = params;
+  const { search, concentration, targetAudience, longevity, limit } = params;
 
   useEffect(() => {
     const requestId = ++requestIdRef.current;
@@ -25,8 +25,7 @@ export function useFragrances(params: FragrancesFilterParams) {
         setError(null);
 
         const response = await getFragrances({
-          name,
-          brand,
+          search,
           concentration,
           targetAudience,
           longevity,
@@ -47,7 +46,7 @@ export function useFragrances(params: FragrancesFilterParams) {
     }
 
     fetchFirstPage();
-  }, [name, brand, concentration, targetAudience, longevity, limit]);
+  }, [search, concentration, targetAudience, longevity, limit]);
 
   async function loadMore() {
     if (!nextCursor || loadingMore) return;
@@ -59,8 +58,7 @@ export function useFragrances(params: FragrancesFilterParams) {
       setError(null);
 
       const response = await getFragrances({
-        name,
-        brand,
+        search,
         concentration,
         targetAudience,
         longevity,

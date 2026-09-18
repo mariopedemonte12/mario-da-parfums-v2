@@ -4,7 +4,7 @@
 ## y `chatbot-server.md`
 
 [`perfume-similarity-search.md`](perfume-similarity-search.md) ya especifica e
-implementa un servicio FastAPI (`perfumeCatalogImporter/app.py`) que sirve
+implementa un servicio FastAPI (`similarityServer/app.py`) que sirve
 búsqueda semántica de fragancias por descripción libre (embeddings +
 similitud coseno aproximada vía HNSW), con `GET /search` y `GET /health`. Este
 documento **no reabre esa implementación** — solo agrega una segunda forma de
@@ -36,7 +36,7 @@ mismo estado in-process.
 
 ## Qué hace
 
-- El mismo proceso `perfumeCatalogImporter/app.py` monta, junto a las rutas
+- El mismo proceso `similarityServer/app.py` monta, junto a las rutas
   HTTP existentes, un servidor MCP sobre **HTTP** (transporte *streamable
   HTTP*, mismo motivo que en `backend-mcp-server.md`: el chatbot es un proceso
   Node separado, stdio no aplica) usando el **SDK oficial de MCP para Python**

@@ -31,9 +31,8 @@ process.env.JWT_EXPIRES_IN ??= '15m';
 const { AppModule } = await import('../src/app.module.js');
 const { DRIZZLE } = await import('../src/database/database.module.js');
 const { listings } = await import('../src/database/schema/listing.schema.js');
-const { fragrances } = await import(
-  '../src/database/schema/fragrance.schema.js'
-);
+const { fragrances } =
+  await import('../src/database/schema/fragrance.schema.js');
 const { vendors } = await import('../src/database/schema/vendor.schema.js');
 const { Role } = await import('../src/shared/enums/role.enums.js');
 
@@ -57,12 +56,10 @@ describe('Listings (e2e, real Postgres)', () => {
     }).compile();
 
     app = moduleFixture.createNestApplication();
-    const { customValidationPipe } = await import(
-      '../src/pipes/custom-validation.pipe.js'
-    );
-    const { AllExceptionsFilter } = await import(
-      '../src/common/filters/http-exception.filter.js'
-    );
+    const { customValidationPipe } =
+      await import('../src/pipes/custom-validation.pipe.js');
+    const { AllExceptionsFilter } =
+      await import('../src/common/filters/http-exception.filter.js');
     app.useGlobalPipes(customValidationPipe);
     app.useGlobalFilters(new AllExceptionsFilter());
     await app.init();
@@ -115,9 +112,9 @@ describe('Listings (e2e, real Postgres)', () => {
   });
 
   afterAll(async () => {
-    await db.delete(fragrances).where(
-      inArray(fragrances.id, [fragranceA.id, fragranceB.id]),
-    );
+    await db
+      .delete(fragrances)
+      .where(inArray(fragrances.id, [fragranceA.id, fragranceB.id]));
     await db
       .delete(vendors)
       .where(inArray(vendors.id, [vendorA.id, vendorB.id]));
@@ -529,13 +526,45 @@ describe('Listings (e2e, real Postgres)', () => {
       // discriminate against — a filter that's silently ignored, or one
       // that's too broad/narrow, would still pass a fixture with only
       // matching rows.
-      await db.insert(listings).values([
-        validItem({ vendorId: vendorA.id, fragranceId: fragranceA.id, sizeMl: 30, price: 10000, inStock: true }),
-        validItem({ vendorId: vendorA.id, fragranceId: fragranceA.id, sizeMl: 50, price: 20000, inStock: false }),
-        validItem({ vendorId: vendorA.id, fragranceId: fragranceB.id, sizeMl: 30, price: 15000, inStock: true }),
-        validItem({ vendorId: vendorB.id, fragranceId: fragranceA.id, sizeMl: 30, price: 30000, inStock: true }),
-        validItem({ vendorId: vendorB.id, fragranceId: fragranceB.id, sizeMl: 100, price: 90000, inStock: false }),
-      ]);
+      await db
+        .insert(listings)
+        .values([
+          validItem({
+            vendorId: vendorA.id,
+            fragranceId: fragranceA.id,
+            sizeMl: 30,
+            price: 10000,
+            inStock: true,
+          }),
+          validItem({
+            vendorId: vendorA.id,
+            fragranceId: fragranceA.id,
+            sizeMl: 50,
+            price: 20000,
+            inStock: false,
+          }),
+          validItem({
+            vendorId: vendorA.id,
+            fragranceId: fragranceB.id,
+            sizeMl: 30,
+            price: 15000,
+            inStock: true,
+          }),
+          validItem({
+            vendorId: vendorB.id,
+            fragranceId: fragranceA.id,
+            sizeMl: 30,
+            price: 30000,
+            inStock: true,
+          }),
+          validItem({
+            vendorId: vendorB.id,
+            fragranceId: fragranceB.id,
+            sizeMl: 100,
+            price: 90000,
+            inStock: false,
+          }),
+        ]);
     });
 
     it('filters by fragranceId alone', async () => {
@@ -556,9 +585,9 @@ describe('Listings (e2e, real Postgres)', () => {
         .query({ vendorId: vendorB.id, limit: 100 })
         .expect(200);
 
-      expect(
-        res.body.data.every((l: any) => l.vendorId === vendorB.id),
-      ).toBe(true);
+      expect(res.body.data.every((l: any) => l.vendorId === vendorB.id)).toBe(
+        true,
+      );
       expect(res.body.data.length).toBeGreaterThanOrEqual(2);
     });
 
@@ -675,9 +704,7 @@ describe('Listings (e2e, real Postgres)', () => {
 
       const idsPage1 = page1.body.data.map((l: any) => l.id);
       const idsPage2 = page2.body.data.map((l: any) => l.id);
-      expect(idsPage1.some((id: number) => idsPage2.includes(id))).toBe(
-        false,
-      );
+      expect(idsPage1.some((id: number) => idsPage2.includes(id))).toBe(false);
       expect([...idsPage1, ...idsPage2].sort()).toEqual(
         idsPage1.concat(idsPage2).sort(),
       );

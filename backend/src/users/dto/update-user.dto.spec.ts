@@ -58,9 +58,9 @@ describe('UpdateUserDto', () => {
     });
 
     it('rejects a malformed email with EMAIL_INVALID_FORMAT', async () => {
-      expect(
-        await codesForField({ email: 'not-an-email' }, 'email'),
-      ).toEqual([ValidationErrorCode.EMAIL_INVALID_FORMAT]);
+      expect(await codesForField({ email: 'not-an-email' }, 'email')).toEqual([
+        ValidationErrorCode.EMAIL_INVALID_FORMAT,
+      ]);
     });
 
     it('accepts a well-formed email', async () => {
@@ -81,10 +81,7 @@ describe('UpdateUserDto', () => {
 
     it('rejects an <img onerror=...> tag in name with CONTAINS_MARKUP', async () => {
       expect(
-        await codesForField(
-          { name: '<img src=x onerror=alert(1)>' },
-          'name',
-        ),
+        await codesForField({ name: '<img src=x onerror=alert(1)>' }, 'name'),
       ).toEqual(expect.arrayContaining([ValidationErrorCode.CONTAINS_MARKUP]));
     });
   });
@@ -95,9 +92,7 @@ describe('UpdateUserDto', () => {
     });
 
     it('rejects a non-string value with PHOTO_S3_KEY_INVALID_TYPE', async () => {
-      expect(
-        await codesForField({ photoS3Key: 123 }, 'photoS3Key'),
-      ).toEqual(
+      expect(await codesForField({ photoS3Key: 123 }, 'photoS3Key')).toEqual(
         expect.arrayContaining([ValidationErrorCode.PHOTO_S3_KEY_INVALID_TYPE]),
       );
     });
