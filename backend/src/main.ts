@@ -1,3 +1,4 @@
+import './config/load-env.js';
 import cookieParser from 'cookie-parser';
 import { json, urlencoded } from 'express';
 import helmet from 'helmet';

@@ -1,3 +1,4 @@
+import './config/load-env.js';
 import { Module } from '@nestjs/common';
 import { APP_GUARD } from '@nestjs/core';
 import { ThrottlerGuard, ThrottlerModule } from '@nestjs/throttler';
@@ -23,7 +24,9 @@ const THROTTLE_LIMIT = process.env.NODE_ENV === 'test' ? 100_000 : 100;
 
 @Module({
   imports: [
-    ConfigModule.forRoot({ isGlobal: true }),
+    // The repo-root env file is loaded by ./config/load-env.js (process env wins);
+    // ConfigModule must not also look for a `.env` in the cwd.
+    ConfigModule.forRoot({ isGlobal: true, ignoreEnvFile: true }),
     ThrottlerModule.forRoot([{ ttl: 60_000, limit: THROTTLE_LIMIT }]),
     JwtConfigModule,
     UsersModule,
