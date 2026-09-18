@@ -23,7 +23,7 @@ Edita el archivo `.env` recién creado (está en `.gitignore`; nunca lo commitee
 | Variable | Qué hacer |
 |---|---|
 | `JWT_SECRET` | **Obligatorio.** Si falta, `docker compose` falla al interpolar. Genera uno con `openssl rand -hex 32`. |
-| `GEMINI_API_KEY` | Opcional. Sin ella, **solo el chatbot** termina al arrancar con un error explícito (compose lo reintenta 3 veces); el resto del sistema funciona. **Para dejarla vacía, borra el comentario de la línea** (`GEMINI_API_KEY=`, sin nada después): en `.env.example` la línea trae un comentario en línea (`GEMINI_API_KEY=   # [SECRET] ...`) y Docker Compose interpreta ese texto como el valor, así que el chatbot arranca "sano" con una clave basura y falla recién al primer mensaje (verificado con `docker compose config`). Lo mismo aplica a `KAGGLE_KEY`. |
+| `GEMINI_API_KEY` | Opcional. Sin ella, **solo el chatbot** termina al arrancar con un error explícito (compose lo reintenta 3 veces); el resto del sistema funciona. Déjala como `GEMINI_API_KEY=` (vacía y **sin comentario en la misma línea**: Docker Compose leería el comentario como valor y el chatbot arrancaría "sano" con una clave basura). Lo mismo aplica a `KAGGLE_KEY`. |
 | `POSTGRES_PASSWORD` | El valor por defecto sirve en local. Si lo cambias, usa caracteres seguros para URL (sin `@ : / ? # %`), porque se incrusta en `DATABASE_URL`. |
 | `KAGGLE_USERNAME`, `KAGGLE_KEY` | Solo para el job `download-dataset`. |
 | `LOCAL_UID`, `LOCAL_GID` | Solo para `download-dataset` (para que el CSV quede a tu nombre): valores de `id -u` / `id -g`. |
