@@ -75,7 +75,7 @@ err` check).
 ### Evidence — 4 failing e2e tests
 
 `backend/test/listings.e2e-spec.ts` (run against the real Postgres
-container, `backend/docker-compose.yml`) has 4 tests that currently fail
+container, root `docker-compose.yml`) has 4 tests that currently fail
 because of this, each with a `KNOWN BUG` comment pointing back here:
 
 - `POST /listings/batch — real unique + FK constraints > reports a real
@@ -96,7 +96,7 @@ cd backend
 pnpm test:e2e -- listings
 ```
 
-(needs the Postgres container from `backend/docker-compose.yml` up; the
+(needs the Postgres container from root `docker-compose.yml` up; the
 spec sets sane `DATABASE_URL`/`JWT_SECRET` defaults itself if no `.env` is
 present).
 

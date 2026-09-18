@@ -1,0 +1,4 @@
+[
+  { "id": "backend", "transport": "http", "url": "http://backend:3000/mcp" },
+  { "id": "similarity", "transport": "http", "url": "http://similarity:8001/mcp" }
+]
