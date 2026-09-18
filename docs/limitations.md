@@ -1,7 +1,7 @@
 # Limitaciones
 
-> **Estado: Borrador — pendiente de confirmar contra infra final.**
-> Solo limitaciones verificadas en el código o en documentación del repo. Lo no verificado está marcado `TODO(verificar)`.
+
+> Solo limitaciones verificadas en el código, en el compose o en documentación del repo. Lo que no se pudo verificar está marcado `TODO(verificar)`.
 
 ## Datos simulados
 
@@ -18,32 +18,37 @@
 - Índice identificado por `name`: nombres repetidos entre marcas son ambiguos.
 - Se sincroniza solo al arrancar; reconstrucción completa del grafo ante cualquier cambio; un solo proceso.
 - Sin filtros ni paginación en `/search`.
+- Cambiar `SIMILARITY_MODEL_NAME` exige borrar el volumen `similarity_data` (reindexado completo); tras importar catálogo con el sistema arriba hay que reiniciar `similarity` para que lo indexe.
+- El arranque de `similarity` puede tardar minutos (el healthcheck de compose tolera hasta 300 s) y la imagen pesa unos 2 GB (torch CPU + modelo).
 
 ## Búsqueda textual
 
 - Sin ranking por relevancia (orden por `id`), sin tolerancia a erratas ni normalización de acentos; máximo 5 tokens y 100 caracteres.
-- Depende de que la rama `search` esté integrada. > TODO(verificar)
+- `name` y `brand` ya no existen como filtros; un cliente que los envíe es ignorado sin error (ver [`features/busqueda-textual.md`](features/busqueda-textual.md)).
 
 ## Chatbot
 
-- Sin tools si `chatbot/mcp-servers.json` (vacío en el repo) no se configura. > TODO(verificar)
+- En Docker el chatbot usa `chatbot/mcp-servers.docker.json` (backend y similarity). Fuera de Docker, `chatbot/mcp-servers.json` está vacío por defecto y el agente no tiene tools hasta configurarlo.
+- Sin `GEMINI_API_KEY` el chatbot termina al arrancar (con error explícito; compose reintenta 3 veces) y el resto del sistema sigue funcionando.
 - Guardrail basado en LLM, con clasificador que falla abierto; no es barrera dura.
 - Depende de un servicio externo (Gemini) y de su clave; modelos con fallback pero sin garantía de disponibilidad.
 - Sesión en memoria, sin persistencia ni identidad de usuario; solo lectura.
-- Recomendaciones = búsqueda semántica + datos simulados, no un motor de recomendación. Sin evaluación formal de calidad. > TODO(verificar)
+- Recomendaciones = búsqueda semántica + datos simulados, no un motor de recomendación. Sin evaluación formal de calidad en el repo; los specs del widget del chatbot no tienen registrado un ciclo completo de testing de caja negra (según notas del proyecto).
 
 ## Escalabilidad
 
 - Diseñado y probado a ~1.000 perfumes y 5 tiendas; los índices y la paginación por cursor están pensados para crecer, pero solo se midieron en datasets sintéticos ([`backend/src/database/NOTES.md`](../backend/src/database/NOTES.md)).
 - El índice vectorial vive en RAM de un proceso y se persiste en un archivo local; no escala horizontalmente tal como está.
-- La comparación de precios se hace en el cliente sobre una página de 20 listings.
+- La comparación de precios se hace en el cliente: el frontend descarga todos los listings del perfume (páginas de 100) y los ordena localmente; no hay mejor precio calculado en el servidor.
 
 ## Ausencia de características de producción
 
 - Sin scheduler de jobs, monitoreo, métricas ni observabilidad centralizada.
 - Sin autenticación en `/search`, `/mcp` (backend y similarityServer) ni en el WebSocket del chatbot; rate limiting solo en el backend REST (100/min global, 5/min login y registro).
 - Sin historial de precios, alertas, pagos ni checkout.
-- Sin recuperación de contraseña ni verificación de email. > TODO(verificar)
-- Infra Docker completa, despliegue y CI/CD: > TODO(verificar) según la infra final (en la rama base solo hay compose de Postgres y un Dockerfile del priceGenerator).
+- Sin recuperación de contraseña ni verificación de email (no hay endpoints ni pantallas; verificado por búsqueda en `backend/src` y `frontend/src`).
+- Login social (Google/Apple) solo decorativo: los botones están deshabilitados y no existe backend de social auth ([`AuthSocialRow.tsx`](../frontend/src/features/auth/components/AuthSocialRow.tsx)).
+- Sin usuario admin de fábrica: hay que promover un usuario a mano en la base (ver [`local-setup.md`](local-setup.md)).
+- Existe un `docker-compose.yml` para levantar todo el stack en local, pero no hay TLS, reverse proxy, CI/CD (no hay `.github/`) ni configuración de despliegue en la nube. Ver [`production.md`](production.md).
 - Esquema compartido entre TypeScript y Python acoplado a mano.
-- Bugs conocidos documentados en el repo: los servicios de `listings`, `vendors` y `fragrances` no detectan violaciones de constraint reales porque leen `error.code` en vez de `error.cause.code` ([`backend/src/database/NOTES.md`](../backend/src/database/NOTES.md)). > TODO(verificar): si sigue vigente.
+- El bug de `error.code` vs `error.cause.code` (violaciones de constraint no detectadas) está corregido: todos los servicios usan `getPgErrorCode` ([`backend/src/database/NOTES.md`](../backend/src/database/NOTES.md)). Sigue abierto un detalle de UX: el formulario de registro muestra cualquier 409 bajo el campo email aunque el duplicado sea el nombre ([`backend/src/auths/NOTES.md`](../backend/src/auths/NOTES.md)).

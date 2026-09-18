@@ -1,7 +1,7 @@
 # Búsqueda semántica
 
-> **Estado: Borrador — pendiente de confirmar contra infra final.**
-> Servicio documentado como `similarityServer` (hoy carpeta [`perfumeCatalogImporter/`](../../perfumeCatalogImporter), se renombrará). > TODO(verificar): rutas tras el rename.
+
+> Servicio `similarityServer` (carpeta [`similarityServer/`](../../similarityServer), servicio `similarity` en compose; arranca con `python -m similarityServer.app`).
 
 ## Problema
 
@@ -13,11 +13,11 @@ Un servicio aparte convierte las descripciones de todos los perfumes en vectores
 
 ## Funcionamiento
 
-1. **Datos de entrada**: descripciones sintéticas generadas por plantilla a partir de marca, nombre, concentración, familia olfativa, público y longevidad ([`description_generator.py`](../../perfumeCatalogImporter/description_generator.py)). El importador las guarda en `fragrances.description`.
-2. **Arranque del servicio** ([`app.py`](../../perfumeCatalogImporter/app.py), [`index_sync.py`](../../perfumeCatalogImporter/index_sync.py)): carga el modelo `paraphrase-multilingual-MiniLM-L12-v2`, lee `(name, description)` de Postgres, carga `embeddings.npz` si existe, codifica solo lo nuevo o cambiado, reconstruye el grafo HNSW si hubo cambios y guarda. Luego cierra la conexión a la base: **las búsquedas no tocan Postgres**.
+1. **Datos de entrada**: descripciones sintéticas generadas por plantilla a partir de marca, nombre, concentración, familia olfativa, público y longevidad ([`description_generator.py`](../../similarityServer/description_generator.py)). El importador las guarda en `fragrances.description`.
+2. **Arranque del servicio** ([`app.py`](../../similarityServer/app.py), [`index_sync.py`](../../similarityServer/index_sync.py)): carga el modelo `paraphrase-multilingual-MiniLM-L12-v2`, lee `(name, description)` de Postgres, carga `embeddings.npz` si existe, codifica solo lo nuevo o cambiado, reconstruye el grafo HNSW si hubo cambios y guarda. Luego cierra la conexión a la base: **las búsquedas no tocan Postgres**.
 3. **Consulta** `GET /search?q=<texto>&top_k=<1..50>` (por defecto 5): codifica `q`, busca los vecinos en el grafo HNSW (`M=16`, `ef_construction=200`, `ef_search=50`, espacio producto interno sobre vectores normalizados) y responde `{results: [{name, score}]}`. `503` si el índice no está construido.
 4. **Frontend** ([`useFragranceSearch.ts`](../../frontend/src/features/search/hooks/useFragranceSearch.ts)): pide `top_k=4`, resuelve cada nombre contra `GET /fragrances?name=&limit=50` (coincidencia exacta en cliente) y muestra `round(score*100)` como afinidad. La búsqueda se lanza al enviar, no mientras se escribe.
-5. **Mismo índice, segunda puerta**: el servidor monta un servidor MCP en `/mcp` con la tool `search_similar_fragrances` ([`mcp_server.py`](../../perfumeCatalogImporter/mcp_server.py)), que usa el chatbot para recomendar.
+5. **Mismo índice, segunda puerta**: el servidor monta un servidor MCP en `/mcp` con la tool `search_similar_fragrances` ([`mcp_server.py`](../../similarityServer/mcp_server.py)), que usa el chatbot para recomendar.
 
 ## Decisiones
 

@@ -1,6 +1,6 @@
 # Cuentas, sesión y favoritos
 
-> **Estado: Borrador — pendiente de confirmar contra infra final.**
+
 
 ## Problema
 
@@ -22,6 +22,7 @@ Un solo modelo `User` con campo `role`; JWT en cookie en vez de `localStorage`; 
 
 ## Limitaciones
 
-- Los botones de login social del frontend ([`AuthSocialRow.tsx`](../../frontend/src/features/auth/components/AuthSocialRow.tsx)) existen como componente. > TODO(verificar): si funcionan o son solo maqueta (no hay endpoints OAuth en el backend).
-- Sin recuperación de contraseña ni verificación de email (no hay endpoints). > TODO(verificar).
+- Los botones de login social del frontend ([`AuthSocialRow.tsx`](../../frontend/src/features/auth/components/AuthSocialRow.tsx)) existen solo como maqueta: los botones (Google, Apple) están deshabilitados y no hay endpoints OAuth en el backend.
+- Sin recuperación de contraseña ni verificación de email (no hay endpoints ni pantallas; verificado por búsqueda en `backend/src` y `frontend/src`).
+- Sin usuario admin de fábrica: el rol `admin` se asigna a mano en la base (ver [`../local-setup.md`](../local-setup.md)).
 - El chatbot no conoce al usuario ni sus favoritos.

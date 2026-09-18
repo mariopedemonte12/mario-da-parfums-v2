@@ -1,6 +1,6 @@
 # Chatbot y recomendaciones
 
-> **Estado: Borrador — pendiente de confirmar contra infra final.**
+
 
 ## Problema
 
@@ -22,7 +22,7 @@ Un asistente ("Sensei") accesible como widget flotante en todas las rutas. Detr�
 - **Modelos**: `gemini-3.5-flash-lite` con fallback a `gemini-3.1-flash-lite` ([`model-fallback.ts`](../../chatbot/src/gemini/model-fallback.ts)).
 - **Tools reales**:
   - Backend, MCP `POST /mcp`: `search_fragrances`, `get_fragrance`, `list_vendors`, `get_listings_for_fragrance`, `get_cheapest_listing` ([`register-catalog-tools.ts`](../../backend/src/mcp/tools/register-catalog-tools.ts)).
-  - similarityServer, MCP `/mcp`: `search_similar_fragrances` ([`mcp_server.py`](../../perfumeCatalogImporter/mcp_server.py)).
+  - similarityServer, MCP `/mcp`: `search_similar_fragrances` ([`mcp_server.py`](../../similarityServer/mcp_server.py)).
   - Local (no MCP): `present_fragrances` (hasta 6 tarjetas con `id, name, brand, price, imageUrl`).
 - **Recomendaciones**: no hay motor de recomendación propio. "Recomendar" significa que el agente combina `search_similar_fragrances` (similitud semántica sobre descripciones sintéticas) y las tools de catálogo/precio, y presenta el resultado.
 
@@ -32,11 +32,11 @@ Tool calling sobre MCP en vez de prompt con catálogo o acceso directo a la base
 
 ## Limitaciones
 
-- [`chatbot/mcp-servers.json`](../../chatbot/mcp-servers.json) está vacío en el repo: sin configurarlo, el agente no tiene tools de datos. > TODO(verificar): configuración final en la infra.
-- La tool `search_fragrances` del backend no declara el parámetro de búsqueda textual `search` (solo `name`, `brand`, `concentration`). > TODO(verificar): si se actualiza al eliminar los filtros exactos.
+- [`chatbot/mcp-servers.json`](../../chatbot/mcp-servers.json) está vacío en el repo: fuera de Docker el agente no tiene tools de datos hasta configurarlo. En Docker, `MCP_CONFIG_PATH=./mcp-servers.docker.json` ([`chatbot/mcp-servers.docker.json`](../../chatbot/mcp-servers.docker.json)) declara `backend` (`http://backend:3000/mcp`) y `similarity` (`http://similarity:8001/mcp`).
+- La tool `search_fragrances` del backend expone `search` (texto libre sobre nombre o marca, máx. 5 tokens / 100 caracteres) y `concentration`, no `name`/`brand`.
 - Guardrail basado en LLM, no una barrera dura; falla abierto.
 - Sin autenticación en el WebSocket ni en los endpoints MCP; sin límite de tasa propio. Cada mensaje cuesta llamadas a Gemini (clasificador + agente).
 - Sin persistencia ni personalización (no conoce favoritos ni usuario).
 - Solo lectura: no puede crear favoritos ni modificar datos.
 - La calidad de las recomendaciones hereda las limitaciones de la [búsqueda semántica](busqueda-semantica.md#limitaciones) y de los precios simulados.
-- No se encontraron evaluaciones formales de calidad del chatbot en el repo (specs/chatbot-widget.md figura sin testing formal completo según notas del proyecto). > TODO(verificar).
+- No se encontraron evaluaciones formales de calidad del chatbot en el repo (según las notas del proyecto, `specs/chatbot-widget.md` se integró sin completar el testing formal de caja negra; tratar como sin verificar). No hay evaluación de calidad de respuestas.

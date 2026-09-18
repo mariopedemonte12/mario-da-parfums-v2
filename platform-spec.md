@@ -1,12 +1,12 @@
 # Mario da Parfums — especificación de plataforma
 
-> **Aviso (borrador, pendiente de confirmar contra infra final).** Este documento es la intención original de producto y **varias secciones ya no describen el sistema implementado**. La descripción verificada contra el código está en [`docs/requirements.md`](docs/requirements.md) (ver también [`docs/architecture.md`](docs/architecture.md) y [`docs/limitations.md`](docs/limitations.md)), que lo reemplaza para efectos de lectura externa. Divergencias conocidas:
+> **Aviso.** Este documento es la intención original de producto y **varias secciones ya no describen el sistema implementado**. La descripción verificada contra el código está en [`docs/requirements.md`](docs/requirements.md) (ver también [`docs/architecture.md`](docs/architecture.md) y [`docs/limitations.md`](docs/limitations.md)), que lo reemplaza para efectos de lectura externa. Divergencias conocidas:
 >
-> - §2/§4.1: no hay worker semanal que scrapee Fragrantica; el catálogo se carga con un importador CLI bajo demanda desde un CSV de Kaggle, con descripciones inventadas. El servicio de similitud se documenta como `similarityServer` (hoy `perfumeCatalogImporter/`).
+> - §2/§4.1: no hay worker semanal que scrapee Fragrantica; el catálogo se carga con un importador CLI bajo demanda desde un CSV de Kaggle, con descripciones inventadas. El servicio de similitud se documenta como `similarityServer` (carpeta `similarityServer/`, antes `perfumeCatalogImporter/`).
 > - §3/§4.2: el flag se llama `inStock` en el esquema (`isAvailable` solo en las tools MCP); los precios son simulados por `priceGenerator`, sin matching, reintentos ni delisting reales.
 > - §4.1: el backend no consume el servicio de similitud; lo llama el frontend directamente.
 > - §5.3: `GET /fragrances` no devuelve precios ni existe un endpoint REST de "más barato" (solo la tool MCP `get_cheapest_listing`).
-> - §6: el chatbot usa varios servidores MCP configurables (backend y similitud) más una tool local `present_fragrances`; `mcp-servers.json` está vacío por defecto.
+> - §6: el chatbot usa varios servidores MCP configurables (backend y similitud) más una tool local `present_fragrances`; `chatbot/mcp-servers.json` está vacío por defecto y `mcp-servers.docker.json` (usado por compose) declara ambos servidores.
 > - §9: hay búsqueda semántica por embeddings (no personalizada), que el chatbot puede usar para recomendar.
 
 Este documento es la ground-truth de **qué es** Mario da Parfums y **qué debe hacer**,

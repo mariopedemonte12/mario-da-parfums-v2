@@ -1,6 +1,6 @@
 # Catálogo y detalle de perfumes
 
-> **Estado: Borrador — pendiente de confirmar contra infra final.**
+
 
 ## Problema
 
