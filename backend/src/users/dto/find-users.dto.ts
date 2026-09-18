@@ -4,6 +4,7 @@ import { IsInt, IsOptional, Max, Min } from 'class-validator';
 import { Role } from '../../shared/enums/role.enums.js';
 import { ValidationErrorCode } from '../../shared/enums/validation-error-code.enums.js';
 import { IsEnumField } from '../../validators/wrappers/is-enum.wrapper.js';
+import { IsNoNul } from '../../validators/is-no-nul.validator.js';
 import { IsStringField } from '../../validators/wrappers/is-string.wrapper.js';
 
 export class FindUsersDto {
@@ -12,6 +13,7 @@ export class FindUsersDto {
   })
   @IsOptional()
   @IsStringField()
+  @IsNoNul()
   name?: string;
 
   @ApiPropertyOptional({
@@ -19,6 +21,7 @@ export class FindUsersDto {
   })
   @IsOptional()
   @IsStringField()
+  @IsNoNul()
   email?: string;
 
   @ApiPropertyOptional({ enum: Role, description: 'Exact match on role' })

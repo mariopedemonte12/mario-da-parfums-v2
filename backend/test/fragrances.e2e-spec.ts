@@ -226,12 +226,12 @@ describe('Fragrances (e2e, real Postgres)', () => {
         await createViaApi([
           validCreateItem({
             name: `Aventus${suffix} Cologne ${++nameCounter}`,
-            search: brandX,
+            brand: brandX,
             concentration: 'EDP',
           }),
           validCreateItem({
             name: `Aventus${suffix} Parfum ${++nameCounter}`,
-            search: brandX,
+            brand: brandX,
             concentration: 'EDT',
           }),
           validCreateItem({
@@ -284,8 +284,7 @@ describe('Fragrances (e2e, real Postgres)', () => {
           .get('/fragrances')
           .set('Authorization', `Bearer ${adminToken}`)
           .query({
-            name: `aventus${suffix}`,
-            search: brandX,
+            search: `aventus${suffix} ${brandX}`,
             concentration: 'EDP',
             limit: 100,
           })
