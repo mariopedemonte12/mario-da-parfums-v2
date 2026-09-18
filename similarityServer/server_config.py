@@ -35,12 +35,12 @@ def load_server_config() -> ServerConfig:
     return ServerConfig(
         database_url=os.environ["DATABASE_URL"],
         embeddings_path=Path(
-            os.environ.get("EMBEDDINGS_PATH", DEFAULT_EMBEDDINGS_PATH)
+            os.environ.get("SIMILARITY_EMBEDDINGS_PATH", DEFAULT_EMBEDDINGS_PATH)
         ),
         model_name=os.environ.get("SIMILARITY_MODEL_NAME", DEFAULT_MODEL_NAME),
-        host=os.environ.get("HOST", "0.0.0.0"),
-        port=int(os.environ.get("PORT", "8001")),
-        log_level=os.environ.get("LOG_LEVEL", "info"),
+        host=os.environ.get("SIMILARITY_HOST", "0.0.0.0"),
+        port=int(os.environ.get("SIMILARITY_PORT", "8001")),
+        log_level=os.environ.get("SIMILARITY_LOG_LEVEL", "info"),
     )
 
 
@@ -54,4 +54,4 @@ def load_mcp_mount_path() -> str:
     skipped/overridden, DB never touched).
     """
     load_dotenv(Path(__file__).parent / ".env")
-    return os.environ.get("MCP_MOUNT_PATH", DEFAULT_MCP_MOUNT_PATH)
+    return os.environ.get("SIMILARITY_MCP_MOUNT_PATH", DEFAULT_MCP_MOUNT_PATH)

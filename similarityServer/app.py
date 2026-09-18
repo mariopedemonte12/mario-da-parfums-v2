@@ -111,4 +111,4 @@ if __name__ == "__main__":
     import uvicorn
 
     _config = load_server_config()
-    uvicorn.run("perfumeCatalogImporter.app:app", host=_config.host, port=_config.port)
+    uvicorn.run("similarityServer.app:app", host=_config.host, port=_config.port)

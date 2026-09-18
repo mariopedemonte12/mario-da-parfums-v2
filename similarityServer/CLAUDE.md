@@ -1,4 +1,4 @@
-# perfumeCatalogImporter — package guidelines
+# similarityServer — package guidelines
 
 See the repo-root [`CLAUDE.md`](../CLAUDE.md) for monorepo-wide worktree/spec/
 testing-session conventions — this file only covers stack-specific conventions for
@@ -93,7 +93,7 @@ Commit per fragrance, not one giant transaction.
   `name` or `brand` before it reaches the repository), and the end-of-run
   summary/log.
 - `main.py` is the CLI entrypoint that wires the two together and calls
-  `run()` once. Run with `python -m perfumeCatalogImporter.main` — a separate,
+  `run()` once. Run with `python -m similarityServer.main` — a separate,
   short-lived process from `app.py` (the long-running FastAPI/MCP search
   server); they share `repository.py` but nothing else at runtime.
 
@@ -129,8 +129,8 @@ for the full decision record. Summary:
 
 - **`app.py`** is the FastAPI app: a `/health` check and a `/search`
   endpoint wrapping `PerfumeSimilarityIndex.search()`. Run with
-  `python -m perfumeCatalogImporter.app` or
-  `uvicorn perfumeCatalogImporter.app:app`. This is a separate long-running
+  `python -m similarityServer.app` or
+  `uvicorn similarityServer.app:app`. This is a separate long-running
   process from the CLI importer (`main.py`) — they share `similarity.py` and
   `repository.py` but are two different entrypoints into the same package,
   not one process doing both jobs.
@@ -142,7 +142,7 @@ for the full decision record. Summary:
   back if anything changed. The DB connection is only open during this
   step — a search request never touches Postgres.
 - **`server_config.py`** loads this process's own env vars (`DATABASE_URL`,
-  `EMBEDDINGS_PATH`, `SIMILARITY_MODEL_NAME`, `HOST`, `PORT`, `LOG_LEVEL`).
+  `SIMILARITY_EMBEDDINGS_PATH`, `SIMILARITY_MODEL_NAME`, `SIMILARITY_HOST`, `SIMILARITY_PORT`, `SIMILARITY_LOG_LEVEL`).
   Deliberately not `config.ImporterConfig` — different process, different
   env surface, no shared fields worth factoring out.
 - The backend NestJS API is a plain HTTP client of this service — it never
@@ -151,7 +151,7 @@ for the full decision record. Summary:
 ## Suggested layout
 
 ```
-perfumeCatalogImporter/
+similarityServer/
   CLAUDE.md               # this file
   NOTES.md                # non-obvious decisions (disk index vs pgvector, ANN scaling plan)
   main.py                 # CLI entrypoint: build source + repository, run orchestrator

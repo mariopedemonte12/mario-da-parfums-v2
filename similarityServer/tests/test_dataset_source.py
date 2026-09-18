@@ -13,7 +13,7 @@ import io
 
 import pytest
 
-from perfumeCatalogImporter.dataset_source import KaggleCatalogSource
+from similarityServer.dataset_source import KaggleCatalogSource
 
 _HEADER = "brand,perfume,type,category,target_audience,longevity\n"
 

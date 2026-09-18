@@ -1,4 +1,4 @@
-"""Unit tests for PerfumeSimilarityIndex (perfumeCatalogImporter/similarity.py).
+"""Unit tests for PerfumeSimilarityIndex (similarityServer/similarity.py).
 
 Black-box against specs/perfume-similarity-search.md and NOTES.md's documented
 contract: sync() encodes only new/changed descriptions in a single batch call,
@@ -19,8 +19,8 @@ import numpy as np
 import pytest
 import hnswlib
 
-from perfumeCatalogImporter import similarity as similarity_module
-from perfumeCatalogImporter.similarity import PerfumeSimilarityIndex
+from similarityServer import similarity as similarity_module
+from similarityServer.similarity import PerfumeSimilarityIndex
 
 
 class _CountingIndex(hnswlib.Index):

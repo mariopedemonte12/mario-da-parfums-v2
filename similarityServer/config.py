@@ -22,6 +22,6 @@ def load_config() -> ImporterConfig:
 
     return ImporterConfig(
         database_url=os.environ["DATABASE_URL"],
-        dataset_csv_path=os.environ.get("DATASET_CSV_PATH", str(DEFAULT_CSV_PATH)),
-        log_level=os.environ.get("LOG_LEVEL", "info"),
+        dataset_csv_path=os.environ.get("SIMILARITY_DATASET_CSV_PATH", str(DEFAULT_CSV_PATH)),
+        log_level=os.environ.get("SIMILARITY_LOG_LEVEL", "info"),
     )

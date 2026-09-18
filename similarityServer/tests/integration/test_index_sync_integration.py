@@ -18,9 +18,9 @@ as their description) get exact, comparable vectors.
 
 import uuid
 
-from perfumeCatalogImporter.index_sync import IndexSyncService
-from perfumeCatalogImporter.repository import FragranceRepository
-from perfumeCatalogImporter.similarity import PerfumeSimilarityIndex
+from similarityServer.index_sync import IndexSyncService
+from similarityServer.repository import FragranceRepository
+from similarityServer.similarity import PerfumeSimilarityIndex
 
 
 def _unique_name(label: str) -> str:

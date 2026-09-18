@@ -14,7 +14,7 @@ fragancias, vendors, listings (precio/disponibilidad) — es decir, todo lo que
 hoy ya vive en `backend/` (NestJS + Drizzle, Postgres). El otro servidor MCP
 (búsqueda semántica por descripción libre) es
 [`specs/similarity-search-mcp.md`](similarity-search-mcp.md), un documento
-aparte, con dueño distinto (`perfumeCatalogImporter/`).
+aparte, con dueño distinto (`similarityServer/`).
 
 **Decisión de esta sesión**: este servidor MCP vive **dentro de `backend/`**,
 no como un proceso ni un paquete separado. Motivo: los datos que expone

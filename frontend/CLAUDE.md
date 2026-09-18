@@ -7,7 +7,7 @@ See the repo-root [`CLAUDE.md`](../CLAUDE.md) for the monorepo-wide worktree/tes
 Stack: Next.js 16 (App Router, React 19, React Compiler enabled), TypeScript, Tailwind CSS v4, pnpm. This app is a pure consumer of three independent services — no BFF layer, the wrappers in `lib/api` and `lib/ws` are the only integration point:
 
 - **backend** (NestJS REST API) — `NEXT_PUBLIC_BACKEND_API_URL`
-- **perfumeCatalogImporter** semantic search service (FastAPI `/search`, see `specs/perfume-similarity-search.md`) — `NEXT_PUBLIC_QUERY_API_URL`
+- **similarityServer** semantic search service (FastAPI `/search`, see `specs/perfume-similarity-search.md`) — `NEXT_PUBLIC_QUERY_API_URL`
 - **chatbot** (WebSocket agent server, see `specs/chatbot-server.md` for the protocol) — `NEXT_PUBLIC_CHATBOT_WS_URL`
 
 ## Visual reference — mockups are mandatory

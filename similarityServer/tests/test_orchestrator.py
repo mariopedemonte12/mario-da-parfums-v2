@@ -14,8 +14,8 @@ single record's failure never stops the run (per "una fila mal formada no
 aborta el import completo").
 """
 
-from perfumeCatalogImporter.models import CatalogFragrance, SyncOutcome, UpsertResult
-from perfumeCatalogImporter.orchestrator import CatalogSyncOrchestrator
+from similarityServer.models import CatalogFragrance, SyncOutcome, UpsertResult
+from similarityServer.orchestrator import CatalogSyncOrchestrator
 
 
 def _fragrance(name="Nitro Red", brand="Dumont", **overrides) -> CatalogFragrance:

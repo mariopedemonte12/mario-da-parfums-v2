@@ -86,7 +86,7 @@ _LONGEVITY_MAP = {
 class KaggleCatalogSource:
     """Yields CatalogFragrance records from the bundled perfume dataset CSV.
 
-    See perfumeCatalogImporter/CLAUDE.md for this class's responsibilities
+    See similarityServer/CLAUDE.md for this class's responsibilities
     and specs/perfume-catalog-import.md for the cleaning/normalization rules.
     """
 

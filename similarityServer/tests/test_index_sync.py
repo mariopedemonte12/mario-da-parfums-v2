@@ -1,4 +1,4 @@
-"""Unit tests for IndexSyncService (perfumeCatalogImporter/index_sync.py).
+"""Unit tests for IndexSyncService (similarityServer/index_sync.py).
 
 Per specs/perfume-similarity-search.md and the package's testing seams: a fake
 repository (no DB) + a real PerfumeSimilarityIndex wired to a fake encoder (no
@@ -11,8 +11,8 @@ import logging
 
 import pytest
 
-from perfumeCatalogImporter.index_sync import IndexSyncService
-from perfumeCatalogImporter.similarity import PerfumeSimilarityIndex
+from similarityServer.index_sync import IndexSyncService
+from similarityServer.similarity import PerfumeSimilarityIndex
 
 
 class FakeRepository:

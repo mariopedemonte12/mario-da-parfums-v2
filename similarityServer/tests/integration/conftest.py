@@ -1,4 +1,4 @@
-"""Fixtures for tests that need a real Postgres (backend/docker-compose.yml).
+"""Fixtures for tests that need a real Postgres (root docker-compose.yml, service `postgres`).
 
 Every fixture row is inserted and read back inside one uncommitted transaction
 that gets rolled back at the end of the test, so nothing is ever left behind

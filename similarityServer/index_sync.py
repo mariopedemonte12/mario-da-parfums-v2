@@ -36,7 +36,7 @@ class IndexSyncService:
         if not records:
             logger.warning(
                 "fragrances table has no rows with a description — "
-                "search will return no results until perfumeCatalogImporter runs"
+                "search will return no results until similarityServer runs"
             )
 
         if self.embeddings_path.exists():

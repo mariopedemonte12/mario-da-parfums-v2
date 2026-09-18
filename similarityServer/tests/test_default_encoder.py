@@ -19,7 +19,7 @@ with: pytest -m real_model tests/test_default_encoder.py
 import numpy as np
 import pytest
 
-from perfumeCatalogImporter.similarity import PerfumeSimilarityIndex, default_encoder
+from similarityServer.similarity import PerfumeSimilarityIndex, default_encoder
 
 pytestmark = pytest.mark.real_model
 

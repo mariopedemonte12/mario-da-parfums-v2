@@ -72,7 +72,7 @@ no se vuelve a pedir al backend por cada cambio de filtro.
 
 - **Pirámide olfativa** (salida/corazón/fondo) del mock → se reemplaza por
   `description` como bloque de texto único. No existe ese dato estructurado
-  en ningún lugar del proyecto (backend, perfumeCatalogImporter).
+  en ningún lugar del proyecto (backend, similarityServer).
 - **Precio único + botón "Añadir"** del mock → tabla de precios real
   (múltiples vendors/tamaños) + botón "Ver en tienda" que abre el listing
   con foco. No hay carrito/checkout en la plataforma.

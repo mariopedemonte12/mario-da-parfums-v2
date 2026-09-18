@@ -82,7 +82,7 @@ No son nombres de tabla obligatorios, son las entidades que el negocio necesita:
 Hay exactamente dos jobs, con propósitos y cadencias distintas y sin superposición
 de responsabilidades.
 
-### 4.1 Import de catálogo de fragancias (`perfumeCatalogImporter`)
+### 4.1 Import de catálogo de fragancias (`similarityServer`)
 
 - **Ya no es scraping en vivo de Fragrantica.** Se decidió explícitamente con
   el usuario abandonar esa vía por riesgo legal de hacer scraping continuo de
@@ -102,7 +102,7 @@ de responsabilidades.
   para búsqueda de perfumes por descripción libre — ver
   `specs/perfume-catalog-import.md` para el mecanismo (embeddings +
   similitud coseno) y `specs/perfume-similarity-search.md` para cómo se
-  expone: un servidor FastAPI (`perfumeCatalogImporter/app.py`) — el backend
+  expone: un servidor FastAPI (`similarityServer/app.py`) — el backend
   NestJS no carga el modelo ni corre encoders, consultaría este servicio por
   HTTP (integración con el backend todavía no implementada).
 - **No** toca precios ni vendors — esa es responsabilidad exclusiva del job diario.

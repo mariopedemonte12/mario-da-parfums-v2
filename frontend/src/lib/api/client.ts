@@ -20,7 +20,7 @@ async function parseErrorResponse(response: Response): Promise<ApiError> {
 // `credentials: "include"` is what lets a request carry the auth session
 // cookie cross-origin (this app has no BFF layer, see frontend/CLAUDE.md).
 // Only pass `withCredentials: false` for a client whose target has no
-// session concept at all (e.g. perfumeCatalogImporter's queryApi) — sending
+// session concept at all (e.g. similarityServer's queryApi) — sending
 // "include" there gets requests blocked by CORS unless that server also
 // opts into `Access-Control-Allow-Credentials`, which it has no reason to.
 export function createApiClient(baseUrl: string, options?: { withCredentials?: boolean }) {

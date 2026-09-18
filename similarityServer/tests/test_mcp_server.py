@@ -1,4 +1,4 @@
-"""Unit tests for the MCP tool surface (perfumeCatalogImporter/mcp_server.py).
+"""Unit tests for the MCP tool surface (similarityServer/mcp_server.py).
 
 Per specs/similarity-search-mcp.md, `search_similar_fragrances` is a second
 transport over exactly the same read-only capability as `GET /search`, so the
@@ -20,8 +20,8 @@ import pytest
 from mcp import ClientSession
 from mcp.shared.memory import create_connected_server_and_client_session
 
-from perfumeCatalogImporter.mcp_server import create_mcp_server
-from perfumeCatalogImporter.similarity import PerfumeSimilarityIndex
+from similarityServer.mcp_server import create_mcp_server
+from similarityServer.similarity import PerfumeSimilarityIndex
 
 pytestmark = pytest.mark.anyio
 

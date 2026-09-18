@@ -1,4 +1,4 @@
-"""Unit tests for the FastAPI app (perfumeCatalogImporter/app.py).
+"""Unit tests for the FastAPI app (similarityServer/app.py).
 
 Per the package's testing seams: FastAPI's TestClient used WITHOUT the `with`
 context-manager form never triggers `lifespan` (verified against this FastAPI
@@ -13,8 +13,8 @@ import asyncio
 import pytest
 from fastapi.testclient import TestClient
 
-from perfumeCatalogImporter import app as app_module
-from perfumeCatalogImporter.similarity import PerfumeSimilarityIndex
+from similarityServer import app as app_module
+from similarityServer.similarity import PerfumeSimilarityIndex
 
 
 @pytest.fixture

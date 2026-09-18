@@ -2,9 +2,9 @@
 
 ## Contexto
 
-`perfumeCatalogImporter/data/perfumes_dataset.csv` (columnas `brand`, `perfume`,
+`similarityServer/data/perfumes_dataset.csv` (columnas `brand`, `perfume`,
 `type`, `category`, `target_audience`, `longevity` — ver
-`perfumeCatalogImporter/data/README.md` y `specs/perfume-catalog-import.md`)
+`similarityServer/data/README.md` y `specs/perfume-catalog-import.md`)
 trae tres campos que hoy `dataset_source.py` ya normaliza (`_AUDIENCE_MAP`,
 `_LONGEVITY_MAP`) pero **solo** para alimentar `description_generator.py` —
 nunca se persisten como columnas propias en `fragrances`
@@ -24,20 +24,20 @@ proyecto, no se simula.
 
 Decisión explícita del usuario durante esta implementación: esta sesión
 **solo toca `backend/`** (schema de Drizzle, DTOs, migración). No se modifica
-`perfumeCatalogImporter/` en absoluto — ver "Hallazgo: el pipeline de
+`similarityServer/` en absoluto — ver "Hallazgo: el pipeline de
 persistencia no existe" y "Fuera de alcance" más abajo para el detalle de
 qué queda pendiente y para quién.
 
-## Hallazgo: el pipeline de persistencia de `perfumeCatalogImporter` no existe
+## Hallazgo: el pipeline de persistencia de `similarityServer` no existe
 
-Al investigar antes de implementar (`perfumeCatalogImporter/repository.py`,
+Al investigar antes de implementar (`similarityServer/repository.py`,
 `orchestrator.py`) se confirmó que **`FragranceRepository.upsert()` y
 `CatalogSyncOrchestrator.run()` son stubs `NotImplementedError`** — no hay,
 hoy, ningún código que efectivamente inserte o actualice filas en
 `fragrances` desde este pipeline, pese a que `specs/perfume-catalog-import.md`
 describe ese comportamiento como si ya estuviera construido. No existen
 tests unitarios para `dataset_source.py`, `repository.upsert`, ni
-`orchestrator.run` (`perfumeCatalogImporter/tests/` no tiene
+`orchestrator.run` (`similarityServer/tests/` no tiene
 `test_dataset_source.py`, `test_repository.py` ni `test_orchestrator.py`;
 solo hay tests para `similarity.py`/`index_sync.py`/`app.py`, que no dependen
 de esa ruta).
@@ -51,7 +51,7 @@ en producción porque nunca tuvo cuerpo. Cualquier fila que exista hoy en
 usuario) implementar `upsert()`/`run()`, agregar los tres campos a
 `models.CatalogFragrance`, poblarlos en `dataset_source.py`, o persistirlos
 en `repository.py`. Es trabajo real y necesario para que el dato llegue a
-producción, pero es una sesión/feature aparte sobre `perfumeCatalogImporter/`
+producción, pero es una sesión/feature aparte sobre `similarityServer/`
 — no una continuación de este cambio de schema. Quien retome ese trabajo
 debe:
 - Agregar `olfactory_family: str | None`, `target_audience: str | None`,
@@ -117,7 +117,7 @@ Tres columnas nuevas, todas nullable, sin default — mismo patrón que
 ## Backfill de filas ya importadas — **no aplica**
 
 Ver "Hallazgo" arriba: no existe ninguna fila en ninguna base real que haya
-sido insertada por `perfumeCatalogImporter` (su `upsert()` nunca tuvo
+sido insertada por `similarityServer` (su `upsert()` nunca tuvo
 cuerpo), así que no hay filas preexistentes que backfillear. Las tres
 columnas nuevas simplemente quedan `NULL` para toda fila existente hasta que
 un import real (implementado en la sesión pendiente descrita arriba) las
@@ -170,7 +170,7 @@ hay código `_REQUIRED` porque los tres campos son opcionales):
 
 ## Fuera de alcance
 
-- **Todo `perfumeCatalogImporter/`** — ver "Hallazgo" arriba. Ni el agregado
+- **Todo `similarityServer/`** — ver "Hallazgo" arriba. Ni el agregado
   de campos a `CatalogFragrance`, ni poblarlos en `dataset_source.py`, ni
   implementar `FragranceRepository.upsert()`/`CatalogSyncOrchestrator.run()`
   (que hoy no existen en absoluto, con o sin estos tres campos).

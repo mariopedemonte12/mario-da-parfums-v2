@@ -1,7 +1,7 @@
 """Unit tests for main() -- fully mocked: no real DB connection, no real CSV read.
 
 Everything main() touches (load_config, psycopg2.connect, CatalogSyncOrchestrator)
-is patched at the perfumeCatalogImporter.main import site, so this never talks to
+is patched at the similarityServer.main import site, so this never talks to
 Postgres or the filesystem dataset.
 """
 
@@ -9,8 +9,8 @@ from unittest.mock import MagicMock, call
 
 import pytest
 
-import perfumeCatalogImporter.main as main_module
-from perfumeCatalogImporter.config import ImporterConfig
+import similarityServer.main as main_module
+from similarityServer.config import ImporterConfig
 
 
 @pytest.fixture

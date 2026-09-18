@@ -9,7 +9,7 @@ left in the shared DB.
 
 import uuid
 
-from perfumeCatalogImporter.repository import FragranceRepository
+from similarityServer.repository import FragranceRepository
 
 
 def _unique_name(label: str) -> str:

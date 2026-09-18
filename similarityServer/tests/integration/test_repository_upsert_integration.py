@@ -20,8 +20,8 @@ import uuid
 
 import pytest
 
-from perfumeCatalogImporter.models import CatalogFragrance
-from perfumeCatalogImporter.repository import FragranceRepository
+from similarityServer.models import CatalogFragrance
+from similarityServer.repository import FragranceRepository
 
 
 def _unique_name(label: str) -> str:

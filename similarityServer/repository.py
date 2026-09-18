@@ -2,7 +2,7 @@
 
 The only module allowed to import psycopg2 or write SQL. Must match
 backend/src/database/schema/fragrance.schema.ts exactly — see
-perfumeCatalogImporter/CLAUDE.md for the column-name gotchas (image_url, uuid
+similarityServer/CLAUDE.md for the column-name gotchas (image_url, uuid
 id, no updated_at trigger, olfactory_family/target_audience/longevity added by
 specs/fragrance-notes-enrichment.md).
 """

@@ -1,4 +1,4 @@
-# perfumeCatalogImporter — notes
+# similarityServer — notes
 
 ## How `FragranceRepository.upsert()` tells INSERT apart from UPDATE
 
@@ -109,7 +109,7 @@ process):
 
 ## Mutation testing findings on `similarity.py` (testing session)
 
-Ran via `cosmic-ray` (`perfumeCatalogImporter/cosmic-ray.toml`,
+Ran via `cosmic-ray` (`similarityServer/cosmic-ray.toml`,
 `cosmic-ray init/baseline/exec cosmic-ray.toml session.sqlite`, from within
 this directory with `.venv` active) against `tests/test_similarity.py`,
 `tests/test_index_sync.py`, `tests/test_app.py`. 150 mutants, final score
@@ -199,11 +199,11 @@ feature (`repository.upsert()`, `orchestrator.run()`, `config.load_config()`,
 - **Local Postgres was missing migration `0002_famous_colonel_america.sql`**
   (the `olfactory_family`/`target_audience`/`longevity` columns) — the
   `backend-postgres-1` container was already running via
-  `backend/docker-compose.yml`, but nothing had run `pnpm db:migrate` against
+  root `docker-compose.yml`, but nothing had run `pnpm db:migrate` against
   it since that migration was authored. Applied it
   (`DATABASE_URL=... pnpm db:migrate` from `backend/`) before any of
   `FragranceRepository`'s integration tests, or the real end-to-end
-  `python -m perfumeCatalogImporter.main` run, could work at all — every
+  `python -m similarityServer.main` run, could work at all — every
   `upsert()` call would otherwise fail with "column does not exist". Worth
   knowing for the next fresh environment: bringing the container up isn't
   enough, the schema migration is a separate step.

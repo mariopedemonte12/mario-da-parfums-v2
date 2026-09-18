@@ -20,7 +20,7 @@ process) -- this is the same wire protocol the chatbot's MCP client actually
 speaks, so it also exercises app.py's redirect-to-trailing-slash mount
 behavior that a lower-level in-memory client/server pair would bypass.
 
-Each test re-imports perfumeCatalogImporter.app fresh rather than reusing the
+Each test re-imports similarityServer.app fresh rather than reusing the
 process-wide singleton tests/test_app.py shares: app.py's
 `mcp_server.session_manager` (a StreamableHTTPSessionManager) can only have
 `.run()` entered once per instance ever -- true in production too, where a
@@ -39,7 +39,7 @@ import pytest
 from mcp import ClientSession
 from mcp.client.streamable_http import streamable_http_client
 
-from perfumeCatalogImporter.similarity import PerfumeSimilarityIndex
+from similarityServer.similarity import PerfumeSimilarityIndex
 
 pytestmark = pytest.mark.anyio
 
@@ -52,10 +52,10 @@ _CATALOG = [
 
 @pytest.fixture
 def app_module():
-    """A fresh import of perfumeCatalogImporter.app, so this test's own
+    """A fresh import of similarityServer.app, so this test's own
     mcp_server.session_manager has never had .run() called on it yet."""
-    sys.modules.pop("perfumeCatalogImporter.app", None)
-    return importlib.import_module("perfumeCatalogImporter.app")
+    sys.modules.pop("similarityServer.app", None)
+    return importlib.import_module("similarityServer.app")
 
 
 @pytest.fixture

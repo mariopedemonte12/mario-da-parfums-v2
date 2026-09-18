@@ -11,7 +11,7 @@ originalmente propuesto.
 
 ## Contexto
 
-`perfumeCatalogImporter/similarity.py` ya resolvía la parte de ML (embeddings
+`similarityServer/similarity.py` ya resolvía la parte de ML (embeddings
 con `sentence-transformers`, modelo `paraphrase-multilingual-MiniLM-L12-v2`
 corriendo localmente — decisión confirmada con el usuario, ver
 [`perfume-catalog-import.md`](./perfume-catalog-import.md) — más ranking por
@@ -26,11 +26,11 @@ el backend no se implementó en esta sesión).
 ## Decisiones que cambiaron respecto a la versión anterior de este documento
 
 - **Ubicación**: la versión anterior de este documento proponía un paquete
-  Python nuevo en la raíz del monorepo, para que `perfumeCatalogImporter`
+  Python nuevo en la raíz del monorepo, para que `similarityServer`
   nunca cargara `sentence-transformers`. Decisión revisada con el usuario:
-  **el servicio vive dentro de `perfumeCatalogImporter/`** (`app.py`,
+  **el servicio vive dentro de `similarityServer/`** (`app.py`,
   `index_sync.py`, `server_config.py`), como un segundo entrypoint del mismo
-  paquete junto al importador CLI (`main.py`). Motivo: `perfumeCatalogImporter`
+  paquete junto al importador CLI (`main.py`). Motivo: `similarityServer`
   ya depende de `sentence-transformers`/`torch` desde antes (para
   `similarity.py`) y ya es el único lugar del proyecto con esa dependencia
   pesada — separar en dos paquetes solo para aislar el modelo del backend
@@ -67,13 +67,13 @@ el backend no se implementó en esta sesión).
        **aproximada** descendente (ver ranking por HNSW abajo).
      - `GET /health` — healthcheck simple.
 - **Almacenamiento del índice: archivo `.npz` en disco**
-  (`perfumeCatalogImporter/embeddings.npz`, gitignoreado), no `pgvector` ni
+  (`similarityServer/embeddings.npz`, gitignoreado), no `pgvector` ni
   ninguna DB vectorial — decisión explícita del usuario: la matriz completa
   se necesita siempre entera en memoria para rankear (nunca un subconjunto
   vía query), un solo proceso la lee/escribe, y `pgvector` sumaría una
   extensión + migración a una tabla que ya gestiona Drizzle desde `backend/`
   sin resolver ningún problema real hoy. Ver
-  `perfumeCatalogImporter/NOTES.md` para el detalle y para cuándo esta
+  `similarityServer/NOTES.md` para el detalle y para cuándo esta
   decisión dejaría de tener sentido.
 - **Ranking por HNSW, no por fuerza bruta** — decisión explícita del usuario
   para que la búsqueda sea *production-ready contra un dataset masivo*:
@@ -88,13 +88,13 @@ el backend no se implementó en esta sesión).
   arranque sin cambios reusa el grafo tal cual. Detalle completo (por qué
   HNSW y no IVF/PQ, por qué `hnswlib` y no `faiss`, qué falta para que sea
   incremental en vez de reconstrucción completa) en
-  `perfumeCatalogImporter/NOTES.md`.
+  `similarityServer/NOTES.md`.
 
 ## Fuera de alcance
 
 - **Reconstruir el índice sin reiniciar el proceso** — recortado de esta
   sesión (ver arriba). Hoy, un cambio en `fragrances` (nueva corrida de
-  `perfumeCatalogImporter`, o un cambio desde el CRUD admin del backend) no
+  `similarityServer`, o un cambio desde el CRUD admin del backend) no
   se refleja en la búsqueda hasta el próximo restart del servidor FastAPI.
 - Cómo exactamente el backend NestJS consume este servicio (¿un módulo
   nuevo? ¿lo cuelga de `fragrances`? ¿autenticación entre servicios?) — no

@@ -1,7 +1,7 @@
 # perfumes_dataset.csv — source and license
 
 **Not committed** — gitignored on purpose, same as any other real-world
-dataset/model-weights file. Run `python -m perfumeCatalogImporter.download_dataset`
+dataset/model-weights file. Run `python -m similarityServer.download_dataset`
 (needs `KAGGLE_USERNAME`/`KAGGLE_KEY` in a local `.env`, see that script's
 docstring) to fetch it before running the importer.
 

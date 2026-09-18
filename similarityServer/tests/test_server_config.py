@@ -23,8 +23,8 @@ from pathlib import Path
 
 import pytest
 
-from perfumeCatalogImporter import server_config as server_config_module
-from perfumeCatalogImporter.server_config import (
+from similarityServer import server_config as server_config_module
+from similarityServer.server_config import (
     DEFAULT_EMBEDDINGS_PATH,
     DEFAULT_MCP_MOUNT_PATH,
     DEFAULT_MODEL_NAME,
@@ -35,12 +35,12 @@ from perfumeCatalogImporter.server_config import (
 
 _ENV_VARS = [
     "DATABASE_URL",
-    "EMBEDDINGS_PATH",
+    "SIMILARITY_EMBEDDINGS_PATH",
     "SIMILARITY_MODEL_NAME",
-    "HOST",
-    "PORT",
-    "LOG_LEVEL",
-    "MCP_MOUNT_PATH",
+    "SIMILARITY_HOST",
+    "SIMILARITY_PORT",
+    "SIMILARITY_LOG_LEVEL",
+    "SIMILARITY_MCP_MOUNT_PATH",
 ]
 
 
@@ -66,7 +66,7 @@ def test_mcp_mount_path_defaults_to_mcp_when_env_var_is_unset():
 
 
 def test_mcp_mount_path_honors_env_var_override(monkeypatch):
-    monkeypatch.setenv("MCP_MOUNT_PATH", "/tools/similarity")
+    monkeypatch.setenv("SIMILARITY_MCP_MOUNT_PATH", "/tools/similarity")
 
     assert load_mcp_mount_path() == "/tools/similarity"
 
@@ -97,7 +97,7 @@ def test_all_defaults_when_only_database_url_is_set(monkeypatch):
 
 def test_embeddings_path_env_var_override(monkeypatch):
     monkeypatch.setenv("DATABASE_URL", "postgresql://fake")
-    monkeypatch.setenv("EMBEDDINGS_PATH", "/tmp/custom/embeddings.npz")
+    monkeypatch.setenv("SIMILARITY_EMBEDDINGS_PATH", "/tmp/custom/embeddings.npz")
 
     config = load_server_config()
 
@@ -113,14 +113,14 @@ def test_model_name_env_var_override(monkeypatch):
 
 def test_host_env_var_override(monkeypatch):
     monkeypatch.setenv("DATABASE_URL", "postgresql://fake")
-    monkeypatch.setenv("HOST", "127.0.0.1")
+    monkeypatch.setenv("SIMILARITY_HOST", "127.0.0.1")
 
     assert load_server_config().host == "127.0.0.1"
 
 
 def test_port_env_var_override_is_cast_to_int(monkeypatch):
     monkeypatch.setenv("DATABASE_URL", "postgresql://fake")
-    monkeypatch.setenv("PORT", "9999")
+    monkeypatch.setenv("SIMILARITY_PORT", "9999")
 
     config = load_server_config()
 
@@ -130,14 +130,14 @@ def test_port_env_var_override_is_cast_to_int(monkeypatch):
 
 def test_log_level_env_var_override(monkeypatch):
     monkeypatch.setenv("DATABASE_URL", "postgresql://fake")
-    monkeypatch.setenv("LOG_LEVEL", "debug")
+    monkeypatch.setenv("SIMILARITY_LOG_LEVEL", "debug")
 
     assert load_server_config().log_level == "debug"
 
 
 def test_loads_dotenv_from_this_packages_own_directory(monkeypatch, isolated_env_and_dotenv):
     # Not the process cwd, not an arbitrary path -- specifically
-    # perfumeCatalogImporter/.env, same seam load_mcp_mount_path uses.
+    # similarityServer/.env, same seam load_mcp_mount_path uses.
     monkeypatch.setenv("DATABASE_URL", "postgresql://fake")
 
     load_server_config()
