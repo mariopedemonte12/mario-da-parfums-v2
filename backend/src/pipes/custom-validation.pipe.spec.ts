@@ -140,4 +140,58 @@ describe('customValidationPipe', () => {
     const nestedError = body.errors.find((e) => e.field === 'address.street');
     expect(nestedError).toBeDefined();
   });
+
+  describe('NUL byte rejection (specs/nul-byte-rejection.md)', () => {
+    const NUL = String.fromCharCode(0);
+
+    it('rejects NUL in a declared body field with CONTAINS_NUL_CHARACTER', async () => {
+      const body = await runTransformExpectingFailure({
+        ...validPayload,
+        name: `Jo${NUL}`,
+      });
+      expect(body.errors).toEqual([
+        { field: 'name', errors: [{ code: 'CONTAINS_NUL_CHARACTER' }] },
+      ]);
+    });
+
+    it('rejects NUL in nested objects and in undeclared (whitelisted-out) fields', async () => {
+      const body = await runTransformExpectingFailure({
+        ...validPayload,
+        address: { street: `a${NUL}` },
+        extra: `b${NUL}`,
+      });
+      expect(body.errors.map((e) => e.field).sort()).toEqual([
+        'address.street',
+        'extra',
+      ]);
+    });
+
+    it('reports a bare string param under the argument name', async () => {
+      let caught: unknown;
+      try {
+        await customValidationPipe.transform(`a${NUL}b`, {
+          type: 'param',
+          data: 'id',
+          metatype: String,
+        });
+      } catch (err) {
+        caught = err;
+      }
+      expect(caught).toBeInstanceOf(BadRequestException);
+      expect((caught as BadRequestException).getResponse()).toMatchObject({
+        errors: [
+          { field: 'id', errors: [{ code: 'CONTAINS_NUL_CHARACTER' }] },
+        ],
+      });
+    });
+
+    it('takes precedence over other DTO errors', async () => {
+      const body = await runTransformExpectingFailure({
+        email: '',
+        name: `x${NUL}`,
+      });
+      expect(body.errors).toHaveLength(1);
+      expect(body.errors[0].errors[0].code).toBe('CONTAINS_NUL_CHARACTER');
+    });
+  });
 });

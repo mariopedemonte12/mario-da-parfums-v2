@@ -66,7 +66,8 @@ la búsqueda semántica (`/search`, HNSW).
    `olfactoryFamily`, `targetAudience`, `longevity` en fragrances; `name`,
    `email` en users; `name`, `websiteUrl` en vendors). Se **rechaza** y no se
    limpia, mismo criterio que `IsNotMarkup`/`IsNotProfane`: el valor consultado
-   no debe diferir en silencio del enviado.
+   no debe diferir en silencio del enviado. La regla se extendio a body y params
+   en `specs/nul-byte-rejection.md`.
 
 ## Ejemplos
 
