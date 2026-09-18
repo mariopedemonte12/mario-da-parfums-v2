@@ -7,14 +7,17 @@ import type {
   PaginatedFragranceResponse,
   PaginatedFragrances,
 } from "../types/fragrance.types";
+import { clampSearch } from "../utils/clampSearch";
 
 export async function getFragrances(
   params: FindFragranceParams = {}
 ): Promise<PaginatedFragranceResponse> {
   const searchParams = new URLSearchParams();
 
-  if (params.search) {
-    searchParams.set("search", params.search);
+  // Clamped so an over-long/odd user input narrows the search instead of a 400.
+  const search = params.search ? clampSearch(params.search) : "";
+  if (search) {
+    searchParams.set("search", search);
   }
   if (params.concentration) {
     searchParams.set("concentration", params.concentration);
@@ -52,22 +55,13 @@ export async function getFragranceById(id: string): Promise<FragranceDetail | nu
 }
 
 // GET /fragrances?search= is a partial, case-insensitive multi-token match over name OR
-// brand (max 5 tokens / 100 chars, else 400), not an exact match — callers that need one
+// brand (max 5 tokens / 100 chars, else 400; see utils/clampSearch), not an exact match — callers that need one
 // specific fragrance by its exact name (e.g. resolving a semantic-search hit) search with
 // the (clamped) name and then compare names themselves. limit=50 (over the default 20)
 // to reduce the odds the exact match falls outside the fetched page.
-const MAX_SEARCH_TOKENS = 5;
-const MAX_SEARCH_LENGTH = 100;
-
 export async function findFragranceByExactName(name: string): Promise<Fragrance | null> {
   const normalized = name.trim().toLowerCase();
-  const search = normalized
-    .split(/\s+/)
-    .filter(Boolean)
-    .slice(0, MAX_SEARCH_TOKENS)
-    .join(" ")
-    .slice(0, MAX_SEARCH_LENGTH)
-    .trim();
+  const search = clampSearch(normalized);
   if (!search) return null;
 
   const params = new URLSearchParams({ search, limit: "50" });

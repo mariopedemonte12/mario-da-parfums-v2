@@ -39,6 +39,6 @@ describe('IsNoNul', () => {
 
   it('passes non-strings through to the type validator', async () => {
     expect(await codesFor(undefined)).toEqual([]);
-    expect(await codesFor(42)).toEqual([ValidationErrorCode.INVALID_TYPE]);
+    expect(await codesFor(42)).toEqual([]);
   });
 });

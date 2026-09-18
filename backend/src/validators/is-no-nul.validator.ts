@@ -2,7 +2,6 @@
 import {
   registerDecorator,
   ValidationOptions,
-  ValidationArguments,
 } from 'class-validator';
 import { buildErrorMessage } from './helpers/build-error-message.js';
 import { ValidationErrorCode } from '../shared/enums/validation-error-code.enums.js';
@@ -24,12 +23,7 @@ export function IsNoNul(validationOptions?: ValidationOptions) {
           return !value.includes(String.fromCharCode(0));
         },
 
-        defaultMessage(args: ValidationArguments) {
-          if (typeof args.value !== 'string') {
-            return buildErrorMessage({
-              code: ValidationErrorCode.INVALID_TYPE,
-            });
-          }
+        defaultMessage() {
           return buildErrorMessage({
             code: ValidationErrorCode.CONTAINS_NUL_CHARACTER,
           });
