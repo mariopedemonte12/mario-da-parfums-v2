@@ -379,8 +379,11 @@ this is a deliberate mock-specific divergence from the generic pill-shaped
   password rule failures render as a short bullet list under the password
   field (the backend already returns all failing rules at once, not just
   the first).
-- On `409 Email already registered` → shown under the email field as
-  *"Ese correo ya está registrado."*
+- On `409` → placed by the colliding field the backend names in `errors[]`
+  (email → *"Ese correo ya está registrado."*, name → *"Ese nombre ya está en
+  uso."*), or a general form message if none is named. See
+  `specs/register-conflict-errors.md` (supersedes the old always-under-email
+  rule).
 - Success → same as login: set session user via context, redirect to `/`.
 
 ## Error handling plumbing (`lib/api/client.ts`)
