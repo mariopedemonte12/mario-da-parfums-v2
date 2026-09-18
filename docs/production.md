@@ -20,7 +20,7 @@ Cada punto indica dónde verificarlo.
 
 ### Postgres y persistencia
 - Postgres 16 con el volumen con nombre `postgres_data`; el índice semántico (`embeddings.npz` y `.hnsw`) en el volumen `similarity_data`. Ambos sobreviven a `docker compose down` (no a `down -v`).
-- Postgres se publica solo en `127.0.0.1` (no en todas las interfaces).
+- Postgres, similarity (8001) y chatbot (8081) se publican solo en `127.0.0.1` (no en todas las interfaces).
 - Las migraciones se aplican automáticamente con el servicio one-shot `migrate` en cada `up` (idempotente).
 
 ### Health checks y reinicio
@@ -46,7 +46,7 @@ Cada punto indica dónde verificarlo.
 - CI/CD (no hay `.github/`), scheduler de jobs, despliegue cloud/k8s.
 - Usuario admin de fábrica (se promueve a mano; ver [`local-setup.md`](local-setup.md)).
 
-> Atención: en compose, backend (3000), similarity (8001) y chatbot (8081) se publican en **todas las interfaces** del host, junto con el frontend. En una máquina expuesta a internet eso deja abiertos `/mcp`, `/search` y el WebSocket sin autenticación.
+> Atención: en compose, similarity (8001, con `/mcp` y `/search`) y chatbot (8081, WebSocket) se publican solo en `127.0.0.1`, porque no tienen autenticación. Backend (3000) y frontend (3010) siguen publicados en **todas las interfaces**. Consecuencia: el stack por defecto no se puede usar desde otro dispositivo de la red, porque el navegador llama directamente a 8001 y 8081; para eso hay que cambiar el bind en `docker-compose.yml`.
 
 ---
 

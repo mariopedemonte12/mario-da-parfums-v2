@@ -90,8 +90,8 @@ docker compose --profile seed run --rm seed-prices
 |---|---|---|
 | Frontend | <http://localhost:3010> | `FRONTEND_HOST_PORT` |
 | API backend | <http://localhost:3000> (Swagger en `/docs`) | `BACKEND_HOST_PORT` |
-| Servidor de similitud | <http://localhost:8001> (`/health`, `/search?q=`) | `SIMILARITY_HOST_PORT` |
-| Chatbot (WebSocket) | `ws://localhost:8081` | `CHATBOT_HOST_PORT` |
+| Servidor de similitud | <http://localhost:8001> (`/health`, `/search?q=`; solo loopback) | `SIMILARITY_HOST_PORT` |
+| Chatbot (WebSocket) | `ws://localhost:8081` (solo loopback) | `CHATBOT_HOST_PORT` |
 | Postgres | `127.0.0.1:5432` (solo loopback) | `POSTGRES_HOST_PORT` |
 
 ## 5. Crear un usuario admin

@@ -34,8 +34,8 @@ catálogo sigue viviendo ahí).
 | `postgres` (16-alpine) | long-running, volumen `postgres_data` | 127.0.0.1:5432 | `pg_isready` |
 | `migrate` | one-shot (`drizzle-kit migrate`) | - | termina con exit 0 |
 | `backend` (NestJS) | long-running | 3000 | `GET /` 200 |
-| `similarity` (FastAPI + MCP) | long-running, volumen `similarity_data` (`embeddings.npz`/`.hnsw`) | 8001 | `GET /health` (solo responde tras el sync inicial del índice) |
-| `chatbot` (WS + Gemini) | long-running | 8081 | conexión TCP al puerto WS |
+| `similarity` (FastAPI + MCP) | long-running, volumen `similarity_data` (`embeddings.npz`/`.hnsw`) | 8001 (solo `127.0.0.1`) | `GET /health` (solo responde tras el sync inicial del índice) |
+| `chatbot` (WS + Gemini) | long-running | 8081 (solo `127.0.0.1`) | conexión TCP al puerto WS |
 | `frontend` (Next standalone) | long-running | 3010 | `GET /` < 500 |
 
 Orden (`depends_on` con `service_healthy` / `service_completed_successfully`):

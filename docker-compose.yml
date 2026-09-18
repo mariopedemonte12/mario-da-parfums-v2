@@ -90,7 +90,7 @@ services:
       SIMILARITY_PORT: "8001"
       SIMILARITY_EMBEDDINGS_PATH: /data/embeddings.npz
     ports:
-      - "${SIMILARITY_HOST_PORT:-8001}:8001"
+      - "127.0.0.1:${SIMILARITY_HOST_PORT:-8001}:8001"
     volumes:
       # embeddings.npz + embeddings.hnsw: survive restarts, so only new/changed
       # fragrances are re-encoded on the next startup.
@@ -131,7 +131,7 @@ services:
       # Docker-internal MCP endpoints: http://backend:3000/mcp, http://similarity:8001/mcp
       MCP_CONFIG_PATH: ./mcp-servers.docker.json
     ports:
-      - "${CHATBOT_HOST_PORT:-8081}:8081"
+      - "127.0.0.1:${CHATBOT_HOST_PORT:-8081}:8081"
     depends_on:
       backend:
         condition: service_healthy
