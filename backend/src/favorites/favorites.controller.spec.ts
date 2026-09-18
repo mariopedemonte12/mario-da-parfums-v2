@@ -2,7 +2,7 @@ import { Test, TestingModule } from '@nestjs/testing';
 import { INestApplication, NotFoundException } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import request from 'supertest';
-import type { App } from 'supertest/types';
+import type { App } from 'supertest/types.js';
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import { FavoritesController } from './favorites.controller.js';
 import { FavoritesService } from './favorites.service.js';

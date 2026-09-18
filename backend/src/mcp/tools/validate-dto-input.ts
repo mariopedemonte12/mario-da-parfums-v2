@@ -2,6 +2,8 @@ import { plainToInstance } from 'class-transformer';
 import { validate, ValidationError } from 'class-validator';
 import type { CallToolResult } from '@modelcontextprotocol/sdk/types.js';
 import { parseConstraintMessage } from '../../validators/helpers/parse-constraint-message.js';
+import { findNulPaths } from '../../validators/helpers/find-nul-paths.js';
+import { ValidationErrorCode } from '../../shared/enums/validation-error-code.enums.js';
 import { errorResult } from './tool-result.js';
 
 function flattenCodes(errors: ValidationError[]): string[] {
@@ -26,6 +28,14 @@ export async function validateDtoInput<T extends object>(
   cls: new () => T,
   args: unknown,
 ): Promise<{ ok: true; value: T } | { ok: false; result: CallToolResult }> {
+  if (findNulPaths(args).length > 0) {
+    return {
+      ok: false,
+      result: errorResult(
+        `Invalid input: ${ValidationErrorCode.CONTAINS_NUL_CHARACTER}`,
+      ),
+    };
+  }
   const instance = plainToInstance(cls, args);
   const errors = await validate(instance);
   if (errors.length === 0) {

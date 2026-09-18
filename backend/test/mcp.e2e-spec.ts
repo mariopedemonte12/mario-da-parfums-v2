@@ -4,7 +4,7 @@ import { Client } from '@modelcontextprotocol/sdk/client/index.js';
 import { StreamableHTTPClientTransport } from '@modelcontextprotocol/sdk/client/streamableHttp.js';
 import { eq } from 'drizzle-orm';
 import request from 'supertest';
-import type { App } from 'supertest/types';
+import type { App } from 'supertest/types.js';
 import { randomUUID } from 'node:crypto';
 import { describe, it, expect, beforeAll, afterAll } from 'vitest';
 
@@ -50,8 +50,8 @@ describe('MCP catalog server (e2e, real Postgres, real HTTP)', () => {
   let client: Client;
   let baseUrl: string;
 
-  let vendorA: { id: number };
-  let fragranceA: { id: string };
+  let vendorA: { id: number; name: string };
+  let fragranceA: { id: string; name: string };
   let fragranceEmpty: { id: string }; // no listings at all
   let fragranceOutOfStockOnly: { id: string };
 

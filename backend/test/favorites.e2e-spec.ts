@@ -3,7 +3,7 @@ import { INestApplication } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import { and, eq, inArray } from 'drizzle-orm';
 import request from 'supertest';
-import type { App } from 'supertest/types';
+import type { App } from 'supertest/types.js';
 import { randomUUID } from 'node:crypto';
 import {
   describe,
@@ -43,9 +43,9 @@ describe('Favorites (e2e, real Postgres)', () => {
   let userAToken: string;
   let adminToken: string;
 
-  let userA: { id: number };
+  let userA: { id: number; email: string };
   let userB: { id: number };
-  let admin: { id: number };
+  let admin: { id: number; email: string };
   let fragranceA: { id: string };
   let fragranceB: { id: string };
   let fragranceC: { id: string };

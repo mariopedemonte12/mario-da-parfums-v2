@@ -3,7 +3,7 @@ import { INestApplication } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import { inArray } from 'drizzle-orm';
 import request from 'supertest';
-import type { App } from 'supertest/types';
+import type { App } from 'supertest/types.js';
 import { randomUUID } from 'node:crypto';
 import { describe, it, expect, beforeAll, beforeEach, afterAll } from 'vitest';
 

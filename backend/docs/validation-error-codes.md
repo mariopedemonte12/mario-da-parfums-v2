@@ -33,27 +33,8 @@ Catálogo general: los códigos genéricos que usan por default los wrappers de
 `src/validators/wrappers`, más los códigos específicos por campo que los DTOs
 pasan cuando quieren un mensaje más preciso que el genérico.
 
-```ts
-export enum ValidationErrorCode {
-    // Genéricos (defaults de los wrappers)
-    FIELD_REQUIRED = 'FIELD_REQUIRED',
-    INVALID_TYPE = 'INVALID_TYPE',
-    INVALID_ENUM_VALUE = 'INVALID_ENUM_VALUE',
-    MIN_LENGTH = 'MIN_LENGTH',
-    MAX_LENGTH = 'MAX_LENGTH',
-    CONTAINS_PROFANITY = 'CONTAINS_PROFANITY',
-
-    // Por campo
-    NAME_REQUIRED = 'NAME_REQUIRED',
-    NAME_INVALID_TYPE = 'NAME_INVALID_TYPE',
-    EMAIL_REQUIRED = 'EMAIL_REQUIRED',
-    EMAIL_INVALID_FORMAT = 'EMAIL_INVALID_FORMAT',
-    ROLE_INVALID = 'ROLE_INVALID',
-    PHOTO_S3_KEY_INVALID_TYPE = 'PHOTO_S3_KEY_INVALID_TYPE',
-    PASSWORD_REQUIRED = 'PASSWORD_REQUIRED',
-    PASSWORD_INVALID_TYPE = 'PASSWORD_INVALID_TYPE',
-}
-```
+El listado completo y vigente de códigos está en la sección
+[Catálogo de códigos](#catálogo-de-códigos) más abajo; el enum es la fuente de verdad.
 
 ### `PasswordErrorCode` — [`src/shared/enums/password-error-code.enums.ts`](../src/shared/enums/password-error-code.enums.ts)
 
@@ -126,6 +107,64 @@ function checkPasswordRules(value: string) {
     };
 }
 ```
+
+## Catálogo de códigos
+
+Todos los valores de `ValidationErrorCode` (los de fortaleza de contraseña están
+en `PasswordErrorCode`, ver arriba). Los códigos `*_REQUIRED` salen cuando el
+campo falta o viene vacío, `*_INVALID_TYPE`/`*_INVALID_FORMAT` cuando el tipo o
+el formato no corresponde, `*_TOO_LONG` cuando excede el máximo del campo.
+Todos viajan como `errors: [{ field, errors: [{ code, meta? }] }]` con HTTP `400`,
+salvo los dos de conflicto (ver más abajo).
+
+| Grupo | Códigos |
+|---|---|
+| Genéricos (defaults de los wrappers) | `FIELD_REQUIRED`, `INVALID_TYPE`, `INVALID_ENUM_VALUE` (`meta: { allowed, actual }`), `MIN_LENGTH` (`meta: { min, actual }`), `MAX_LENGTH` (`meta: { max, actual }`) |
+| Contenido | `CONTAINS_PROFANITY`, `CONTAINS_MARKUP`, `CONTAINS_NUL_CHARACTER` |
+| name (usuarios) | `NAME_REQUIRED`, `NAME_INVALID_TYPE`, `NAME_TOO_LONG`, `NAME_ALREADY_TAKEN` (409) |
+| email | `EMAIL_REQUIRED`, `EMAIL_INVALID_FORMAT`, `EMAIL_ALREADY_REGISTERED` (409) |
+| role | `ROLE_INVALID` |
+| photoS3Key | `PHOTO_S3_KEY_INVALID_TYPE`, `PHOTO_S3_KEY_INVALID_FORMAT`, `PHOTO_S3_KEY_TOO_LONG` |
+| password (presencia/tipo) | `PASSWORD_REQUIRED`, `PASSWORD_INVALID_TYPE` |
+| fragrances | `BRAND_REQUIRED`, `BRAND_INVALID_TYPE`, `BRAND_TOO_LONG`, `CONCENTRATION_INVALID_TYPE`, `CONCENTRATION_TOO_LONG`, `DESCRIPTION_INVALID_TYPE`, `IMAGE_URL_INVALID_FORMAT`, `IMAGE_URL_TOO_LONG`, `OLFACTORY_FAMILY_INVALID_TYPE`, `OLFACTORY_FAMILY_TOO_LONG`, `TARGET_AUDIENCE_INVALID_TYPE`, `TARGET_AUDIENCE_TOO_LONG`, `LONGEVITY_INVALID_TYPE`, `LONGEVITY_TOO_LONG` |
+| vendors | `VENDOR_NAME_REQUIRED`, `VENDOR_NAME_INVALID_TYPE`, `VENDOR_NAME_TOO_LONG`, `VENDOR_WEBSITE_URL_REQUIRED`, `VENDOR_WEBSITE_URL_INVALID_FORMAT`, `VENDOR_WEBSITE_URL_TOO_LONG` |
+| listings | `LISTING_FRAGRANCE_ID_REQUIRED`, `LISTING_FRAGRANCE_ID_INVALID_FORMAT`, `LISTING_VENDOR_ID_REQUIRED`, `LISTING_VENDOR_ID_INVALID_TYPE`, `LISTING_SIZE_ML_REQUIRED`, `LISTING_SIZE_ML_INVALID_TYPE`, `LISTING_PRICE_REQUIRED`, `LISTING_PRICE_INVALID_TYPE`, `LISTING_URL_REQUIRED`, `LISTING_URL_INVALID_FORMAT`, `LISTING_URL_TOO_LONG`, `LISTING_IN_STOCK_INVALID_TYPE` |
+| favorites | `FRAGRANCE_ID_REQUIRED`, `FRAGRANCE_ID_INVALID_FORMAT`, `FRAGRANCE_IDS_REQUIRED` |
+
+### Códigos con comportamiento propio
+
+**`CONTAINS_NUL_CHARACTER`** — HTTP `400`. Un string con el byte NUL (`\u0000`,
+`%00`) en cualquier lugar del body, query string o params de ruta, de cualquier
+endpoint (`POST /auths/register`, `/auths/login`, `POST /vendors/batch`,
+`GET /fragrances?search=a%00b`, `GET /fragrances/abc%00`, ...). Lo produce
+`customValidationPipe` antes de la validación del DTO (y `@IsNoNul` en los query
+DTOs); `field` es la ruta con puntos (`items.0.name`) o el nombre del param (`id`).
+Sin `meta`. Ver `specs/nul-byte-rejection.md`.
+
+```json
+{ "statusCode": 400, "message": "Validation failed",
+  "errors": [{ "field": "items.0.name", "errors": [{ "code": "CONTAINS_NUL_CHARACTER" }] }],
+  "timestamp": "..." }
+```
+
+**`EMAIL_ALREADY_REGISTERED`** — HTTP `409`. `POST /auths/register`,
+`POST /auths/admin-register` (y `PATCH /users/:id` al cambiar el email) cuando el
+email ya existe: por el chequeo previo o por la violación de la unique constraint
+`users_email_unique` (carrera). `field: "email"`. No es un error de validación del
+DTO sino un `ConflictException` (`src/common/utils/user-conflict.util.ts`) que usa
+el mismo sobre.
+
+**`NAME_ALREADY_TAKEN`** — HTTP `409`. Mismos endpoints, cuando falla la unique
+constraint `users_name_unique` (no hay chequeo previo por nombre). `field: "name"`.
+
+```json
+{ "statusCode": 409, "message": "Email already registered",
+  "errors": [{ "field": "email", "errors": [{ "code": "EMAIL_ALREADY_REGISTERED" }] }],
+  "timestamp": "..." }
+```
+
+Una violación de unicidad con una constraint no reconocida devuelve `409` sin
+`errors` (mensaje genérico), para no atribuir el error a un campo equivocado.
 
 ## Cómo agregar un DTO/campo nuevo
 

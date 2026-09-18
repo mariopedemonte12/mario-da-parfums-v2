@@ -3,7 +3,7 @@ import { INestApplication } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import { ilike, inArray } from 'drizzle-orm';
 import request from 'supertest';
-import type { App } from 'supertest/types';
+import type { App } from 'supertest/types.js';
 import { randomUUID } from 'node:crypto';
 import {
   describe,
@@ -1011,7 +1011,9 @@ describe('Fragrances (e2e, real Postgres)', () => {
     let target: { id: string };
 
     beforeEach(async () => {
-      [target] = await createViaApi([validCreateItem()]);
+      const [created] = await createViaApi([validCreateItem()]);
+      expect(created.success).toBe(true);
+      target = { id: created.id as string };
     });
 
     const operations = [
