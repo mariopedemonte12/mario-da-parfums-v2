@@ -215,7 +215,7 @@ describe('MCP catalog server (e2e, real Postgres, real HTTP)', () => {
       const result = await client.callTool({
         name: 'search_fragrances',
         arguments: {
-          brand: 'MCP E2E Brand',
+          search: 'MCP E2E Brand',
           limit: 1,
           ...(cursor ? { cursor } : {}),
         },

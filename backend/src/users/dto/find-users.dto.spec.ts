@@ -100,4 +100,9 @@ describe('FindUsersDto', () => {
       expect(errors.some((e) => e.property === 'limit')).toBe(true);
     });
   });
+
+  it.each(['name', 'email'])('rejects a NUL byte in %s', async (field) => {
+    const errors = await validate(build({ [field]: `a${String.fromCharCode(0)}b` }));
+    expect(errors.some((e) => e.property === field)).toBe(true);
+  });
 });

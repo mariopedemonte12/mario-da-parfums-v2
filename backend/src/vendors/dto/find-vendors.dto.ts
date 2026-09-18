@@ -1,6 +1,7 @@
 import { Type } from 'class-transformer';
 import { IsInt, IsOptional, Max, Min } from 'class-validator';
 import { ApiPropertyOptional } from '@nestjs/swagger';
+import { IsNoNul } from '../../validators/is-no-nul.validator.js';
 import { IsStringField } from '../../validators/wrappers/is-string.wrapper.js';
 
 export class FindVendorsDto {
@@ -9,6 +10,7 @@ export class FindVendorsDto {
   })
   @IsOptional()
   @IsStringField()
+  @IsNoNul()
   name?: string;
 
   @ApiPropertyOptional({
@@ -16,6 +18,7 @@ export class FindVendorsDto {
   })
   @IsOptional()
   @IsStringField()
+  @IsNoNul()
   websiteUrl?: string;
 
   @ApiPropertyOptional({

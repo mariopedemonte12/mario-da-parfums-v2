@@ -38,6 +38,48 @@ describe('FindFragranceDto', () => {
     expect(errors.some((e) => e.property === 'search')).toBe(true);
   });
 
+  describe('search normalization and limits (spec rules 7-9)', () => {
+    const errorsFor = async (search: string) =>
+      (await validate(build({ search }))).filter((e) => e.property === 'search');
+
+    it('accepts 100 real characters plus surrounding whitespace (trim before validate)', async () => {
+      expect(await errorsFor(`${'a'.repeat(100)}   `)).toHaveLength(0);
+      expect(build({ search: `  ${'a'.repeat(100)}  ` }).search).toBe(
+        'a'.repeat(100),
+      );
+    });
+
+    it('rejects 101 real characters', async () => {
+      expect(await errorsFor('a'.repeat(101))).not.toHaveLength(0);
+    });
+
+    it('de-duplicates tokens (case-insensitive) before counting', async () => {
+      expect(await errorsFor('a a A a a a')).toHaveLength(0);
+      expect(build({ search: 'a a A a a a' }).search).toBe('a');
+    });
+
+    it('accepts 5 distinct tokens and rejects 6', async () => {
+      expect(await errorsFor('a b c d e')).toHaveLength(0);
+      expect(await errorsFor('a b c d e f')).not.toHaveLength(0);
+    });
+
+    it('collapses whitespace-only input to an empty string', () => {
+      expect(build({ search: '   ' }).search).toBe('');
+    });
+
+    it.each([
+      'search',
+      'concentration',
+      'olfactoryFamily',
+      'targetAudience',
+      'longevity',
+    ])('rejects a NUL byte in %s', async (field) => {
+      const nul = String.fromCharCode(0);
+      const errors = await validate(build({ [field]: `a${nul}b` }));
+      expect(errors.some((e) => e.property === field)).toBe(true);
+    });
+  });
+
   it('no longer declares name/brand filters', () => {
     // Global ValidationPipe (whitelist: true) strips these, so they are
     // silently ignored — see specs/text-search-partial.md.

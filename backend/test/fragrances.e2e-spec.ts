@@ -212,8 +212,10 @@ describe('Fragrances (e2e, real Postgres)', () => {
     });
 
     describe('filters and pagination', () => {
-      const brandX = `E2E Brand X ${suffix}`;
-      const brandY = `E2E Brand Y ${suffix}`;
+      // Single-token brands: search is token-based, so a multi-word brand would
+      // match unrelated rows (e.g. token "X" inside "Elixir").
+      const brandX = `E2EBrandX${suffix}`;
+      const brandY = `E2EBrandY${suffix}`;
 
       beforeEach(async () => {
         // Deliberately mixed fixture: two brands, two concentrations, and a
@@ -226,12 +228,12 @@ describe('Fragrances (e2e, real Postgres)', () => {
         await createViaApi([
           validCreateItem({
             name: `Aventus${suffix} Cologne ${++nameCounter}`,
-            search: brandX,
+            brand: brandX,
             concentration: 'EDP',
           }),
           validCreateItem({
             name: `Aventus${suffix} Parfum ${++nameCounter}`,
-            search: brandX,
+            brand: brandX,
             concentration: 'EDT',
           }),
           validCreateItem({
@@ -284,8 +286,7 @@ describe('Fragrances (e2e, real Postgres)', () => {
           .get('/fragrances')
           .set('Authorization', `Bearer ${adminToken}`)
           .query({
-            name: `aventus${suffix}`,
-            search: brandX,
+            search: `aventus${suffix} ${brandX}`,
             concentration: 'EDP',
             limit: 100,
           })

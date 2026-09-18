@@ -1,0 +1,23 @@
+// GET /fragrances?search= answers 400 above 5 distinct tokens / 100 characters and
+// on NUL (specs/text-search-partial.md rules 7-9). Anything the user types is clamped
+// here instead, so over-long input narrows the search silently rather than surfacing
+// an error panel. Same normalization the backend applies (trim, collapse whitespace,
+// case-insensitive de-dup of tokens), then truncates, after replacing control
+// characters (incl. NUL) with spaces.
+export const MAX_SEARCH_TOKENS = 5;
+export const MAX_SEARCH_LENGTH = 100;
+
+const CONTROL_CHARS = /[\u0000-\u001f\u007f]/g;
+
+export function clampSearch(value: string): string {
+  const seen = new Set<string>();
+  const tokens: string[] = [];
+  for (const token of value.replace(CONTROL_CHARS, " ").split(/\s+/).filter(Boolean)) {
+    const key = token.toLowerCase();
+    if (seen.has(key)) continue;
+    seen.add(key);
+    tokens.push(token);
+    if (tokens.length === MAX_SEARCH_TOKENS) break;
+  }
+  return tokens.join(" ").slice(0, MAX_SEARCH_LENGTH).trim();
+}
