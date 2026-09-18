@@ -154,6 +154,35 @@ describe('AuthsService', () => {
       ).rejects.toBeInstanceOf(ConflictException);
       expect(usersService.create).not.toHaveBeenCalled();
     });
+
+    it('reports the colliding field in the 409 body: email pre-check, name and email db constraints', async () => {
+      const dto = {
+        name: 'Jane Doe',
+        email: 'jane@example.com',
+        password: 'Str0ng!Pass',
+      };
+      const errorsOf = async () => {
+        const err = await service.register(dto).catch((e: unknown) => e);
+        return (err as ConflictException).getResponse();
+      };
+
+      usersService.findByEmail.mockResolvedValue(sampleUser);
+      expect(await errorsOf()).toMatchObject({ errors: [{ field: 'email' }] });
+
+      usersService.findByEmail.mockResolvedValue(undefined);
+      passwordsService.hash.mockResolvedValue('hashed-password');
+      usersService.create.mockRejectedValue({
+        code: '23505',
+        constraint: 'users_name_unique',
+      });
+      expect(await errorsOf()).toMatchObject({ errors: [{ field: 'name' }] });
+
+      usersService.create.mockRejectedValue({
+        code: '23505',
+        constraint: 'users_email_unique',
+      });
+      expect(await errorsOf()).toMatchObject({ errors: [{ field: 'email' }] });
+    });
   });
 
   describe('adminCreate', () => {

@@ -1,5 +1,4 @@
 import {
-  ConflictException,
   Inject,
   Injectable,
   UnauthorizedException,
@@ -17,15 +16,9 @@ import { Role } from '../shared/enums/role.enums.js';
 import { DRIZZLE } from '../database/database.module.js';
 import type { Database } from '../database/database.module.js';
 import {
-  getPgErrorCode,
-  getPgErrorConstraint,
-} from '../common/utils/pg-error.util.js';
-
-// users.name and users.email each have their own unique constraint
-// (database/schema/user.schema.ts) — the 23505 handler below reports which
-// one actually collided instead of always blaming email.
-const USERS_NAME_UNIQUE_CONSTRAINT = 'users_name_unique';
-const USERS_EMAIL_UNIQUE_CONSTRAINT = 'users_email_unique';
+  emailConflict,
+  throwIfUserUniqueViolation,
+} from '../common/utils/user-conflict.util.js';
 
 @Injectable()
 export class AuthsService {
@@ -46,7 +39,7 @@ export class AuthsService {
   async register(dto: RegisterDto) {
     const existingUser = await this.usersService.findByEmail(dto.email);
     if (existingUser) {
-      throw new ConflictException('Email already registered');
+      throw emailConflict();
     }
 
     const passwordHash = await this.passwordsService.hash(dto.password);
@@ -64,7 +57,7 @@ export class AuthsService {
           tx,
         );
       } catch (err) {
-        this.throwIfUniqueViolation(err);
+        throwIfUserUniqueViolation(err);
         throw err;
       }
 
@@ -79,7 +72,7 @@ export class AuthsService {
   async adminCreate(dto: AdminCreateUserDto) {
     const existingUser = await this.usersService.findByEmail(dto.email);
     if (existingUser) {
-      throw new ConflictException('Email already registered');
+      throw emailConflict();
     }
 
     const passwordHash = await this.passwordsService.hash(dto.password);
@@ -93,7 +86,7 @@ export class AuthsService {
         role: dto.role,
       });
     } catch (err) {
-      this.throwIfUniqueViolation(err);
+      throwIfUserUniqueViolation(err);
       throw err;
     }
 
@@ -113,23 +106,6 @@ export class AuthsService {
     }
 
     return this.buildAuthResponse(user);
-  }
-
-  // Only throws (never returns) when err is actually a 23505; otherwise
-  // callers fall through and rethrow the original error unchanged.
-  private throwIfUniqueViolation(err: unknown): void {
-    if (getPgErrorCode(err) !== '23505') return;
-
-    switch (getPgErrorConstraint(err)) {
-      case USERS_EMAIL_UNIQUE_CONSTRAINT:
-        throw new ConflictException('Email already registered');
-      case USERS_NAME_UNIQUE_CONSTRAINT:
-        throw new ConflictException('Name already taken');
-      default:
-        throw new ConflictException(
-          'A user with that name or email already exists',
-        );
-    }
   }
 
   private buildAuthResponse(user: User) {

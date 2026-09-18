@@ -1,5 +1,4 @@
 import {
-  ConflictException,
   Inject,
   Injectable,
   NotFoundException,
@@ -14,7 +13,7 @@ import {
 } from '../database/schema/user.schema.js';
 import { UpdateUserDto } from './dto/update-user.dto.js';
 import { FindUsersDto } from './dto/find-users.dto.js';
-import { getPgErrorCode } from '../common/utils/pg-error.util.js';
+import { throwIfUserUniqueViolation } from '../common/utils/user-conflict.util.js';
 import { containsPattern } from '../common/utils/sql-like.util.js';
 
 @Injectable()
@@ -97,11 +96,7 @@ export class UsersService {
       }
       return user;
     } catch (err) {
-      if (getPgErrorCode(err) === '23505') {
-        throw new ConflictException(
-          'A user with that name or email already exists',
-        );
-      }
+      throwIfUserUniqueViolation(err);
       throw err;
     }
   }
