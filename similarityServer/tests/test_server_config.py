@@ -10,13 +10,12 @@ surfaced (a removed @dataclass decorator and a corrupted env-var-file path
 both survived). Adding it here since it's the same module/file as
 load_mcp_mount_path.
 
-Every test in this file gets `load_dotenv` replaced with a recording no-op:
-a real `.env` exists in this package directory (gitignored, developer-local),
-and both functions under test call `load_dotenv(Path(__file__).parent /
-".env")` before reading any environment variable -- without this, a test's
-"defaults apply" assertion would silently depend on that real .env file not
-happening to set the variable under test, rather than on a controlled
-fixture.
+Every test in this file gets `load_root_env` replaced with a counting no-op:
+both functions under test call it before reading any environment variable, and
+a developer's real repo-root env file may exist -- without this, a test's
+"defaults apply" assertion would silently depend on that file not happening to
+set the variable under test, rather than on a controlled fixture. Where the
+env file is looked up is covered in tests/test_env_file.py.
 """
 
 from pathlib import Path
@@ -46,15 +45,15 @@ _ENV_VARS = [
 
 @pytest.fixture(autouse=True)
 def isolated_env_and_dotenv(monkeypatch):
-    """Clears every env var either function reads, and replaces load_dotenv
-    with a recording no-op so no test's outcome depends on the real,
-    developer-local .env file's contents. Returns the list of paths
-    load_dotenv was called with, for tests that assert on it directly."""
+    """Clears every env var either function reads, and replaces load_root_env
+    with a counting no-op so no test's outcome depends on a real,
+    developer-local root env file. Returns the list of calls, for tests that
+    assert on it directly."""
     for var in _ENV_VARS:
         monkeypatch.delenv(var, raising=False)
 
-    calls: list[Path] = []
-    monkeypatch.setattr(server_config_module, "load_dotenv", lambda path: calls.append(path))
+    calls: list[str] = []
+    monkeypatch.setattr(server_config_module, "load_root_env", lambda: calls.append("called"))
     return calls
 
 
@@ -135,11 +134,15 @@ def test_log_level_env_var_override(monkeypatch):
     assert load_server_config().log_level == "debug"
 
 
-def test_loads_dotenv_from_this_packages_own_directory(monkeypatch, isolated_env_and_dotenv):
-    # Not the process cwd, not an arbitrary path -- specifically
-    # similarityServer/.env, same seam load_mcp_mount_path uses.
+def test_load_server_config_loads_the_root_env_file_once(monkeypatch, isolated_env_and_dotenv):
     monkeypatch.setenv("DATABASE_URL", "postgresql://fake")
 
     load_server_config()
 
-    assert isolated_env_and_dotenv == [Path(server_config_module.__file__).parent / ".env"]
+    assert isolated_env_and_dotenv == ["called"]
+
+
+def test_load_mcp_mount_path_loads_the_root_env_file_once(isolated_env_and_dotenv):
+    load_mcp_mount_path()
+
+    assert isolated_env_and_dotenv == ["called"]

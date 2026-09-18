@@ -2,11 +2,8 @@
 
 import os
 from dataclasses import dataclass
-from pathlib import Path
-
-from dotenv import load_dotenv
-
 from .dataset_source import DEFAULT_CSV_PATH
+from .env_file import load_root_env
 
 
 @dataclass
@@ -18,7 +15,7 @@ class ImporterConfig:
 
 def load_config() -> ImporterConfig:
     """Build an ImporterConfig from environment variables."""
-    load_dotenv(Path(__file__).parent / ".env")
+    load_root_env()
 
     return ImporterConfig(
         database_url=os.environ["DATABASE_URL"],

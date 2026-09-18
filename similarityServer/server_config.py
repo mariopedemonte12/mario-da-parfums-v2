@@ -3,16 +3,16 @@
 Deliberately separate from config.ImporterConfig (the CLI import job's
 config): this process never needs the dataset CSV path, and the import job
 never needs the embeddings/model/HTTP settings below. Loaded from a local
-`.env` in this package (same pattern as download_dataset.py) so running the
-server locally doesn't require exporting env vars by hand; in a real
-deployment the platform is expected to set these directly instead.
+the optional repo-root env file (see env_file.py) so running the server
+locally doesn't require exporting env vars by hand; in Docker or a real
+deployment the platform sets these directly instead.
 """
 
 import os
 from dataclasses import dataclass
 from pathlib import Path
 
-from dotenv import load_dotenv
+from .env_file import load_root_env
 
 DEFAULT_EMBEDDINGS_PATH = Path(__file__).parent / "embeddings.npz"
 DEFAULT_MODEL_NAME = "paraphrase-multilingual-MiniLM-L12-v2"
@@ -30,7 +30,7 @@ class ServerConfig:
 
 
 def load_server_config() -> ServerConfig:
-    load_dotenv(Path(__file__).parent / ".env")
+    load_root_env()
 
     return ServerConfig(
         database_url=os.environ["DATABASE_URL"],
@@ -53,5 +53,5 @@ def load_mcp_mount_path() -> str:
     that at import time would break app.py's existing test seam (lifespan
     skipped/overridden, DB never touched).
     """
-    load_dotenv(Path(__file__).parent / ".env")
+    load_root_env()
     return os.environ.get("SIMILARITY_MCP_MOUNT_PATH", DEFAULT_MCP_MOUNT_PATH)

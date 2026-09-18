@@ -1,4 +1,4 @@
-"""Unit tests for load_config() -- environment variables only, no real .env file, no DB."""
+"""Unit tests for load_config() -- environment variables only, no real env file, no DB."""
 
 import pytest
 
@@ -7,11 +7,11 @@ from similarityServer.dataset_source import DEFAULT_CSV_PATH
 
 
 @pytest.fixture(autouse=True)
-def _no_dotenv_file(monkeypatch):
-    """Prevent load_config() from picking up the real gitignored .env in this
-    package (it has real DATABASE_URL/Kaggle creds) -- point load_dotenv at a
-    path that doesn't exist so only monkeypatched env vars are in play."""
-    monkeypatch.setattr("similarityServer.config.load_dotenv", lambda *_args, **_kwargs: None)
+def _no_env_file(monkeypatch):
+    """Prevent load_config() from picking up a developer's real repo-root env
+    file (it has real DATABASE_URL/Kaggle creds) -- replace the loader with a
+    no-op so only monkeypatched env vars are in play."""
+    monkeypatch.setattr("similarityServer.config.load_root_env", lambda *_a, **_k: None)
 
 
 def test_required_database_url_is_read_from_environment(monkeypatch):
