@@ -47,7 +47,26 @@ la búsqueda semántica (`/search`, HNSW).
    nunca como comodines.
 6. Un `search` vacío o solo espacios equivale a no enviarlo (sin filtro).
 7. Máximo 5 tokens y 100 caracteres por valor de `search`; excederlos es un
-   error de validación 400 (protección de costo de consulta).
+   error de validación 400 (protección de costo de consulta). Los límites se
+   miden sobre el valor **normalizado** (ver regla 8), no sobre el crudo:
+   - (a) El valor se **recorta (trim) antes de validar**: 100 caracteres
+     reales más espacios a los lados es válido (200, no 400).
+   - (b) Los tokens **duplicados se eliminan antes de contar** (comparación
+     insensible a mayúsculas, se conserva la primera aparición): `a a a a a a`
+     equivale a `a` y es válido; `a b c d e f` (6 tokens distintos) es 400.
+     Coincide con el servicio, que ya deduplica (regla 4).
+8. Normalización: antes de validar, el DTO transforma `search` a
+   `tokens únicos unidos por un solo espacio` (trim, espacios múltiples
+   colapsados, duplicados fuera). Un valor vacío tras normalizar equivale a no
+   enviarlo (regla 6).
+9. El carácter NUL (`\u0000`, `%00`) no puede almacenarse ni compararse en
+   Postgres text; en vez de propagar un 500, el valor se rechaza con 400
+   (código `CONTAINS_NUL_CHARACTER`). Regla transversal: aplica a `search` y a
+   todos los query params de texto que alimentan una consulta (`concentration`,
+   `olfactoryFamily`, `targetAudience`, `longevity` en fragrances; `name`,
+   `email` en users; `name`, `websiteUrl` en vendors). Se **rechaza** y no se
+   limpia, mismo criterio que `IsNotMarkup`/`IsNotProfane`: el valor consultado
+   no debe diferir en silencio del enviado.
 
 ## Ejemplos
 
@@ -67,7 +86,20 @@ la búsqueda semántica (`/search`, HNSW).
   acota el costo).
 - `search` combinado con `cursor`: la página siguiente respeta ambos.
 - `name`/`brand` enviados por un cliente antiguo: ignorados (ver Contrato).
+- `search=a%00b` → 400 (regla 9), nunca 500.
+- `search` con 100 caracteres + espacios finales → 200 (regla 7a).
+- `search=a a a a a a` → 200, equivale a `a` (regla 7b).
 - `search` combinado con `concentration` u otros filtros exactos: se exigen todas las condiciones.
+
+## Frontend: caja de búsqueda de `/fragrances`
+
+Decisión: el cliente **acota en silencio** lo que escribe el usuario en vez de
+mostrar un error: normaliza (trim, colapsa espacios, deduplica tokens
+insensible a mayúsculas), elimina NUL/caracteres de control, y trunca a 5
+tokens y 100 caracteres antes de llamar a la API. Un helper compartido
+(`clampSearch`) lo usa tanto `getFragrances` (por lo que cubre la caja y
+cualquier otro llamador) como `findFragranceByExactName`. Así escribir de más
+nunca produce el panel de error por un 400.
 
 ## Fuera de alcance
 
