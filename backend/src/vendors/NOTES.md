@@ -16,11 +16,3 @@ Vendors are a plain data entity — no vendor-facing auth, no ownership model.
 - Batch operations are **partial-success**: each item is applied
   independently and reported as `{ id?, success, error? }`. A duplicate
   name or an unknown id fails only that item, not the whole batch.
-
-## Seeding
-
-`src/database/seeds/vendors.seed.ts` ships fixture vendors. Vendors have no
-FK dependency of their own, so this must run **before** the listings seed
-(`listings.vendorId` references `vendors.id`). There is no generic
-cross-module seed runner yet — this is just the vendors-side data, wired
-into a runner is future work.
