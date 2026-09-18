@@ -66,6 +66,15 @@ docker compose up -d --build
 
 Revisa el estado con `docker compose ps` y los logs con `docker compose logs -f similarity` (u otro servicio). Los jobs `seed-*` terminan con estado `Exited (0)`; es lo esperado.
 
+### Resultado esperado (verificado con el CSV del proyecto)
+
+- `seed-catalog` termina con `Catalog sync finished: created=932 updated=0 discarded=0 failed=71`. Los 71 "fallos" son filas del CSV con un par (marca, nombre) repetido dentro de la misma corrida (aviso `(brand, name) collision within this run`, por ejemplo *Jean Paul Gaultier - Le Classique Eau de Parfum*): se conserva la primera, no es un error de instalación. Al repetir el job verás `created=0 updated=932`.
+- `seed-prices` termina con `vendors_ensured=5 listings_created=4660 listings_failed=0`.
+- El catálogo no incluye Chanel (0 filas en el CSV): buscar `chanel` devuelve una lista vacía, no un error. Para probar la búsqueda textual usa `jean` o `dior sauvage`.
+- Arranque desde volúmenes vacíos con las imágenes ya construidas: todos los servicios `healthy` en ~1 minuto (similarity, que indexa 932 perfumes, en ~20-40 s). El primer build de imágenes (torch + modelo) es aparte y bastante más lento.
+- Memoria en reposo (`docker stats`): similarity ~1,1 GiB, backend ~100 MiB, postgres ~65 MiB, frontend ~45 MiB (más el chatbot si tiene clave). En total ~1,5 GiB; el build de la imagen de similarity necesita bastante más, así que construye los servicios de a uno (`COMPOSE_PARALLEL_LIMIT=1 docker compose build <servicio>`) si tu máquina o WSL tiene poca RAM.
+- Si haces `docker compose up -d <servicio>` por partes, ten en cuenta que cada `up` vuelve a ejecutar los jobs de los que ese servicio depende (`migrate`, `seed-catalog`); son idempotentes.
+
 ### Si importas catálogo con el sistema ya arriba
 
 El índice semántico se construye **solo al arrancar** `similarity`. Si importaste o cambiaste perfumes con el sistema corriendo, reinicia ese servicio para que los indexe:
@@ -132,7 +141,7 @@ python -m pytest similarityServer -m real_model    # instancia el modelo real (l
 python -m pytest priceGenerator
 ```
 
-Los tests marcados `integration` requieren un Postgres accesible (ver el `pytest.ini` de cada paquete). El frontend no tiene test runner configurado (solo `pnpm --filter frontend lint`).
+Los tests marcados `integration` requieren un Postgres accesible (ver el `pytest.ini` de cada paquete). El frontend tiene Vitest (`pnpm --filter frontend test`), además de `pnpm --filter frontend lint` y `pnpm --filter frontend typecheck`; el backend y el chatbot también tienen `typecheck` y `test:mutation`.
 
 > TODO(autor): si hay un procedimiento propio de verificación (por ejemplo, el orden en que corres las suites o el mutation testing con `test:mutation`), anótalo aquí; no se puede inferir del repo.
 
@@ -143,7 +152,8 @@ Los tests marcados `integration` requieren un Postgres accesible (ver el `pytest
 - **Puerto ocupado** (`port is already allocated` / `address already in use`). Cambia el `*_HOST_PORT` correspondiente (el más común es `POSTGRES_HOST_PORT=5432` si ya tienes un Postgres local). Si cambias el puerto del frontend o del backend, ajusta también `FRONTEND_URL` y `NEXT_PUBLIC_*` y reconstruye el frontend.
 - **`similarity` tarda mucho en quedar `healthy`.** Es normal: `/health` responde solo cuando terminó la sincronización inicial del índice y el healthcheck tiene un `start_period` de 300 s. En el primer arranque codifica todo el catálogo. `chatbot` espera a que esté sano, así que también tarda. Sigue el progreso con `docker compose logs -f similarity`.
 - **`docker compose` dice que falta `JWT_SECRET`.** Defínelo en el archivo de entorno.
-- **El chatbot se reinicia y luego queda caído.** Falta `GEMINI_API_KEY` (el proceso sale con error explícito y compose reintenta 3 veces). Defínela y ejecuta `docker compose up -d chatbot`.
+- **El chatbot se reinicia y luego queda caído.** Falta `GEMINI_API_KEY` (el proceso sale con error explícito `Falta la variable de entorno requerida: GEMINI_API_KEY` y compose reintenta 3 veces). Defínela y ejecuta `docker compose up -d chatbot`. En el navegador, el widget "Sensei" se abre pero muestra "SIN CONEXIÓN" y, al enviar un mensaje, "No se pudo conectar con el sensei"; la consola registra `ERR_CONNECTION_REFUSED` contra el WebSocket. El resto del sitio no se ve afectado.
+- **El chatbot arranca "sano" aunque no puse clave.** Probablemente dejaste el comentario de `.env.example` en la línea `GEMINI_API_KEY=` (ver la tabla de la sección 1): `docker compose config | grep GEMINI_API_KEY` te muestra el valor real que recibe el contenedor.
 - **El catálogo o la búsqueda semántica están vacíos.** Comprueba que el CSV existe en `similarityServer/data/`, que corriste con `--profile seed` y que `seed-catalog` terminó con exit 0 (`docker compose logs seed-catalog`). Si importaste con el sistema arriba, reinicia `similarity`.
 - **`download-dataset` falla o el CSV queda con dueño root.** Requiere `KAGGLE_USERNAME` y `KAGGLE_KEY`; corre con tu uid/gid (`LOCAL_UID`, `LOCAL_GID`).
 - **Empezar de cero.** `docker compose down -v` borra los volúmenes `postgres_data` y `similarity_data` (pierdes base de datos e índice).
