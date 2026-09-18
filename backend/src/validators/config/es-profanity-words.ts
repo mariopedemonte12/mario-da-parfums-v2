@@ -1,7 +1,7 @@
 // Spanish profanity list — leo-profanity@1.9.0 has no `es` dictionary to
-// load (see profanity.config.ts). Sourced from `malsonantes.md` (repo root,
-// a markdown transcription of a "listado de palabras malsonantes" reference
-// document) plus a handful of Latin-American terms ("verga", "chingada"/
+// load (see profanity.config.ts). Originally transcribed from a
+// "listado de palabras malsonantes" reference document (not kept in the repo;
+// this file is the source of truth and nothing reads it at runtime) plus a handful of Latin-American terms ("verga", "chingada"/
 // "chingado", "pelotudo"/"pelotuda", "perra", "hijueputa") that list didn't
 // cover. Words are lowercase with diacritics/ñ already stripped, matching
 // the normalized form `normalizeForProfanityCheck` produces before calling
