@@ -1,6 +1,10 @@
 import { plainToInstance } from 'class-transformer';
 import { validate } from 'class-validator';
-import { DEFAULT_LIMIT, FindFragranceDto, MAX_LIMIT } from './find-fragrance.dto.js';
+import {
+  DEFAULT_LIMIT,
+  FindFragranceDto,
+  MAX_LIMIT,
+} from './find-fragrance.dto.js';
 
 const SAMPLE_UUID = '3fa85f64-5717-4562-b3fc-2c963f66afa6';
 
@@ -17,10 +21,9 @@ describe('FindFragranceDto', () => {
     expect(dto.limit).toBe(DEFAULT_LIMIT);
   });
 
-  it('accepts name/brand/concentration/olfactoryFamily/targetAudience/longevity filters and no pagination override', async () => {
+  it('accepts search/concentration/olfactoryFamily/targetAudience/longevity filters and no pagination override', async () => {
     const dto = build({
-      name: 'Chanel',
-      brand: 'Chanel',
+      search: 'Chanel',
       concentration: 'EDP',
       olfactoryFamily: 'Woody Spicy',
       targetAudience: 'Male',
@@ -29,10 +32,17 @@ describe('FindFragranceDto', () => {
     expect(await validate(dto)).toHaveLength(0);
   });
 
-  it('rejects a non-string name filter', async () => {
-    const dto = plainToInstance(FindFragranceDto, { name: 123 });
+  it('rejects a non-string search filter', async () => {
+    const dto = plainToInstance(FindFragranceDto, { search: 123 });
     const errors = await validate(dto);
-    expect(errors.some((e) => e.property === 'name')).toBe(true);
+    expect(errors.some((e) => e.property === 'search')).toBe(true);
+  });
+
+  it('no longer declares name/brand filters', () => {
+    // Global ValidationPipe (whitelist: true) strips these, so they are
+    // silently ignored — see specs/text-search-partial.md.
+    expect(Object.keys(new FindFragranceDto())).not.toContain('name');
+    expect(Object.keys(new FindFragranceDto())).not.toContain('brand');
   });
 
   describe('cursor (IsUUID)', () => {

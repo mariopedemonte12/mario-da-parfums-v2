@@ -53,13 +53,14 @@ export function registerCatalogTools(
     {
       title: 'Search fragrances',
       description:
-        'Search the fragrance catalog by name, brand and/or concentration (paginated).',
+        'Search the fragrance catalog by free text (name and/or brand) and/or concentration (paginated).',
       inputSchema: {
-        name: z
+        search: z
           .string()
           .optional()
-          .describe('Partial, case-insensitive match on name'),
-        brand: z.string().optional().describe('Exact brand match'),
+          .describe(
+            'Free text: whitespace-separated tokens (max 5, 100 chars), each matched partially and case-insensitively against name OR brand, any order',
+          ),
         concentration: z
           .string()
           .optional()

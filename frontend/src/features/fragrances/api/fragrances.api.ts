@@ -13,11 +13,8 @@ export async function getFragrances(
 ): Promise<PaginatedFragranceResponse> {
   const searchParams = new URLSearchParams();
 
-  if (params.name) {
-    searchParams.set("name", params.name);
-  }
-  if (params.brand) {
-    searchParams.set("brand", params.brand);
+  if (params.search) {
+    searchParams.set("search", params.search);
   }
   if (params.concentration) {
     searchParams.set("concentration", params.concentration);
@@ -54,18 +51,30 @@ export async function getFragranceById(id: string): Promise<FragranceDetail | nu
   }
 }
 
-// GET /fragrances?name= is a case-insensitive *contains* filter, not exact match —
-// callers that need one specific fragrance by its exact name (e.g. resolving a
-// semantic-search hit) must filter the page themselves. limit=50 (over the default 20)
-// to reduce the odds the exact match falls outside the fetched page for a common name.
+// GET /fragrances?search= is a partial, case-insensitive multi-token match over name OR
+// brand (max 5 tokens / 100 chars, else 400), not an exact match — callers that need one
+// specific fragrance by its exact name (e.g. resolving a semantic-search hit) search with
+// the (clamped) name and then compare names themselves. limit=50 (over the default 20)
+// to reduce the odds the exact match falls outside the fetched page.
+const MAX_SEARCH_TOKENS = 5;
+const MAX_SEARCH_LENGTH = 100;
+
 export async function findFragranceByExactName(name: string): Promise<Fragrance | null> {
-  const params = new URLSearchParams({ name, limit: "50" });
+  const normalized = name.trim().toLowerCase();
+  const search = normalized
+    .split(/\s+/)
+    .filter(Boolean)
+    .slice(0, MAX_SEARCH_TOKENS)
+    .join(" ")
+    .slice(0, MAX_SEARCH_LENGTH)
+    .trim();
+  if (!search) return null;
+
+  const params = new URLSearchParams({ search, limit: "50" });
 
   const { data } = await backendApi.get<PaginatedFragrances>(
     `/fragrances?${params.toString()}`
   );
-
-  const normalized = name.trim().toLowerCase();
 
   return data.find((fragrance) => fragrance.name.trim().toLowerCase() === normalized) ?? null;
 }

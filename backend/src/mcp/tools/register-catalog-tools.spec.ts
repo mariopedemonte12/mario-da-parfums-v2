@@ -130,14 +130,13 @@ describe('registerCatalogTools (unit, mocked services, real MCP dispatch)', () =
 
       const result = await client.callTool({
         name: 'search_fragrances',
-        arguments: { name: 'Chanel', brand: 'Chanel', concentration: 'EDP' },
+        arguments: { search: 'Chanel', concentration: 'EDP' },
       });
 
       expect(result.isError).toBeFalsy();
       expect(services.fragrancesService.findAll).toHaveBeenCalledWith(
         expect.objectContaining({
-          name: 'Chanel',
-          brand: 'Chanel',
+          search: 'Chanel',
           concentration: 'EDP',
         }),
       );
@@ -631,8 +630,7 @@ describe('registerCatalogTools (unit, mocked services, real MCP dispatch)', () =
       description: expect.stringContaining('Search the fragrance catalog'),
       inputSchema: {
         properties: {
-          name: { description: 'Partial, case-insensitive match on name' },
-          brand: { description: 'Exact brand match' },
+          search: { description: expect.stringContaining('name OR brand') },
           concentration: { description: 'Exact concentration match' },
         },
       },

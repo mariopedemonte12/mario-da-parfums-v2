@@ -183,7 +183,7 @@ describe('MCP catalog server (e2e, real Postgres, real HTTP)', () => {
   it('search_fragrances works over MCP with no Authorization header at all', async () => {
     const result = await client.callTool({
       name: 'search_fragrances',
-      arguments: { name: fragranceA.name },
+      arguments: { search: fragranceA.name },
     });
 
     expect(result.isError).toBeFalsy();
@@ -193,10 +193,10 @@ describe('MCP catalog server (e2e, real Postgres, real HTTP)', () => {
 
   // --- search_fragrances / get_fragrance against real rows ---------------
 
-  it('search_fragrances filters by brand and concentration against real rows', async () => {
+  it('search_fragrances searches by brand text and filters by concentration against real rows', async () => {
     const result = await client.callTool({
       name: 'search_fragrances',
-      arguments: { brand: 'MCP E2E Brand', concentration: 'Eau de Parfum' },
+      arguments: { search: 'MCP E2E Brand', concentration: 'Eau de Parfum' },
     });
 
     const body = jsonOf(result) as { data: Array<{ id: string }> };

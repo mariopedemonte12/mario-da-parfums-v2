@@ -13,8 +13,7 @@ export type Fragrance = {
 };
 
 export type FindFragranceParams = {
-  name?: string;
-  brand?: string;
+  search?: string;
   concentration?: string;
   targetAudience?: string;
   longevity?: string;

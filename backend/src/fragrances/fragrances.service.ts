@@ -1,5 +1,5 @@
 import { Inject, Injectable, Logger, NotFoundException } from '@nestjs/common';
-import { and, asc, eq, gt, ilike } from 'drizzle-orm';
+import { and, asc, eq, gt, ilike, or } from 'drizzle-orm';
 import { plainToInstance } from 'class-transformer';
 import { DRIZZLE } from '../database/database.module.js';
 import type { Database } from '../database/database.module.js';
@@ -16,10 +16,7 @@ import { PaginatedFragranceDto } from './dto/paginated-fragrance.dto.js';
 import { BatchResultDto } from './dto/batch-result.dto.js';
 import { CreateBatchResultDto } from './dto/create-batch-result.dto.js';
 import { getPgErrorCode } from '../common/utils/pg-error.util.js';
-import {
-  containsPattern,
-  escapeLikePattern,
-} from '../common/utils/sql-like.util.js';
+import { containsPattern } from '../common/utils/sql-like.util.js';
 
 const UNIQUE_VIOLATION = '23505';
 
@@ -35,8 +32,7 @@ export class FragrancesService {
 
   async findAll(query: FindFragranceDto): Promise<PaginatedFragranceDto> {
     const {
-      name,
-      brand,
+      search,
       concentration,
       olfactoryFamily,
       targetAudience,
@@ -46,14 +42,7 @@ export class FragrancesService {
     } = query;
 
     const conditions = [
-      name ? ilike(fragrances.name, containsPattern(name)) : undefined,
-      // Case-insensitive exact match — was a plain `eq` (case-sensitive)
-      // until agent testing surfaced it as a latent bug: a caller (the
-      // chatbot agent, or any other consumer) sending different casing than
-      // what's stored gets zero results with no indication why. `ilike`
-      // with no wildcards in the pattern is an exact-value comparison, just
-      // case-insensitive.
-      brand ? ilike(fragrances.brand, escapeLikePattern(brand)) : undefined,
+      ...this.searchConditions(search),
       concentration ? eq(fragrances.concentration, concentration) : undefined,
       olfactoryFamily
         ? eq(fragrances.olfactoryFamily, olfactoryFamily)
@@ -82,6 +71,19 @@ export class FragrancesService {
       data: rows.map((row) => this.toResponseDto(row)),
       nextCursor: rows.length === limit ? rows[rows.length - 1].id : null,
     };
+  }
+
+  // Each whitespace-separated token must appear in name OR brand (AND across
+  // tokens), so word order and name/brand split don't matter.
+  private searchConditions(search?: string) {
+    const tokens = [...new Set((search ?? '').split(/\s+/).filter(Boolean))];
+    return tokens.map((token) => {
+      const pattern = containsPattern(token);
+      return or(
+        ilike(fragrances.name, pattern),
+        ilike(fragrances.brand, pattern),
+      );
+    });
   }
 
   async findOne(id: string): Promise<ResponseFragranceDto> {

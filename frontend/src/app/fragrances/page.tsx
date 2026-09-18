@@ -12,18 +12,15 @@ import { useDebounce } from "@/features/common/hooks/useDebounce";
 const LIMIT = 20;
 
 export default function FragrancesPage() {
-  const [name, setName] = useState("");
-  const [brand, setBrand] = useState("");
+  const [search, setSearch] = useState("");
   const [concentration, setConcentration] = useState<string | undefined>();
   const [targetAudience, setTargetAudience] = useState<string | undefined>();
   const [longevity, setLongevity] = useState<string | undefined>();
 
-  const debouncedName = useDebounce(name, 500);
-  const debouncedBrand = useDebounce(brand, 500);
+  const debouncedSearch = useDebounce(search, 500);
 
   const { fragrances, hasMore, loading, loadingMore, error, loadMore } = useFragrances({
-    name: debouncedName || undefined,
-    brand: debouncedBrand || undefined,
+    search: debouncedSearch.trim() || undefined,
     concentration,
     targetAudience,
     longevity,
@@ -37,13 +34,11 @@ export default function FragrancesPage() {
           Todos los perfumes
         </h1>
 
-        <FragranceSearch value={name} onChange={setName} />
+        <FragranceSearch value={search} onChange={setSearch} />
       </div>
 
       <div className="grid grid-cols-1 gap-10 lg:grid-cols-[220px_1fr] lg:gap-12">
         <FragranceFilters
-          brand={brand}
-          onBrandChange={setBrand}
           concentration={concentration}
           onConcentrationChange={setConcentration}
           targetAudience={targetAudience}
