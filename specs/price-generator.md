@@ -8,7 +8,7 @@ y dejar reflejado el precio vigente en `Listing`, actualizando in-place.
 
 Hacer eso con scraping real de retailers chilenos reconocidos es legalmente
 complejo (scraping continuo de sitios de terceros) y de mala reputación para
-el proyecto — el mismo motivo por el que `perfumeCatalogImporter` abandonó el
+el proyecto — el mismo motivo por el que `similarityServer` abandonó el
 scraping en vivo de Fragrantica (ver
 [`perfume-catalog-import.md`](./perfume-catalog-import.md), sección
 "Contexto y por qué cambió de scope"). Se sigue el mismo patrón acá: en vez de
@@ -42,7 +42,7 @@ lenguaje que usa `perfume-catalog-import.md` para el mismo tipo de cambio).
    segunda fila para una combinación que ya tiene una.
 5. Al final de la corrida reporta un resumen (vendors asegurados, listings
    creados, listings actualizados, fallidos) — mismo espíritu que
-   `perfumeCatalogImporter`.
+   `similarityServer`.
 
 Correr el script de nuevo sobre los mismos datos no cambia ningún precio
 existente (ver "Determinismo") — solo actualiza `scraped_at` y agrega filas
@@ -176,10 +176,10 @@ explícitamente fuera de alcance, ver abajo).
   generador).
 - El script **nunca hace DDL** — las tablas ya existen y las gestiona Drizzle
   desde el backend; solo hace `INSERT`/`UPDATE` de filas, igual que
-  `perfumeCatalogImporter`.
+  `similarityServer`.
 - SQL puro parametrizado vía `psycopg2` (`cursor.execute(sql, params)`),
   nunca f-strings/`%`-formatting para construir la query — mismo estándar que
-  `perfumeCatalogImporter/CLAUDE.md`.
+  `similarityServer/CLAUDE.md`.
 
 ## Empaquetado como imagen Docker
 
@@ -187,7 +187,7 @@ explícitamente fuera de alcance, ver abajo).
   vida ni con su propio scheduler/cron interno) — se limita a: conectar,
   generar, upsert, resumir, salir con código `0` en éxito o `!= 0` si la
   corrida completa falló (fallas puntuales por combinación no abortan el
-  resto, igual que `perfumeCatalogImporter`).
+  resto, igual que `similarityServer`).
 - **Configuración vía variables de entorno**, sin valores hardcodeados: como
   mínimo `DATABASE_URL` (connection string de Postgres) y `LOG_LEVEL`. Sin
   secretos en el código ni en la imagen.
@@ -223,7 +223,7 @@ explícitamente fuera de alcance, ver abajo).
   Cloud Scheduler, etc.) — solo se entrega la imagen Docker, no su
   orquestación (`platform-spec.md` §9).
 - **Cualquier endpoint HTTP o API** — es un script batch standalone, igual
-  categoría que `perfumeCatalogImporter`, no expone nada.
+  categoría que `similarityServer`, no expone nada.
 - **Migraciones de schema** — las tablas `vendors`/`listings`/`fragrances` ya
   existen y las gestiona Drizzle desde el backend.
 - **Tests** — se escriben en una sesión de testing separada sobre este mismo

@@ -1,0 +1,38 @@
+# Build context is the repo root for every service (see docker-compose.yml).
+# Keep it small and never ship secrets or local state into an image.
+.git
+.claude
+.worktreeinclude
+graphify-out
+
+# secrets / local env (only *.example files may enter the context)
+**/.env
+**/.env.*
+!**/.env.example
+
+# JS artefacts — always reinstalled/rebuilt inside the image
+**/node_modules
+**/dist
+**/build
+**/.next
+**/coverage
+**/.stryker-tmp
+**/reports
+**/*.tsbuildinfo
+
+# Python artefacts
+**/__pycache__
+**/*.pyc
+**/.venv
+**/.pytest_cache
+**/*.sqlite
+
+# similarityServer: dataset and index are runtime data (bind mount / named
+# volume), never baked into the image
+similarityServer/data/*.csv
+similarityServer/*.npz
+similarityServer/*.hnsw
+
+# Docs/specs are not needed at runtime
+specs
+**/*.md

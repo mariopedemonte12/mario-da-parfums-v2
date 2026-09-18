@@ -1,11 +1,11 @@
 ---
 name: security-audit
-description: "Use for an end-to-end security audit of this monorepo — backend, frontend, chatbot server, perfumeCatalogImporter, priceGenerator, and the database — covering injection (SQL/NoSQL/command), XSS/JS injection, credential/secret exposure, access control over confidential data, DoS resilience, API misuse, and backend code execution (RCE). Distinct from the built-in `security-review` skill, which only reviews the pending diff — this skill audits the whole running system, not just a changeset. Triggers: \"audit de seguridad\", \"seguridad end to end\", \"pentest\", \"revisar seguridad del sitio\", \"SQL injection\", \"XSS\", \"inyección\", \"fuga de credenciales\", \"denegación de servicio\", \"security audit\", \"is this secure\"."
+description: "Use for an end-to-end security audit of this monorepo — backend, frontend, chatbot server, similarityServer, priceGenerator, and the database — covering injection (SQL/NoSQL/command), XSS/JS injection, credential/secret exposure, access control over confidential data, DoS resilience, API misuse, and backend code execution (RCE). Distinct from the built-in `security-review` skill, which only reviews the pending diff — this skill audits the whole running system, not just a changeset. Triggers: \"audit de seguridad\", \"seguridad end to end\", \"pentest\", \"revisar seguridad del sitio\", \"SQL injection\", \"XSS\", \"inyección\", \"fuga de credenciales\", \"denegación de servicio\", \"security audit\", \"is this secure\"."
 ---
 
 # Security Audit (End-to-End)
 
-A whole-system security audit across every service in this monorepo: `backend` (NestJS API + Postgres via Drizzle), `frontend` (Next.js), `chatbot` (WS agent server + MCP + Gemini), `perfumeCatalogImporter` (FastAPI semantic search), `priceGenerator`. Complements the root [`CLAUDE.md`](../../../CLAUDE.md) conventions — a violation of a stated stack convention (e.g. backend/CLAUDE.md's "never hand-write SQL", "password hashing only through `src/passwords`") is very often the bug itself, so read the relevant package `CLAUDE.md` before auditing that package.
+A whole-system security audit across every service in this monorepo: `backend` (NestJS API + Postgres via Drizzle), `frontend` (Next.js), `chatbot` (WS agent server + MCP + Gemini), `similarityServer` (FastAPI semantic search), `priceGenerator`. Complements the root [`CLAUDE.md`](../../../CLAUDE.md) conventions — a violation of a stated stack convention (e.g. backend/CLAUDE.md's "never hand-write SQL", "password hashing only through `src/passwords`") is very often the bug itself, so read the relevant package `CLAUDE.md` before auditing that package.
 
 This is **audit and report**, not implement-and-fix — same separation-of-concerns spirit as implementation/testing sessions in this repo. Report findings; only fix if the user explicitly asks, and treat that as a separate pass.
 
@@ -32,7 +32,7 @@ Map every finding to one of these (plus the baseline hygiene checks, which aren'
 
 ## Recon phase
 
-- Map the attack surface: every backend controller route (`backend/src/**/*.controller.ts`), the chatbot WS protocol (`chatbot/src/protocol.ts`), perfumeCatalogImporter's FastAPI routes, any admin/internal-only endpoints.
+- Map the attack surface: every backend controller route (`backend/src/**/*.controller.ts`), the chatbot WS protocol (`chatbot/src/protocol.ts`), similarityServer's FastAPI routes, any admin/internal-only endpoints.
 - Note trust boundaries: which routes are public vs behind `@UseGuards(JwtAuthGuard)` vs role-gated.
 - Note external integrations: Postgres (Drizzle), Gemini API, MCP servers (`chatbot/mcp-servers.json`), any price-source integration in `priceGenerator`.
 - Locate secrets/config: `.env`/`.env.example` per package, `JWT_SECRET`, `GEMINI_API_KEY`, DB credentials.
@@ -40,7 +40,7 @@ Map every finding to one of these (plus the baseline hygiene checks, which aren'
 ## Testing methodology per pillar
 
 ### 1. Injection
-- Backend/perfumeCatalogImporter: grep for raw SQL (`` sql` ``, `.execute(`, string-concatenated queries) — Drizzle's query builder is the required path per `backend/CLAUDE.md`; any raw SQL built from request input is a red flag. Python side: watch for f-string/`%`-built queries and unsafe `eval`/`exec`/`pickle.loads`.
+- Backend/similarityServer: grep for raw SQL (`` sql` ``, `.execute(`, string-concatenated queries) — Drizzle's query builder is the required path per `backend/CLAUDE.md`; any raw SQL built from request input is a red flag. Python side: watch for f-string/`%`-built queries and unsafe `eval`/`exec`/`pickle.loads`.
 - Confirm every controller input is a validated DTO (`class-validator`) — an endpoint accepting a loosely-typed body is a gap even before testing payloads.
 - Live (with target confirmed): send classic payloads (`' OR '1'='1`, `'; DROP TABLE --`) through every filter/search field (fragrance name/brand search is a known LIKE-wildcard quirk per prior testing — confirm whether it's just a UX gap or an actual injection path) and confirm parametrized handling.
 - Command injection: grep `backend/`, `chatbot/`, `priceGenerator/` for `exec(`, `execSync(`, `spawn(`, `eval(` reachable from user or model-controlled input — chatbot's tool-calling loop (`agent/chat-agent.ts`, `mcp/mcp-manager.ts`) is the highest-risk spot since it routes model output into tool calls.
@@ -78,7 +78,7 @@ Map every finding to one of these (plus the baseline hygiene checks, which aren'
 - Chatbot: the model-calls-tools loop is the highest-value target — confirm tool arguments from Gemini are validated/typed before being used, and that no code path does `eval`/`new Function()` on model or user text.
 - File upload (if any exists, e.g. profile/listing images): server-side type and size validation (never trust client-side checks alone), no path traversal via filename, uploaded files never served from a path that gets executed.
 - SSRF: any server-side fetch of a user- or model-supplied URL (MCP server registration, price-source calls) must not be able to reach internal/metadata endpoints.
-- Dependency RCE: run the audit tool per package (`pnpm audit` for backend/frontend/chatbot, the Python equivalent for `perfumeCatalogImporter`) and flag criticals/highs with a known exploit.
+- Dependency RCE: run the audit tool per package (`pnpm audit` for backend/frontend/chatbot, the Python equivalent for `similarityServer`) and flag criticals/highs with a known exploit.
 
 ## Baseline hygiene (always check, regardless of pillar)
 

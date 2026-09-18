@@ -15,7 +15,7 @@ placeholder, not a cut-down version of the mock).
 ## Search contract
 
 - **Semantic search**: `GET {NEXT_PUBLIC_QUERY_API_URL}/search?q=<text>&top_k=<n>`
-  (`perfumeCatalogImporter/app.py`) → `{ results: [{ name, score }, ...] }`,
+  (`similarityServer/app.py`) → `{ results: [{ name, score }, ...] }`,
   already sorted by descending cosine similarity (approximate, HNSW — see
   `specs/perfume-similarity-search.md`). This response carries no id, brand,
   or image — only `name` + `score`.

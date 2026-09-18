@@ -41,7 +41,7 @@ Todas las respuestas de batch reportan resultado por ítem (`{ id, success, erro
 
 `olfactoryFamily`/`targetAudience`/`longevity` agregados por
 `specs/fragrance-notes-enrichment.md` (columnas `varchar` nullable en
-`fragrances`, pobladas por `perfumeCatalogImporter` a partir de
+`fragrances`, pobladas por `similarityServer` a partir de
 `category`/`target_audience`/`longevity` del dataset — ver ese spec para el
 detalle completo, incluyendo por qué son `varchar` libre y no un enum).
 `GET /fragrances` filtra los tres por match exacto, mismo patrón que

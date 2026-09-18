@@ -6,7 +6,7 @@ conventions for this package. Behavior and business rules live in
 [`specs/price-generator.md`](../specs/price-generator.md); this file is
 architecture/coding conventions, not the spec.
 
-Same shape as [`perfumeCatalogImporter`](../perfumeCatalogImporter/CLAUDE.md)
+Same shape as [`similarityServer`](../similarityServer/CLAUDE.md)
 (one object per concern, `psycopg2` raw SQL confined to the repository
 modules, dataclasses in `models.py`, an orchestrator that wires everything
 together, `main.py` as the only entrypoint) — deliberately not that
@@ -21,7 +21,7 @@ list) and derives everything else from data already in the DB.
   allowed to import `psycopg2` or write SQL. Always parameterized
   (`cursor.execute(sql, params)`), never f-strings/`%`-formatting.
 - **No other dependencies.** `requirements.txt` is `psycopg2-binary` alone —
-  deliberately excludes anything `perfumeCatalogImporter` needed for its
+  deliberately excludes anything `similarityServer` needed for its
   dataset/ML work (`torch`, `kaggle`, `sentence-transformers`); this package
   has no dataset file and no model to load.
 - **Config via environment variables**: `DATABASE_URL`, `LOG_LEVEL`. No
@@ -97,7 +97,7 @@ no randomness of its own — pure coordination.
 
 - One line per listing processed: outcome (created/updated/failed) plus
   fragrance, vendor, size, price, in_stock — same style as
-  `perfumeCatalogImporter`.
+  `similarityServer`.
 - One summary line at the end with the `RunOutcome` counts.
 
 ## Testing seams
