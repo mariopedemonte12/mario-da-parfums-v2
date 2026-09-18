@@ -1,11 +1,21 @@
 import { ApiPropertyOptional } from '@nestjs/swagger';
 import { Type } from 'class-transformer';
-import { IsInt, IsOptional, IsUUID, Max, Min } from 'class-validator';
+import {
+  IsInt,
+  IsOptional,
+  IsUUID,
+  Matches,
+  Max,
+  MaxLength,
+  Min,
+} from 'class-validator';
 import { ValidationErrorCode } from '../../shared/enums/validation-error-code.enums.js';
 import { IsStringField } from '../../validators/wrappers/is-string.wrapper.js';
 
 export const DEFAULT_LIMIT = 20;
 export const MAX_LIMIT = 100;
+export const MAX_SEARCH_LENGTH = 100;
+export const MAX_SEARCH_TOKENS = 5;
 
 export class FindFragranceDto {
   @ApiPropertyOptional({
@@ -14,6 +24,17 @@ export class FindFragranceDto {
   @IsOptional()
   @IsStringField(ValidationErrorCode.NAME_INVALID_TYPE)
   name?: string;
+
+  @ApiPropertyOptional({
+    description:
+      'Free-text search: whitespace-separated tokens, each must appear (partial, case-insensitive) in the name or brand, in any order. Max 5 tokens / 100 chars.',
+    maxLength: MAX_SEARCH_LENGTH,
+  })
+  @IsOptional()
+  @IsStringField(ValidationErrorCode.NAME_INVALID_TYPE)
+  @MaxLength(MAX_SEARCH_LENGTH)
+  @Matches(new RegExp(`^\\s*(\\S+\\s+){0,${MAX_SEARCH_TOKENS - 1}}\\S*\\s*$`))
+  search?: string;
 
   @ApiPropertyOptional({ description: 'Filter by exact brand' })
   @IsOptional()

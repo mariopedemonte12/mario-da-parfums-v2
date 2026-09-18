@@ -196,10 +196,7 @@ describe('FragrancesService', () => {
 
       await service.findAll({ page: 1, limit: 20, name: '50%_off\\x' });
 
-      expect(ilike).toHaveBeenCalledWith(
-        fragrances.name,
-        '%50\\%\\_off\\\\x%',
-      );
+      expect(ilike).toHaveBeenCalledWith(fragrances.name, '%50\\%\\_off\\\\x%');
     });
 
     it('filters brand as an exact match, case-insensitively (ilike with no wildcards), not a case-sensitive eq', async () => {
