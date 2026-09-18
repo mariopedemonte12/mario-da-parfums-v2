@@ -1,36 +1,39 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# frontend
 
-## Getting Started
+Next.js 16 (App Router) + React 19 + Tailwind CSS 4 web app for Mario da Parfums: fragrance catalog and search, fragrance detail with vendor listings, auth, favorites, profile, and a chatbot widget. Conventions are in [`CLAUDE.md`](./CLAUDE.md) and [`AGENTS.md`](./AGENTS.md).
 
-First, run the development server:
+## Development
+
+From the repo root run `pnpm install` once (pnpm workspace), then from `frontend/`:
 
 ```bash
-npm run dev
-# or
-yarn dev
-# or
 pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+The backend API, the similarity search service and the chatbot server must be running for the corresponding features to work.
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+## Scripts
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+| Script | What it does |
+| --- | --- |
+| `pnpm dev` | `next dev` |
+| `pnpm build` | `next build` |
+| `pnpm start` | `next start` |
+| `pnpm lint` | `eslint` |
 
-## Learn More
+There is no test runner configured in this package.
 
-To learn more about Next.js, take a look at the following resources:
+## Environment variables
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+There is no example env file for this package. All variables are optional and have local defaults in `src/lib`:
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+- `NEXT_PUBLIC_BACKEND_API_URL` (default `http://localhost:3000`)
+- `NEXT_PUBLIC_QUERY_API_URL` (default `http://localhost:8001`)
+- `NEXT_PUBLIC_CHATBOT_WS_URL` (default `ws://localhost:8081`)
 
-## Deploy on Vercel
+The backend allows CORS from `http://localhost:3010` by default, so run the frontend on that port (`pnpm dev -p 3010`) or set `FRONTEND_URL` in the backend.
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+## Docs
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+- Per-area `NOTES.md`: [`src/components/ui`](./src/components/ui/NOTES.md), [`src/features/auth`](./src/features/auth/NOTES.md), [`src/features/layout`](./src/features/layout/NOTES.md), [`src/features/legal`](./src/features/legal/NOTES.md).
+- Design reference: [`designGuidelines/`](./designGuidelines).
