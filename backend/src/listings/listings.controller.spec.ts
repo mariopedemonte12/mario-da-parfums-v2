@@ -3,7 +3,7 @@ import { INestApplication, NotFoundException } from '@nestjs/common';
 import { GUARDS_METADATA } from '@nestjs/common/constants.js';
 import { JwtService } from '@nestjs/jwt';
 import request from 'supertest';
-import type { App } from 'supertest/types';
+import type { App } from 'supertest/types.js';
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import { ListingsController } from './listings.controller.js';
 import { ListingsService } from './listings.service.js';

@@ -179,9 +179,7 @@ describe('customValidationPipe', () => {
       }
       expect(caught).toBeInstanceOf(BadRequestException);
       expect((caught as BadRequestException).getResponse()).toMatchObject({
-        errors: [
-          { field: 'id', errors: [{ code: 'CONTAINS_NUL_CHARACTER' }] },
-        ],
+        errors: [{ field: 'id', errors: [{ code: 'CONTAINS_NUL_CHARACTER' }] }],
       });
     });
 

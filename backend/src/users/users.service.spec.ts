@@ -145,7 +145,7 @@ describe('UsersService', () => {
           returning: vi.fn().mockResolvedValue([sampleUser]),
         }),
       });
-      const tx = { insert: txInsert } as unknown as typeof db;
+      const tx = { insert: txInsert } as unknown as Parameters<UsersService['create']>[1];
 
       const result = await service.create(
         {

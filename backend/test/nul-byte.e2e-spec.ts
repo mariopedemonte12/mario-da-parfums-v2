@@ -2,7 +2,7 @@ import { Test, TestingModule } from '@nestjs/testing';
 import { INestApplication } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import request from 'supertest';
-import type { App } from 'supertest/types';
+import type { App } from 'supertest/types.js';
 import { describe, it, expect, beforeAll, afterAll } from 'vitest';
 
 // specs/nul-byte-rejection.md: a NUL byte in any body/query/param string
@@ -59,21 +59,33 @@ describe('NUL byte rejection (e2e, real Postgres)', () => {
   it('POST /auths/register with NUL in name -> 400', async () => {
     const res = await request(app.getHttpServer())
       .post('/auths/register')
-      .send({ name: `nul${NUL}user`, email: 'nul@example.com', password: 'Str0ng!Passw0rd' });
+      .send({
+        name: `nul${NUL}user`,
+        email: 'nul@example.com',
+        password: 'Str0ng!Passw0rd',
+      });
     expectNul(res, 'name');
   });
 
   it('POST /auths/register with NUL in email -> 400', async () => {
     const res = await request(app.getHttpServer())
       .post('/auths/register')
-      .send({ name: 'nuluser', email: `nul${NUL}@example.com`, password: 'Str0ng!Passw0rd' });
+      .send({
+        name: 'nuluser',
+        email: `nul${NUL}@example.com`,
+        password: 'Str0ng!Passw0rd',
+      });
     expectNul(res, 'email');
   });
 
   it('POST /auths/register with NUL in password -> 400', async () => {
     const res = await request(app.getHttpServer())
       .post('/auths/register')
-      .send({ name: 'nuluser', email: 'nul@example.com', password: `Str0ng!Pass${NUL}w0rd` });
+      .send({
+        name: 'nuluser',
+        email: 'nul@example.com',
+        password: `Str0ng!Pass${NUL}w0rd`,
+      });
     expectNul(res, 'password');
   });
 
@@ -88,7 +100,12 @@ describe('NUL byte rejection (e2e, real Postgres)', () => {
     const res = await request(app.getHttpServer())
       .post('/auths/admin-register')
       .set(auth())
-      .send({ name: `a${NUL}`, email: 'nul2@example.com', password: 'Str0ng!Passw0rd', role: Role.USER });
+      .send({
+        name: `a${NUL}`,
+        email: 'nul2@example.com',
+        password: 'Str0ng!Passw0rd',
+        role: Role.USER,
+      });
     expectNul(res, 'name');
   });
 
@@ -104,7 +121,9 @@ describe('NUL byte rejection (e2e, real Postgres)', () => {
     const res = await request(app.getHttpServer())
       .post('/vendors/batch')
       .set(auth())
-      .send({ items: [{ name: `Vendor${NUL}`, websiteUrl: 'https://v.example.com' }] });
+      .send({
+        items: [{ name: `Vendor${NUL}`, websiteUrl: 'https://v.example.com' }],
+      });
     expectNul(res, 'items.0.name');
   });
 
@@ -127,9 +146,7 @@ describe('NUL byte rejection (e2e, real Postgres)', () => {
   });
 
   it('GET /fragrances/:id with NUL in the param -> 400 (never 500)', async () => {
-    const res = await request(app.getHttpServer()).get(
-      '/fragrances/abc%00def',
-    );
+    const res = await request(app.getHttpServer()).get('/fragrances/abc%00def');
     expectNul(res, 'id');
   });
 
@@ -141,7 +158,9 @@ describe('NUL byte rejection (e2e, real Postgres)', () => {
   });
 
   it('a clean request is unaffected', async () => {
-    const res = await request(app.getHttpServer()).get('/fragrances?search=abc');
+    const res = await request(app.getHttpServer()).get(
+      '/fragrances?search=abc',
+    );
     expect(res.status).toBe(200);
   });
 });

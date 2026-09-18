@@ -2,7 +2,7 @@ import { Test, TestingModule } from '@nestjs/testing';
 import { INestApplication } from '@nestjs/common';
 import { eq } from 'drizzle-orm';
 import request from 'supertest';
-import type { App } from 'supertest/types';
+import type { App } from 'supertest/types.js';
 import { describe, it, expect, beforeAll, afterAll } from 'vitest';
 import { appendFileSync } from 'node:fs';
 const obs = (...a: unknown[]) => appendFileSync(process.env.QA_OBS_FILE ?? '/dev/null', a.join(' ') + '\n');
