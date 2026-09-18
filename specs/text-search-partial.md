@@ -2,8 +2,8 @@
 
 ## Propósito
 
-Hoy `GET /fragrances?name=` solo busca por contains sobre el nombre del
-perfume; `brand` es match exacto. Buscar `jean` no encuentra
+Antes `GET /fragrances?name=` solo buscaba por contains sobre el nombre del
+perfume y `brand` era match exacto. Buscar `jean` no encuentra
 `Jean Paul Gaultier` (la marca no participa) y una consulta multi-palabra
 como `dior sauvage` no matchea si las palabras están repartidas entre marca y
 nombre. Esta feature agrega una búsqueda textual libre, parcial y tolerante
@@ -13,9 +13,24 @@ la búsqueda semántica (`/search`, HNSW).
 ## Contrato
 
 - Nuevo query param opcional `search` en `GET /fragrances` (string).
-- Los filtros existentes (`name` contains, `brand` exacto case-insensitive,
-  `concentration`, `olfactoryFamily`, `targetAudience`, `longevity`) siguen
-  igual y se combinan con `search` por AND.
+- **`search` es el ÚNICO mecanismo textual** (decisión de alcance
+  posterior): los filtros `name` (contains) y `brand` (exacto) de
+  `GET /fragrances` se ELIMINAN. Los filtros exactos `concentration`,
+  `olfactoryFamily`, `targetAudience`, `longevity` siguen igual y se combinan
+  con `search` por AND.
+- Si un cliente aún envía `name` o `brand`: el `ValidationPipe` global usa
+  `whitelist: true` sin `forbidNonWhitelisted`, así que los parámetros
+  desconocidos se **ignoran silenciosamente** (no hay 400) y la consulta se
+  responde sin ese filtro. Se decide conservar ese comportamiento global
+  (activar `forbidNonWhitelisted` afectaría a todos los endpoints).
+- Herramienta MCP `search_fragrances`: expone `search` (+ `concentration`,
+  `cursor`, `limit`) en lugar de `name`/`brand`.
+- Frontend: el buscador de `/fragrances` envía `search`; el input de filtro
+  por marca de la barra lateral se elimina porque `search` ya cubre la marca
+  (ej. `chanel`). La resolución del resultado semántico del home a un
+  perfume por nombre exacto usa `search=<nombre>` (truncado a 5 tokens /
+  100 caracteres para respetar la regla 7) y filtra por igualdad exacta de
+  nombre en el cliente.
 - Paginación por cursor (`cursor`, `limit`, `nextCursor`) y orden por `id`
   ascendente no cambian; `search` solo restringe el conjunto de filas.
 
@@ -51,12 +66,12 @@ la búsqueda semántica (`/search`, HNSW).
 - Tokens de 1 carácter son válidos (pueden ser lentos; el límite de tokens
   acota el costo).
 - `search` combinado con `cursor`: la página siguiente respeta ambos.
-- `search` combinado con `brand`/`name`: se exigen todas las condiciones.
+- `name`/`brand` enviados por un cliente antiguo: ignorados (ver Contrato).
+- `search` combinado con `concentration` u otros filtros exactos: se exigen todas las condiciones.
 
 ## Fuera de alcance
 
 - Ranking por relevancia (el orden sigue siendo por `id`).
 - Tolerancia a typos / fuzzy, normalización de acentos.
 - Búsqueda semántica (`/search`, similarityServer, perfumeCatalogImporter).
-- Cambios de frontend (adoptar `search` en el buscador es trabajo aparte).
 - Búsqueda en otros módulos (vendors, users).
