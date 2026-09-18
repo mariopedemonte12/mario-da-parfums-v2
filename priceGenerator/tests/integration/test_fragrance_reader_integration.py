@@ -2,7 +2,7 @@
 
 Run with `pytest -m integration`. Requires DATABASE_URL to point at a
 reachable Postgres with the fragrances table already migrated (see
-backend/.env.example for the local docker-compose shape).
+the host-only DATABASE_URL in the root .env.example for the local docker-compose shape).
 """
 
 import pytest

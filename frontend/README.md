@@ -32,7 +32,7 @@ Vitest (same version as backend and chatbot). Tests live next to the code as `*.
 
 ## Environment variables
 
-There is no example env file for this package. All variables are optional and have local defaults in `src/lib`:
+There is no env file or example for this package: `next.config.ts` loads the single repo-root env file (`<repo root>/.env`, template [`../.env.example`](../.env.example)) with `@next/env`, so `next dev` / `next build` see its `NEXT_PUBLIC_*` values. The file is optional (in Docker they come from build args) and real environment variables win over it. Do not put a `.env` in `frontend/`. All variables are optional and have local defaults in `src/lib`:
 
 - `NEXT_PUBLIC_BACKEND_API_URL` (default `http://localhost:3000`)
 - `NEXT_PUBLIC_QUERY_API_URL` (default `http://localhost:8001`)

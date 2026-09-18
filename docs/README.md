@@ -43,7 +43,7 @@
 - [`../platform-spec.md`](../platform-spec.md): intención original de producto; algunas secciones están desactualizadas (ver el aviso al inicio).
 - [`../backend/docs/`](../backend/docs): decisiones transversales del backend (manejo de errores, códigos de validación).
 - `NOTES.md` dentro de cada módulo: decisiones no obvias de ese módulo.
-- [`../docker-compose.yml`](../docker-compose.yml) y [`../.env.example`](../.env.example): infraestructura y variables.
+- [`../docker-compose.yml`](../docker-compose.yml) y [`../.env.example`](../.env.example): infraestructura y variables (un único archivo de entorno raíz, también para el host; ver [`../specs/single-root-env.md`](../specs/single-root-env.md) y la sección "Migrar desde .env por paquete" de [`local-setup.md`](local-setup.md)).
 
 ## Convenciones de estos documentos
 

@@ -33,8 +33,11 @@ history on this path before the rename, not deleted for no reason.
   package should grow dependencies at that scale.
 - **Config via environment variables**, not hardcoded values: DB connection
   string, dataset CSV path, log level. No secrets in code or committed files —
-  `download_dataset.py`'s Kaggle credentials live in a gitignored local `.env`
-  (loaded with `python-dotenv`), never anywhere that gets committed.
+  `download_dataset.py`'s Kaggle token (`SIMILARITY_KAGGLE_API_TOKEN`) lives
+  in the gitignored repo-root `.env` (loaded by `env_file.py` with
+  `python-dotenv`: `<root>/.env`, optional, never overriding real environment
+  variables; there is no per-package env file or `.env.example`), never
+  anywhere that gets committed.
 
 ## Architecture — one object per concern
 
@@ -161,6 +164,7 @@ similarityServer/
   orchestrator.py         # CatalogSyncOrchestrator
   similarity.py           # PerfumeSimilarityIndex
   models.py               # CatalogFragrance dataclass, small result types
+  env_file.py              # optional repo-root env file loader (never overrides real env vars)
   config.py                # env var loading for the CLI importer (DB url, CSV path, log level)
   download_dataset.py      # manual Kaggle refresh, not part of the normal run
   app.py                   # FastAPI search server entrypoint

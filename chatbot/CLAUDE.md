@@ -9,6 +9,7 @@ Stack: **plain TypeScript, no framework** (explicit choice — `ws` + `@google/g
 ```
 chatbot/
   src/
+    load-env.ts / root-env.ts  # side-effect import (FIRST in main.ts): loads the optional repo-root .env without overriding real env vars; root found by walking up to pnpm-workspace.yaml (src/, dist/, any cwd)
     main.ts              # entrypoint: loads config, connects MCP servers, starts the WS server
     config.ts             # env + mcp-servers.json loading/validation
     logger.ts             # tiny timestamped console logger
@@ -26,7 +27,7 @@ chatbot/
     NOTES.md               # non-obvious implementation decisions the spec doesn't fix — read before touching agent/chat-agent.ts or session.ts's truncation logic
   dev-mcp-stub/            # THROWAWAY stub MCP server, NOT the real fragrances/vendors/pricing MCP — see its README.md
   mcp-servers.json         # declarative list of MCP servers to connect to (empty by default)
-  .env.example / .env      # same pattern as backend/ and similarityServer/
+  # no env file here: config comes from the single repo-root .env (template: ../.env.example)
 ```
 
 ## Conventions

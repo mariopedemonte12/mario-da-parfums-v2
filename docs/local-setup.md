@@ -7,7 +7,7 @@ Cómo levantar todo el sistema con Docker Compose. La fuente de verdad de lo que
 - **Docker** con **Docker Compose v2** (el compose usa `depends_on ... required: false`, que exige una versión reciente de Compose).
 - **Espacio y tiempo**: la imagen de `similarity` pesa alrededor de 2 GB (torch CPU + modelo de embeddings) y su primer build y arranque son lentos.
 - Solo si quieres correr tests o los servicios fuera de Docker: Node.js y pnpm (monorepo pnpm, ver [`package.json`](../package.json)) y Python 3.12 (la versión de las imágenes Python).
-- Para descargar el dataset con Kaggle: una cuenta de Kaggle y su API token (`KAGGLE_USERNAME`, `KAGGLE_KEY`). Alternativa: copiar el CSV a mano.
+- Para descargar el dataset con Kaggle: una cuenta de Kaggle y un API token (`SIMILARITY_KAGGLE_API_TOKEN`; se crea en kaggle.com/settings -> API -> Create New Token). Alternativa: copiar el CSV a mano.
 - Opcional: una clave de Gemini (`GEMINI_API_KEY`, <https://aistudio.google.com/apikey>) para el chatbot.
 
 ## 1. Clonar y configurar
@@ -23,9 +23,9 @@ Edita el archivo `.env` recién creado (está en `.gitignore`; nunca lo commitee
 | Variable | Qué hacer |
 |---|---|
 | `JWT_SECRET` | **Obligatorio.** Si falta, `docker compose` falla al interpolar. Genera uno con `openssl rand -hex 32`. |
-| `GEMINI_API_KEY` | Opcional. Sin ella, **solo el chatbot** termina al arrancar con un error explícito (compose lo reintenta 3 veces); el resto del sistema funciona. Déjala como `GEMINI_API_KEY=` (vacía y **sin comentario en la misma línea**: Docker Compose leería el comentario como valor y el chatbot arrancaría "sano" con una clave basura). Lo mismo aplica a `KAGGLE_KEY`. |
+| `GEMINI_API_KEY` | Opcional. Sin ella, **solo el chatbot** termina al arrancar con un error explícito (compose lo reintenta 3 veces); el resto del sistema funciona. Déjala como `GEMINI_API_KEY=` (vacía y **sin comentario en la misma línea**: Docker Compose leería el comentario como valor y el chatbot arrancaría "sano" con una clave basura). Lo mismo aplica a `SIMILARITY_KAGGLE_API_TOKEN`. |
 | `POSTGRES_PASSWORD` | El valor por defecto sirve en local. Si lo cambias, usa caracteres seguros para URL (sin `@ : / ? # %`), porque se incrusta en `DATABASE_URL`. |
-| `KAGGLE_USERNAME`, `KAGGLE_KEY` | Solo para el job `download-dataset`. |
+| `SIMILARITY_KAGGLE_API_TOKEN` | Solo para el job `download-dataset` (un único token de Kaggle). |
 | `LOCAL_UID`, `LOCAL_GID` | Solo para `download-dataset` (para que el CSV quede a tu nombre): valores de `id -u` / `id -g`. |
 | `*_HOST_PORT`, `FRONTEND_URL`, `NEXT_PUBLIC_*` | Solo si necesitas cambiar puertos u orígenes (ver troubleshooting). |
 
@@ -34,7 +34,7 @@ Edita el archivo `.env` recién creado (está en `.gitignore`; nunca lo commitee
 El CSV **no está en el repo** (fuente: dataset de Kaggle "Perfume Dataset", licencia CC BY 4.0; ver [`similarityServer/data/README.md`](../similarityServer/data/README.md)). Es necesario para poblar el catálogo. Dos opciones:
 
 ```bash
-# A) Descargarlo con el job de compose (requiere KAGGLE_USERNAME y KAGGLE_KEY en el .env)
+# A) Descargarlo con el job de compose (requiere SIMILARITY_KAGGLE_API_TOKEN en el .env)
 docker compose --profile tools run --rm download-dataset
 
 # B) Copiarlo a mano
@@ -145,7 +145,37 @@ Los tests marcados `integration` requieren un Postgres accesible (ver el `pytest
 
 > TODO(autor): si hay un procedimiento propio de verificación (por ejemplo, el orden en que corres las suites o el mutation testing con `test:mutation`), anótalo aquí; no se puede inferir del repo.
 
-## 7. Troubleshooting
+## 7. Desarrollo en el host (sin Docker)
+
+El mismo `.env` de la raíz sirve para correr los servicios fuera de Docker; cada app lo carga desde la raíz del repo (desde `src/` o `dist/` y desde cualquier directorio de trabajo). Es opcional para ellas y el entorno real del proceso siempre tiene precedencia. La sección "HOST-ONLY" de `.env.example` trae las variables que solo usa este modo (`DATABASE_URL` con `localhost`, `PORT`, `CHATBOT_WS_*`, `SIMILARITY_HOST`/`SIMILARITY_PORT`, `MCP_CONFIG_PATH`, ...); Compose las ignora. Para tener solo la base de datos: `docker compose up -d postgres migrate`.
+
+```bash
+pnpm --filter backend start:dev
+pnpm --filter chatbot dev
+pnpm --filter frontend dev
+python -m similarityServer.app        # desde la raíz del repo
+```
+
+Comprueba tus claves contra la plantilla (nunca imprime valores): `node scripts/check-env.mjs` (`--strict` también falla por claves desconocidas). Sus tests: `node --test scripts/check-env.test.mjs`.
+
+## 8. Migrar desde .env por paquete
+
+Antes había un `.env` por paquete (`backend/.env`, `chatbot/.env`, `similarityServer/.env`) además del de la raíz. Ahora **solo se lee `<raíz>/.env`**; los archivos por paquete se **ignoran** (sin error ni aviso) y sus `.env.example` ya no existen. Para pasar a uno solo:
+
+1. Actualiza tu `.env` raíz con la plantilla: `node scripts/check-env.mjs` te dice qué claves faltan o sobran (sin mostrar valores).
+2. Copia al `.env` raíz lo que solo tenías en los archivos por paquete (`DATABASE_URL`, `PORT`, `CHATBOT_WS_*`, `MCP_CONFIG_PATH`, `SIMILARITY_*`, claves de Gemini, etc.); las líneas de la sección HOST-ONLY vienen comentadas con su valor por defecto.
+3. Borra los `.env` de `backend/`, `chatbot/` y `similarityServer/`.
+
+Nombres que cambiaron:
+
+| Antes | Ahora |
+|---|---|
+| `KAGGLE_USERNAME` + `KAGGLE_KEY` | `SIMILARITY_KAGGLE_API_TOKEN` (un único token: genera uno nuevo en kaggle.com/settings -> API -> Create New Token) |
+| similarityServer: `EMBEDDINGS_PATH`, `HOST`, `PORT`, `LOG_LEVEL`, `MCP_MOUNT_PATH`, `DATASET_CSV_PATH` (renombres anteriores, feature docker-infra) | `SIMILARITY_EMBEDDINGS_PATH`, `SIMILARITY_HOST`, `SIMILARITY_PORT`, `SIMILARITY_LOG_LEVEL`, `SIMILARITY_MCP_MOUNT_PATH`, `SIMILARITY_DATASET_CSV_PATH` |
+
+Detalle en [`specs/single-root-env.md`](../specs/single-root-env.md). Nota: Next.js lee por su cuenta cualquier `frontend/.env*`; no lo uses, y si existe uno viejo bórralo.
+
+## 9. Troubleshooting
 
 - **El login falla sin ningún mensaje (o las búsquedas fallan en silencio).** `FRONTEND_URL` debe ser **exactamente** el origen que ves en la barra de direcciones (esquema, host y puerto). Se usa como lista de CORS con credenciales en backend y similarity. Si abres el sitio como `http://127.0.0.1:3010` pero `FRONTEND_URL=http://localhost:3010`, el navegador bloquea las peticiones sin mostrar error en la UI. Corrige la variable y ejecuta `docker compose up -d` (recrea backend y similarity).
 - **Cambié `NEXT_PUBLIC_*` y no pasa nada.** Esas variables se hornean en el bundle en `next build`. Reconstruye: `docker compose build frontend && docker compose up -d frontend`. Deben ser URLs alcanzables **desde el navegador** (puertos publicados), no nombres internos como `backend:3000`.
@@ -155,6 +185,6 @@ Los tests marcados `integration` requieren un Postgres accesible (ver el `pytest
 - **El chatbot se reinicia y luego queda caído.** Falta `GEMINI_API_KEY` (el proceso sale con error explícito `Falta la variable de entorno requerida: GEMINI_API_KEY` y compose reintenta 3 veces). Defínela y ejecuta `docker compose up -d chatbot`. En el navegador, el widget "Sensei" se abre pero muestra "SIN CONEXIÓN" y, al enviar un mensaje, "No se pudo conectar con el sensei"; la consola registra `ERR_CONNECTION_REFUSED` contra el WebSocket. El resto del sitio no se ve afectado.
 - **El chatbot arranca "sano" aunque no puse clave.** Probablemente dejaste el comentario de `.env.example` en la línea `GEMINI_API_KEY=` (ver la tabla de la sección 1): `docker compose config | grep GEMINI_API_KEY` te muestra el valor real que recibe el contenedor.
 - **El catálogo o la búsqueda semántica están vacíos.** Comprueba que el CSV existe en `similarityServer/data/`, que corriste con `--profile seed` y que `seed-catalog` terminó con exit 0 (`docker compose logs seed-catalog`). Si importaste con el sistema arriba, reinicia `similarity`.
-- **`download-dataset` falla o el CSV queda con dueño root.** Requiere `KAGGLE_USERNAME` y `KAGGLE_KEY`; corre con tu uid/gid (`LOCAL_UID`, `LOCAL_GID`).
+- **`download-dataset` falla o el CSV queda con dueño root.** Requiere `SIMILARITY_KAGGLE_API_TOKEN`; corre con tu uid/gid (`LOCAL_UID`, `LOCAL_GID`).
 - **Empezar de cero.** `docker compose down -v` borra los volúmenes `postgres_data` y `similarity_data` (pierdes base de datos e índice).
 - **Imagen pesada / build lento.** La imagen de `similarity` ronda los 2 GB; las siguientes construcciones reutilizan la caché de capas.

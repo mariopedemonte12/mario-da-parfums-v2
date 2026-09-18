@@ -42,7 +42,8 @@ reports/mutation/
 !.vscode/launch.json
 !.vscode/extensions.json
 
-# dotenv environment variable files (any package: backend/frontend/chatbot)
+# dotenv environment variable files: the single repo-root .env (and any stray
+# per-package one, which is ignored by the apps). Templates (*.example) stay tracked.
 .env
 .env.local
 .env.development

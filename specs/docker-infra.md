@@ -70,11 +70,13 @@ Perfiles opcionales:
 
 ## Inicialización
 
-1. `cp .env.example .env` y editar `JWT_SECRET` (y `GEMINI_API_KEY`).
+1. `cp .env.example .env` (único archivo de entorno del repo, también para
+   desarrollo en el host; ver `specs/single-root-env.md`) y editar `JWT_SECRET`
+   (y `GEMINI_API_KEY`).
 2. Migraciones: automáticas (`migrate` en cada `up`, idempotente).
 3. Dataset: `similarityServer/data/perfumes_dataset.csv` no está en el repo.
    `docker compose --profile tools run --rm download-dataset` (requiere
-   `KAGGLE_USERNAME`/`KAGGLE_KEY`) o copiarlo a mano.
+   `SIMILARITY_KAGGLE_API_TOKEN`) o copiarlo a mano.
 4. Seed: `docker compose --profile seed up -d --build`.
 5. Índice semántico: lo construye `similarity` al arrancar leyendo `fragrances`
    (encoda solo lo nuevo/cambiado). Si se importó catálogo con el sistema ya

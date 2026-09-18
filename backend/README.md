@@ -7,9 +7,9 @@ NestJS 12 REST API for Mario da Parfums (fragrance catalog, vendor listings, use
 From the repo root, install once with `pnpm install` (pnpm workspace). Then, from `backend/`:
 
 ```bash
-cp .env.example .env          # fill in the values, see below
-docker compose up -d          # local Postgres 16 (docker-compose.yml)
-pnpm db:migrate               # apply the migrations in drizzle/
+# once, in the repo root: cp .env.example .env  (single env file for the whole repo)
+# and, also in the repo root: docker compose up -d postgres migrate  (local Postgres 16)
+pnpm db:migrate               # apply the migrations in drizzle/ (skip if `migrate` ran)
 pnpm start:dev                # watch mode, listens on PORT (default 3000)
 ```
 
@@ -27,8 +27,9 @@ pnpm start:dev                # watch mode, listens on PORT (default 3000)
 
 ## Environment variables
 
-See [`.env.example`](./.env.example) for the Postgres credentials and `DATABASE_URL`. The code also reads these variables, which are not in the example file:
+The backend reads the single repo-root env file (`<repo root>/.env`, template [`../.env.example`](../.env.example)); there is no backend-specific file. It is optional (absent inside Docker) and real environment variables always win over it. `src/config/root-env.ts` finds the root from the module location, so it works from `src/`, `dist/` and any cwd; `drizzle.config.ts` (the `db:*` scripts) uses the same loader. Variables it reads:
 
+- `DATABASE_URL` (Drizzle; host mode uses `localhost:<POSTGRES_HOST_PORT>`)
 - `JWT_SECRET` (required to sign tokens) and `JWT_EXPIRES_IN` (default `15m`)
 - `PORT` (default `3000`)
 - `FRONTEND_URL` (CORS origin, default `http://localhost:3010`)

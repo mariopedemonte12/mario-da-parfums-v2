@@ -2,7 +2,7 @@
 
 - **`DatabaseModule` is `@Global()`** with two chained providers: `PG_POOL` (internal, the raw `pg` Pool) and `DRIZZLE` (exported, the Drizzle-wrapped connection). `PG_POOL` exists as its own provider — rather than being created inline inside the `DRIZZLE` factory — specifically so it can be injected into the module and closed in `onModuleDestroy` (clean shutdown, no dangling Postgres connections in tests/redeploys).
 - **`schema/index.ts` is the single source of truth** passed to `drizzle(pool, { schema })`, which is what enables Drizzle's query API (`db.query.fragrances.findMany({ with: { listings: true } })`) — and the same file `drizzle.config.ts` points at for migrations. If a new table/relation isn't re-exported from `schema/index.ts`, Drizzle doesn't know about it even though the table exists physically.
-- **`drizzle.config.ts`** runs outside Nest's bootstrap (via the `drizzle-kit` CLI), so it loads `.env` manually (`import 'dotenv/config'`) instead of relying on `ConfigModule`.
+- **`drizzle.config.ts`** runs outside Nest's bootstrap (via the `drizzle-kit` CLI), so it loads the repo-root env file manually (`import '../config/load-env.js'`, see `src/config/root-env.ts`) instead of relying on `ConfigModule` (which is set to `ignoreEnvFile`; the same loader runs first in `main.ts`/`app.module.ts`). The file is optional and never overrides real environment variables.
 
 ## Schema quirks
 

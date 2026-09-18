@@ -14,7 +14,7 @@ Este documento separa dos cosas para no confundirlas:
 Cada punto indica dónde verificarlo.
 
 ### Secretos y configuración
-- Toda la configuración entra por variables de entorno desde un único archivo `.env` en la raíz, ignorado por git; el repo solo incluye [`.env.example`](../.env.example) ([`docker-compose.yml`](../docker-compose.yml)).
+- Toda la configuración entra por variables de entorno desde un único archivo `.env` en la raíz, ignorado por git; el repo solo incluye [`.env.example`](../.env.example), que también sirve al desarrollo en el host (no hay `.env.example` por paquete; dentro de las imágenes el archivo no existe y manda el entorno del contenedor) ([`docker-compose.yml`](../docker-compose.yml)).
 - `JWT_SECRET` es obligatorio: compose falla al interpolar si falta. `GEMINI_API_KEY` vacío hace que solo el chatbot termine con un error explícito (verificado; no pongas un comentario en la misma línea que un valor vacío: Compose lo toma como valor; ver [`local-setup.md`](local-setup.md)).
 - El `.env.example` trae valores de desarrollo (por ejemplo `POSTGRES_PASSWORD=mario_da_parfums` y un `JWT_SECRET` de ejemplo) que **no son seguros como están**: hay que cambiarlos antes de exponer nada.
 

@@ -1,8 +1,10 @@
-# Full Mario da Parfums stack. Copy .env.example to .env first (see specs/docker-infra.md).
+# Full Mario da Parfums stack. Copy the root .env.example to a `.env` in this
+# directory first (see specs/docker-infra.md). That one file also serves host
+# development without Docker; compose ignores its host-only section.
 #
 #   docker compose up -d --build                      # postgres, migrate, backend, similarity, chatbot, frontend
 #   docker compose --profile seed up -d --build       # same + catalog import + price seed, correctly ordered
-#   docker compose --profile tools run --rm download-dataset   # fetch the Kaggle CSV (needs KAGGLE_* in .env)
+#   docker compose --profile tools run --rm download-dataset   # fetch the Kaggle CSV (needs SIMILARITY_KAGGLE_API_TOKEN in the root env file)
 #
 # Every image is built from the repo root (build context ".") because the
 # Node services resolve dependencies through the root pnpm-lock.yaml.
@@ -223,8 +225,7 @@ services:
     user: "${LOCAL_UID:-1000}:${LOCAL_GID:-1000}"
     environment:
       HOME: /tmp
-      KAGGLE_USERNAME: ${KAGGLE_USERNAME:-}
-      KAGGLE_KEY: ${KAGGLE_KEY:-}
+      KAGGLE_API_TOKEN: ${SIMILARITY_KAGGLE_API_TOKEN:-}
     volumes:
       - ./similarityServer/data:/app/similarityServer/data
     restart: "no"
