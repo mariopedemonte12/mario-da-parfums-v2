@@ -63,9 +63,9 @@ describe('BatchCreateListingsDto', () => {
     expect(errors.some((e) => e.property === 'items')).toBe(true);
     const nested = errors.find((e) => e.property === 'items')?.children?.[0];
     expect(nested?.property).toBe('0');
-    expect(
-      nested?.children?.some((c) => c.property === 'fragranceId'),
-    ).toBe(true);
+    expect(nested?.children?.some((c) => c.property === 'fragranceId')).toBe(
+      true,
+    );
   });
 
   it('isolates a single invalid item from an otherwise valid batch', async () => {

@@ -128,7 +128,9 @@ export async function runTurn(params: RunTurnParams): Promise<RunTurnResult> {
     log.info(
       `[iter ${iteration}] Gemini respondió en ${Date.now() - iterationStart}ms — ${
         functionCalls.length > 0
-          ? functionCalls.map((c) => `${c.name}(${JSON.stringify(c.args)})`).join(', ')
+          ? functionCalls
+              .map((c) => `${c.name}(${JSON.stringify(c.args)})`)
+              .join(', ')
           : 'texto final'
       }`,
     );

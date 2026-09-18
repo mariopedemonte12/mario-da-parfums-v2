@@ -30,12 +30,9 @@ process.env.JWT_EXPIRES_IN ??= '15m';
 
 const { AppModule } = await import('../src/app.module.js');
 const { DRIZZLE } = await import('../src/database/database.module.js');
-const { favorites } = await import(
-  '../src/database/schema/favorite.schema.js'
-);
-const { fragrances } = await import(
-  '../src/database/schema/fragrance.schema.js'
-);
+const { favorites } = await import('../src/database/schema/favorite.schema.js');
+const { fragrances } =
+  await import('../src/database/schema/fragrance.schema.js');
 const { users } = await import('../src/database/schema/user.schema.js');
 const { Role } = await import('../src/shared/enums/role.enums.js');
 
@@ -61,12 +58,10 @@ describe('Favorites (e2e, real Postgres)', () => {
     }).compile();
 
     app = moduleFixture.createNestApplication();
-    const { customValidationPipe } = await import(
-      '../src/pipes/custom-validation.pipe.js'
-    );
-    const { AllExceptionsFilter } = await import(
-      '../src/common/filters/http-exception.filter.js'
-    );
+    const { customValidationPipe } =
+      await import('../src/pipes/custom-validation.pipe.js');
+    const { AllExceptionsFilter } =
+      await import('../src/common/filters/http-exception.filter.js');
     app.useGlobalPipes(customValidationPipe);
     app.useGlobalFilters(new AllExceptionsFilter());
     await app.init();
@@ -118,15 +113,24 @@ describe('Favorites (e2e, real Postgres)', () => {
 
     [fragranceA] = await db
       .insert(fragrances)
-      .values({ name: `E2E Favorites Fragrance A ${suffix}`, brand: 'E2E Brand' })
+      .values({
+        name: `E2E Favorites Fragrance A ${suffix}`,
+        brand: 'E2E Brand',
+      })
       .returning();
     [fragranceB] = await db
       .insert(fragrances)
-      .values({ name: `E2E Favorites Fragrance B ${suffix}`, brand: 'E2E Brand' })
+      .values({
+        name: `E2E Favorites Fragrance B ${suffix}`,
+        brand: 'E2E Brand',
+      })
       .returning();
     [fragranceC] = await db
       .insert(fragrances)
-      .values({ name: `E2E Favorites Fragrance C ${suffix}`, brand: 'E2E Brand' })
+      .values({
+        name: `E2E Favorites Fragrance C ${suffix}`,
+        brand: 'E2E Brand',
+      })
       .returning();
   });
 
@@ -143,7 +147,9 @@ describe('Favorites (e2e, real Postgres)', () => {
   afterAll(async () => {
     await db
       .delete(fragrances)
-      .where(inArray(fragrances.id, [fragranceA.id, fragranceB.id, fragranceC.id]));
+      .where(
+        inArray(fragrances.id, [fragranceA.id, fragranceB.id, fragranceC.id]),
+      );
     await db
       .delete(users)
       .where(inArray(users.id, [userA.id, userB.id, admin.id]));
@@ -211,7 +217,10 @@ describe('Favorites (e2e, real Postgres)', () => {
         .set('Authorization', `Bearer ${userAToken}`)
         .expect(200);
 
-      expect(res.body).toEqual({ fragranceId: fragranceB.id, favoritesCount: 0 });
+      expect(res.body).toEqual({
+        fragranceId: fragranceB.id,
+        favoritesCount: 0,
+      });
     });
 
     it('counts favorites across every user, not just the caller', async () => {
@@ -223,7 +232,10 @@ describe('Favorites (e2e, real Postgres)', () => {
         .set('Authorization', `Bearer ${adminToken}`)
         .expect(200);
 
-      expect(res.body).toEqual({ fragranceId: fragranceB.id, favoritesCount: 2 });
+      expect(res.body).toEqual({
+        fragranceId: fragranceB.id,
+        favoritesCount: 2,
+      });
     });
 
     it('returns 400 for a malformed (non-UUID) fragranceId', async () => {
@@ -260,7 +272,10 @@ describe('Favorites (e2e, real Postgres)', () => {
         .select()
         .from(favorites)
         .where(
-          and(eq(favorites.userId, userA.id), eq(favorites.fragranceId, fragranceA.id)),
+          and(
+            eq(favorites.userId, userA.id),
+            eq(favorites.fragranceId, fragranceA.id),
+          ),
         );
       expect(row).toBeDefined();
     });
@@ -317,7 +332,10 @@ describe('Favorites (e2e, real Postgres)', () => {
         .select()
         .from(favorites)
         .where(
-          and(eq(favorites.userId, userA.id), eq(favorites.fragranceId, fragranceA.id)),
+          and(
+            eq(favorites.userId, userA.id),
+            eq(favorites.fragranceId, fragranceA.id),
+          ),
         );
       expect(rows).toHaveLength(1);
     });
@@ -342,7 +360,10 @@ describe('Favorites (e2e, real Postgres)', () => {
         .select()
         .from(favorites)
         .where(
-          and(eq(favorites.userId, userA.id), eq(favorites.fragranceId, fragranceC.id)),
+          and(
+            eq(favorites.userId, userA.id),
+            eq(favorites.fragranceId, fragranceC.id),
+          ),
         );
       expect(rows).toHaveLength(1);
     });
@@ -402,7 +423,10 @@ describe('Favorites (e2e, real Postgres)', () => {
         .select()
         .from(favorites)
         .where(
-          and(eq(favorites.userId, userA.id), eq(favorites.fragranceId, fragranceA.id)),
+          and(
+            eq(favorites.userId, userA.id),
+            eq(favorites.fragranceId, fragranceA.id),
+          ),
         );
       expect(rows).toHaveLength(0);
     });
@@ -427,7 +451,10 @@ describe('Favorites (e2e, real Postgres)', () => {
         .select()
         .from(favorites)
         .where(
-          and(eq(favorites.userId, userA.id), eq(favorites.fragranceId, fragranceA.id)),
+          and(
+            eq(favorites.userId, userA.id),
+            eq(favorites.fragranceId, fragranceA.id),
+          ),
         );
       expect(rows).toHaveLength(0);
     });
@@ -464,7 +491,10 @@ describe('Favorites (e2e, real Postgres)', () => {
         .select()
         .from(favorites)
         .where(
-          and(eq(favorites.userId, userB.id), eq(favorites.fragranceId, fragranceA.id)),
+          and(
+            eq(favorites.userId, userB.id),
+            eq(favorites.fragranceId, fragranceA.id),
+          ),
         );
       expect(rows).toHaveLength(1);
     });
@@ -492,7 +522,10 @@ describe('Favorites (e2e, real Postgres)', () => {
         .select()
         .from(favorites)
         .where(
-          and(eq(favorites.userId, userB.id), eq(favorites.fragranceId, fragranceB.id)),
+          and(
+            eq(favorites.userId, userB.id),
+            eq(favorites.fragranceId, fragranceB.id),
+          ),
         );
       expect(bStillThere).toHaveLength(1);
     });

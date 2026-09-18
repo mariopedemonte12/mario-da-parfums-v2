@@ -10,7 +10,7 @@ import { normalizeForProfanityCheck } from './helpers/normalize-text.js';
 import { ValidationErrorCode } from '../shared/enums/validation-error-code.enums.js';
 
 export function IsNotProfane(validationOptions?: ValidationOptions) {
-  return function (object: Object, propertyName: string) {
+  return function (object: object, propertyName: string) {
     registerDecorator({
       name: 'isNotProfane',
       target: object.constructor,
@@ -31,10 +31,6 @@ export function IsNotProfane(validationOptions?: ValidationOptions) {
               code: ValidationErrorCode.INVALID_TYPE,
             });
           }
-
-          const badWords = leoProfanity
-            .list()
-            .filter((word) => value.toLowerCase().includes(word));
 
           return buildErrorMessage({
             code: ValidationErrorCode.CONTAINS_PROFANITY,

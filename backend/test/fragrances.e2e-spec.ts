@@ -30,9 +30,8 @@ process.env.JWT_EXPIRES_IN ??= '15m';
 
 const { AppModule } = await import('../src/app.module.js');
 const { DRIZZLE } = await import('../src/database/database.module.js');
-const { fragrances } = await import(
-  '../src/database/schema/fragrance.schema.js'
-);
+const { fragrances } =
+  await import('../src/database/schema/fragrance.schema.js');
 const { listings } = await import('../src/database/schema/listing.schema.js');
 const { vendors } = await import('../src/database/schema/vendor.schema.js');
 const { Role } = await import('../src/shared/enums/role.enums.js');
@@ -70,12 +69,10 @@ describe('Fragrances (e2e, real Postgres)', () => {
     }).compile();
 
     app = moduleFixture.createNestApplication();
-    const { customValidationPipe } = await import(
-      '../src/pipes/custom-validation.pipe.js'
-    );
-    const { AllExceptionsFilter } = await import(
-      '../src/common/filters/http-exception.filter.js'
-    );
+    const { customValidationPipe } =
+      await import('../src/pipes/custom-validation.pipe.js');
+    const { AllExceptionsFilter } =
+      await import('../src/common/filters/http-exception.filter.js');
     app.useGlobalPipes(customValidationPipe);
     app.useGlobalFilters(new AllExceptionsFilter());
     await app.init();
@@ -268,9 +265,7 @@ describe('Fragrances (e2e, real Postgres)', () => {
           .expect(200);
 
         expect(res.body.data.length).toBe(2);
-        expect(res.body.data.every((f: any) => f.brand === brandX)).toBe(
-          true,
-        );
+        expect(res.body.data.every((f: any) => f.brand === brandX)).toBe(true);
       });
 
       it('filters by concentration (exact match)', async () => {
@@ -375,9 +370,9 @@ describe('Fragrances (e2e, real Postgres)', () => {
           .query({ brand: brandX, limit: 10, cursor: page1.body.nextCursor })
           .expect(200);
 
-        expect(
-          page2.body.data.every((f: any) => f.brand === brandX),
-        ).toBe(true);
+        expect(page2.body.data.every((f: any) => f.brand === brandX)).toBe(
+          true,
+        );
       });
 
       it('paginating without any filter enumerates every row exactly once (no gaps, no duplicates)', async () => {
@@ -387,7 +382,11 @@ describe('Fragrances (e2e, real Postgres)', () => {
           const res = await request(app.getHttpServer())
             .get('/fragrances')
             .set('Authorization', `Bearer ${adminToken}`)
-            .query({ name: `aventus${suffix}`, limit: 1, ...(cursor ? { cursor } : {}) })
+            .query({
+              name: `aventus${suffix}`,
+              limit: 1,
+              ...(cursor ? { cursor } : {}),
+            })
             .expect(200);
           seen.push(...res.body.data.map((f: any) => f.id));
           cursor = res.body.nextCursor ?? undefined;
@@ -526,9 +525,7 @@ describe('Fragrances (e2e, real Postgres)', () => {
       // vendors.service.ts. Fixed in fragrances.service.ts to also check
       // `error.cause?.code`; this asserts the spec-documented message is
       // now actually reachable.
-      expect(res.body[1].error).toBe(
-        `Fragrance "${name}" already exists`,
-      );
+      expect(res.body[1].error).toBe(`Fragrance "${name}" already exists`);
     });
 
     // BVA (two-point) on the @MaxLen guards added to CreateFragranceDto so
@@ -721,9 +718,7 @@ describe('Fragrances (e2e, real Postgres)', () => {
       ];
 
       it.each(accepted)('accepts %s', async (imageUrl) => {
-        const [result] = await createViaApi([
-          validCreateItem({ imageUrl }),
-        ]);
+        const [result] = await createViaApi([validCreateItem({ imageUrl })]);
         expect(result.success).toBe(true);
       });
 
@@ -820,9 +815,7 @@ describe('Fragrances (e2e, real Postgres)', () => {
         .patch('/fragrances/batch')
         .set('Authorization', `Bearer ${adminToken}`)
         .send({
-          items: [
-            { id: toUpdate.id, name: (await getName(existing.id!)) },
-          ],
+          items: [{ id: toUpdate.id, name: await getName(existing.id!) }],
         })
         .expect(200);
 
@@ -1090,7 +1083,9 @@ describe('Fragrances (e2e, real Postgres)', () => {
     for (const op of operations) {
       for (const [roleLabel, getToken, fixedStatus] of roles) {
         const expected =
-          op.public || roleLabel === 'admin role' ? op.successStatus : fixedStatus;
+          op.public || roleLabel === 'admin role'
+            ? op.successStatus
+            : fixedStatus;
         it(`${op.name} as ${roleLabel} -> ${expected}`, async () => {
           await op.run(getToken()).expect(expected);
         });

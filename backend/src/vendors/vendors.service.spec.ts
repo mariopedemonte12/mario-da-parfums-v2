@@ -162,9 +162,7 @@ describe('VendorsService', () => {
 
       await service.findAll({ name: '50%_off', page: 1, limit: 20 });
 
-      expect(whereCalls[0]).toEqual(
-        and(ilike(vendors.name, '%50\\%\\_off%')),
-      );
+      expect(whereCalls[0]).toEqual(and(ilike(vendors.name, '%50\\%\\_off%')));
     });
 
     it('builds a case-insensitive partial-match filter when only websiteUrl is given', async () => {
@@ -462,9 +460,7 @@ describe('VendorsService', () => {
         { name, websiteUrl: 'https://a.example.com' },
       ]);
 
-      expect(results).toEqual([
-        { success: false, error: expect.any(String) },
-      ]);
+      expect(results).toEqual([{ success: false, error: expect.any(String) }]);
       expect(insert).not.toHaveBeenCalled();
     });
 
@@ -475,17 +471,20 @@ describe('VendorsService', () => {
       // syntactically valid, absolute URL — it only fails because @IsUrl
       // is configured with protocols: ['http', 'https'].
       ['ftp://a.example.com', 'a disallowed protocol'],
-    ])('fails an item with %s (%s) without calling insert', async (websiteUrl) => {
-      const insert = vi.fn();
-      await build({ insert });
+    ])(
+      'fails an item with %s (%s) without calling insert',
+      async (websiteUrl) => {
+        const insert = vi.fn();
+        await build({ insert });
 
-      const results = await service.createMany([{ name: 'A', websiteUrl }]);
+        const results = await service.createMany([{ name: 'A', websiteUrl }]);
 
-      expect(results).toEqual([
-        { success: false, error: expect.any(String) },
-      ]);
-      expect(insert).not.toHaveBeenCalled();
-    });
+        expect(results).toEqual([
+          { success: false, error: expect.any(String) },
+        ]);
+        expect(insert).not.toHaveBeenCalled();
+      },
+    );
   });
 
   describe('updateMany', () => {
@@ -662,9 +661,7 @@ describe('VendorsService', () => {
       const update = vi.fn();
       await build({ update });
 
-      const results = await service.updateMany([
-        { id: 1.5, name: 'Whatever' },
-      ]);
+      const results = await service.updateMany([{ id: 1.5, name: 'Whatever' }]);
 
       expect(results[0]).toMatchObject({ success: false });
       expect(update).not.toHaveBeenCalled();

@@ -2,14 +2,8 @@ import {
   pgTable,
   serial,
   varchar,
-  text,
-  integer,
-  boolean,
   timestamp,
-  date,
-  numeric,
   pgEnum,
-  uuid,
 } from 'drizzle-orm/pg-core';
 import { Role } from '../../shared/enums/role.enums.js';
 

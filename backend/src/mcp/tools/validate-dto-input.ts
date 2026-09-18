@@ -7,7 +7,9 @@ import { errorResult } from './tool-result.js';
 function flattenCodes(errors: ValidationError[]): string[] {
   return errors.flatMap((err) => {
     const own = err.constraints
-      ? Object.values(err.constraints).flatMap(parseConstraintMessage).map((item) => item.code)
+      ? Object.values(err.constraints)
+          .flatMap(parseConstraintMessage)
+          .map((item) => item.code)
       : [];
     const nested = err.children ? flattenCodes(err.children) : [];
     return [...own, ...nested];

@@ -35,7 +35,9 @@ afterAll(async () => {
   // feature — the process just exits in production); reach into the
   // private client map here only to kill the stub child process cleanly.
   const clients = (
-    manager as unknown as { clients: Map<string, { close: () => Promise<void> }> }
+    manager as unknown as {
+      clients: Map<string, { close: () => Promise<void> }>;
+    }
   ).clients;
   await Promise.all([...clients.values()].map((c) => c.close()));
 });

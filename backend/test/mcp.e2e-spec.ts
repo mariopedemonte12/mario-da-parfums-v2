@@ -6,13 +6,7 @@ import { eq } from 'drizzle-orm';
 import request from 'supertest';
 import type { App } from 'supertest/types';
 import { randomUUID } from 'node:crypto';
-import {
-  describe,
-  it,
-  expect,
-  beforeAll,
-  afterAll,
-} from 'vitest';
+import { describe, it, expect, beforeAll, afterAll } from 'vitest';
 
 // Runs the MCP catalog server against a real Postgres (docker-compose.yml —
 // container must already be up), over the real HTTP transport, per the
@@ -31,9 +25,8 @@ process.env.JWT_EXPIRES_IN ??= '15m';
 const { AppModule } = await import('../src/app.module.js');
 const { DRIZZLE, PG_POOL } = await import('../src/database/database.module.js');
 const { listings } = await import('../src/database/schema/listing.schema.js');
-const { fragrances } = await import(
-  '../src/database/schema/fragrance.schema.js'
-);
+const { fragrances } =
+  await import('../src/database/schema/fragrance.schema.js');
 const { vendors } = await import('../src/database/schema/vendor.schema.js');
 
 async function connectClient(baseUrl: string): Promise<Client> {
@@ -70,12 +63,10 @@ describe('MCP catalog server (e2e, real Postgres, real HTTP)', () => {
     }).compile();
 
     app = moduleFixture.createNestApplication();
-    const { customValidationPipe } = await import(
-      '../src/pipes/custom-validation.pipe.js'
-    );
-    const { AllExceptionsFilter } = await import(
-      '../src/common/filters/http-exception.filter.js'
-    );
+    const { customValidationPipe } =
+      await import('../src/pipes/custom-validation.pipe.js');
+    const { AllExceptionsFilter } =
+      await import('../src/common/filters/http-exception.filter.js');
     app.useGlobalPipes(customValidationPipe);
     app.useGlobalFilters(new AllExceptionsFilter());
     await app.listen(0);
@@ -102,7 +93,10 @@ describe('MCP catalog server (e2e, real Postgres, real HTTP)', () => {
 
     [fragranceEmpty] = await db
       .insert(fragrances)
-      .values({ name: `MCP E2E Fragrance Empty ${suffix}`, brand: 'MCP E2E Brand' })
+      .values({
+        name: `MCP E2E Fragrance Empty ${suffix}`,
+        brand: 'MCP E2E Brand',
+      })
       .returning();
 
     [fragranceOutOfStockOnly] = await db
@@ -153,9 +147,7 @@ describe('MCP catalog server (e2e, real Postgres, real HTTP)', () => {
 
   afterAll(async () => {
     await client?.close();
-    await db
-      .delete(listings)
-      .where(eq(listings.vendorId, vendorA.id));
+    await db.delete(listings).where(eq(listings.vendorId, vendorA.id));
     await db.delete(fragrances).where(eq(fragrances.id, fragranceA.id));
     await db.delete(fragrances).where(eq(fragrances.id, fragranceEmpty.id));
     await db
@@ -316,7 +308,10 @@ describe('MCP catalog server (e2e, real Postgres, real HTTP)', () => {
       arguments: { fragranceId: fragranceA.id, inStock: true },
     });
 
-    const body = jsonOf(result) as Array<{ price: number; isAvailable: boolean }>;
+    const body = jsonOf(result) as Array<{
+      price: number;
+      isAvailable: boolean;
+    }>;
     expect(body).toHaveLength(2);
     expect(body.every((l) => l.isAvailable)).toBe(true);
   });
@@ -324,7 +319,11 @@ describe('MCP catalog server (e2e, real Postgres, real HTTP)', () => {
   it('get_listings_for_fragrance filters by minPrice/maxPrice against real rows', async () => {
     const result = await client.callTool({
       name: 'get_listings_for_fragrance',
-      arguments: { fragranceId: fragranceA.id, minPrice: 20000, maxPrice: 50000 },
+      arguments: {
+        fragranceId: fragranceA.id,
+        minPrice: 20000,
+        maxPrice: 50000,
+      },
     });
 
     const body = jsonOf(result) as Array<{ price: number }>;

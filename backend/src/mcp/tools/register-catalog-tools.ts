@@ -68,7 +68,9 @@ export function registerCatalogTools(
           .string()
           .uuid()
           .optional()
-          .describe('Keyset cursor: the id of the last item from the previous page'),
+          .describe(
+            'Keyset cursor: the id of the last item from the previous page',
+          ),
         limit: z.number().int().min(1).max(100).optional(),
       },
     },

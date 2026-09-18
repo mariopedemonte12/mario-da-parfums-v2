@@ -50,7 +50,8 @@ export const PRESENT_FRAGRANCES_TOOL: FunctionDeclaration = {
           properties: {
             id: {
               type: 'string',
-              description: 'Fragrance id, exactly as returned by a catalog tool.',
+              description:
+                'Fragrance id, exactly as returned by a catalog tool.',
             },
             name: { type: 'string' },
             brand: { type: 'string' },

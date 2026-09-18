@@ -1,6 +1,11 @@
 import { ApiProperty } from '@nestjs/swagger';
 import { Type } from 'class-transformer';
-import { ArrayMaxSize, ArrayMinSize, IsInt, ValidateNested } from 'class-validator';
+import {
+  ArrayMaxSize,
+  ArrayMinSize,
+  IsInt,
+  ValidateNested,
+} from 'class-validator';
 import { UpdateListingDto } from './update-listing.dto.js';
 
 export class UpdateListingItemDto extends UpdateListingDto {

@@ -80,7 +80,8 @@ async function setup(): Promise<{
 
   const server = new McpServer({ name: 'test-server', version: '0.0.0' });
   registerCatalogTools(server, {
-    fragrancesService: services.fragrancesService as unknown as FragrancesService,
+    fragrancesService:
+      services.fragrancesService as unknown as FragrancesService,
     vendorsService: services.vendorsService as unknown as VendorsService,
     listingsService: services.listingsService as unknown as ListingsService,
   });
@@ -140,9 +141,7 @@ describe('registerCatalogTools (unit, mocked services, real MCP dispatch)', () =
           concentration: 'EDP',
         }),
       );
-      expect(jsonOf(result as any)).toEqual(
-        JSON.parse(JSON.stringify(page)),
-      );
+      expect(jsonOf(result as any)).toEqual(JSON.parse(JSON.stringify(page)));
     });
 
     it('defaults to no cursor (first page) when omitted', async () => {
@@ -285,7 +284,9 @@ describe('registerCatalogTools (unit, mocked services, real MCP dispatch)', () =
       });
 
       expect(result.isError).toBe(true);
-      expect(textOf(result as any)).toMatch(/invalid arguments for tool get_fragrance/i);
+      expect(textOf(result as any)).toMatch(
+        /invalid arguments for tool get_fragrance/i,
+      );
       expect(services.fragrancesService.findOne).not.toHaveBeenCalled();
 
       // Connection must still be alive after a validation failure.
@@ -314,7 +315,9 @@ describe('registerCatalogTools (unit, mocked services, real MCP dispatch)', () =
         expect.objectContaining({ name: 'Vendor', page: 2, limit: 10 }),
       );
       expect(jsonOf(result as any)).toEqual({
-        data: [{ id: vendor.id, name: vendor.name, websiteUrl: vendor.websiteUrl }],
+        data: [
+          { id: vendor.id, name: vendor.name, websiteUrl: vendor.websiteUrl },
+        ],
         total: 1,
         page: 2,
         limit: 10,
@@ -560,7 +563,11 @@ describe('registerCatalogTools (unit, mocked services, real MCP dispatch)', () =
 
     it('picks the first listing on a price tie (strict less-than, not less-or-equal)', async () => {
       const first = buildListing({ id: 1, fragranceId, price: 30000 });
-      const secondSamePrice = buildListing({ id: 2, fragranceId, price: 30000 });
+      const secondSamePrice = buildListing({
+        id: 2,
+        fragranceId,
+        price: 30000,
+      });
       services.listingsService.findAll.mockResolvedValue({
         data: [first, secondSamePrice],
         total: 2,

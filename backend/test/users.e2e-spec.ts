@@ -39,12 +39,10 @@ describe('Users (e2e, real Postgres)', () => {
     }).compile();
 
     app = moduleFixture.createNestApplication();
-    const { customValidationPipe } = await import(
-      '../src/pipes/custom-validation.pipe.js'
-    );
-    const { AllExceptionsFilter } = await import(
-      '../src/common/filters/http-exception.filter.js'
-    );
+    const { customValidationPipe } =
+      await import('../src/pipes/custom-validation.pipe.js');
+    const { AllExceptionsFilter } =
+      await import('../src/common/filters/http-exception.filter.js');
     app.useGlobalPipes(customValidationPipe);
     app.useGlobalFilters(new AllExceptionsFilter());
     await app.init();
@@ -80,7 +78,11 @@ describe('Users (e2e, real Postgres)', () => {
   }
 
   function tokenFor(user: { id: number; email: string; role: string }) {
-    return jwtService.sign({ sub: user.id, email: user.email, role: user.role });
+    return jwtService.sign({
+      sub: user.id,
+      email: user.email,
+      role: user.role,
+    });
   }
 
   describe('GET /users/:id and PATCH /users/:id — SelfOrAdminGuard (decision table)', () => {
@@ -103,9 +105,7 @@ describe('Users (e2e, real Postgres)', () => {
     });
 
     it('GET /users/:id — no token => 401', async () => {
-      await request(app.getHttpServer())
-        .get(`/users/${owner.id}`)
-        .expect(401);
+      await request(app.getHttpServer()).get(`/users/${owner.id}`).expect(401);
     });
 
     it('GET /users/:id — non-admin, not the owner => 403', async () => {
@@ -183,7 +183,7 @@ describe('Users (e2e, real Postgres)', () => {
       expect(check.body.name).toBe(owner.name);
     });
 
-    it('PATCH /users/:id — admin editing a different user\'s profile => 200', async () => {
+    it("PATCH /users/:id — admin editing a different user's profile => 200", async () => {
       const target = await createUser();
       const res = await request(app.getHttpServer())
         .patch(`/users/${target.id}`)
@@ -239,7 +239,9 @@ describe('Users (e2e, real Postgres)', () => {
 
     it('no token => 401', async () => {
       const target = await createUser();
-      await request(app.getHttpServer()).delete(`/users/${target.id}`).expect(401);
+      await request(app.getHttpServer())
+        .delete(`/users/${target.id}`)
+        .expect(401);
     });
 
     it('non-admin token, deleting someone else => 403', async () => {
@@ -431,7 +433,10 @@ describe('Users (e2e, real Postgres)', () => {
       const res = await request(app.getHttpServer())
         .patch(`/users/${self.id}`)
         .set('Authorization', `Bearer ${selfToken}`)
-        .send({ role: Role.ADMIN, name: `Still User ${randomUUID().slice(0, 8)} ${suffix}` });
+        .send({
+          role: Role.ADMIN,
+          name: `Still User ${randomUUID().slice(0, 8)} ${suffix}`,
+        });
 
       // Either the extra field is stripped (200, role unchanged) or rejected
       // outright (400) — both satisfy the spec's guarantee. What must never
@@ -448,7 +453,7 @@ describe('Users (e2e, real Postgres)', () => {
       expect(check.body.role).toBe(Role.USER);
     });
 
-    it('admin sending { role: ... } on someone else\'s profile does not change their role', async () => {
+    it("admin sending { role: ... } on someone else's profile does not change their role", async () => {
       const admin = await createUser({ role: Role.ADMIN });
       const adminToken = tokenFor(admin);
       const target = await createUser({ role: Role.USER });
@@ -456,7 +461,10 @@ describe('Users (e2e, real Postgres)', () => {
       const res = await request(app.getHttpServer())
         .patch(`/users/${target.id}`)
         .set('Authorization', `Bearer ${adminToken}`)
-        .send({ role: Role.ADMIN, name: `Still User ${randomUUID().slice(0, 8)} ${suffix}` });
+        .send({
+          role: Role.ADMIN,
+          name: `Still User ${randomUUID().slice(0, 8)} ${suffix}`,
+        });
 
       expect([200, 400]).toContain(res.status);
 

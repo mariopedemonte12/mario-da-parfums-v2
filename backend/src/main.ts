@@ -26,7 +26,10 @@ async function bootstrap() {
       // JSON API with one HTML exception (Swagger UI at /docs, which needs
       // inline scripts/styles to render) — a global 'none' CSP would break it.
       contentSecurityPolicy: {
-        directives: { ...helmet.contentSecurityPolicy.getDefaultDirectives(), 'default-src': ["'self'"] },
+        directives: {
+          ...helmet.contentSecurityPolicy.getDefaultDirectives(),
+          'default-src': ["'self'"],
+        },
       },
       // Only meaningful behind TLS; forcing it in dev would push plain-HTTP
       // localhost into HTTPS-only via the browser's HSTS cache.
@@ -35,7 +38,10 @@ async function bootstrap() {
   );
   app.use(json({ limit: BODY_SIZE_LIMIT }));
   app.use(urlencoded({ limit: BODY_SIZE_LIMIT, extended: true }));
-  app.enableCors({ origin: process.env.FRONTEND_URL ?? 'http://localhost:3010', credentials: true });
+  app.enableCors({
+    origin: process.env.FRONTEND_URL ?? 'http://localhost:3010',
+    credentials: true,
+  });
   app.use(cookieParser());
   app.useGlobalPipes(customValidationPipe);
   app.useGlobalFilters(new AllExceptionsFilter());

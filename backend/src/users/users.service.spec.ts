@@ -302,9 +302,9 @@ describe('UsersService', () => {
           setArg = arg;
           return {
             where: vi.fn().mockReturnValue({
-              returning: vi.fn().mockResolvedValue([
-                { ...sampleUser, name: 'New Name' },
-              ]),
+              returning: vi
+                .fn()
+                .mockResolvedValue([{ ...sampleUser, name: 'New Name' }]),
             }),
           };
         },
@@ -354,9 +354,9 @@ describe('UsersService', () => {
         }),
       });
 
-      await expect(
-        service.update(1, { name: 'New Name' }),
-      ).rejects.toBe(dbError);
+      await expect(service.update(1, { name: 'New Name' })).rejects.toBe(
+        dbError,
+      );
     });
   });
 

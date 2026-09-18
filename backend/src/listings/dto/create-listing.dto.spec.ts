@@ -136,9 +136,7 @@ describe('CreateListingDto', () => {
     it('is required: missing fails, including LISTING_SIZE_ML_REQUIRED', async () => {
       const { sizeMl: _sizeMl, ...rest } = VALID_PAYLOAD;
       expect(await codesForField(rest, 'sizeMl')).toEqual(
-        expect.arrayContaining([
-          ValidationErrorCode.LISTING_SIZE_ML_REQUIRED,
-        ]),
+        expect.arrayContaining([ValidationErrorCode.LISTING_SIZE_ML_REQUIRED]),
       );
     });
 
@@ -209,9 +207,7 @@ describe('CreateListingDto', () => {
     });
 
     it('is required: empty string fails, including LISTING_URL_REQUIRED', async () => {
-      expect(
-        await codesForField({ ...VALID_PAYLOAD, url: '' }, 'url'),
-      ).toEqual(
+      expect(await codesForField({ ...VALID_PAYLOAD, url: '' }, 'url')).toEqual(
         expect.arrayContaining([ValidationErrorCode.LISTING_URL_REQUIRED]),
       );
     });
@@ -245,9 +241,9 @@ describe('CreateListingDto', () => {
       it('rejects a url one char past 500, with LISTING_URL_TOO_LONG', async () => {
         const url = base + 'x'.repeat(501 - base.length);
         expect(url).toHaveLength(501);
-        expect(await codesForField({ ...VALID_PAYLOAD, url }, 'url')).toEqual(
-          [ValidationErrorCode.LISTING_URL_TOO_LONG],
-        );
+        expect(await codesForField({ ...VALID_PAYLOAD, url }, 'url')).toEqual([
+          ValidationErrorCode.LISTING_URL_TOO_LONG,
+        ]);
       });
     });
   });
