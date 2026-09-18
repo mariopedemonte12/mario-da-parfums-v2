@@ -20,8 +20,15 @@ The backend API, the similarity search service and the chatbot server must be ru
 | `pnpm build` | `next build` |
 | `pnpm start` | `next start` |
 | `pnpm lint` | `eslint` |
+| `pnpm typecheck` | `next typegen && tsc --noEmit` |
+| `pnpm test` | `vitest run --maxWorkers=1` (single run) |
+| `pnpm test:watch` | `vitest` (watch mode) |
 
-There is no test runner configured in this package.
+`pnpm typecheck` runs `next typegen` first because Next 16 generates global types such as `LayoutProps` / `PageProps` (under the git-ignored `.next/`); a bare `tsc --noEmit` on a fresh checkout reports them as missing.
+
+## Tests
+
+Vitest (same version as backend and chatbot). Tests live next to the code as `*.test.ts` / `*.test.tsx`. The default environment is `node`, for pure logic (utils, api functions with `fetch` mocked). A component test opts into the DOM with a `// @vitest-environment jsdom` comment on its first line and uses `@testing-library/react` + `@testing-library/user-event`. `@/*` resolves to `src/*` (see `vitest.config.mts`).
 
 ## Environment variables
 
