@@ -15,7 +15,7 @@ Cada punto indica dónde verificarlo.
 
 ### Secretos y configuración
 - Toda la configuración entra por variables de entorno desde un único archivo `.env` en la raíz, ignorado por git; el repo solo incluye [`.env.example`](../.env.example) ([`docker-compose.yml`](../docker-compose.yml)).
-- `JWT_SECRET` es obligatorio: compose falla al interpolar si falta. `GEMINI_API_KEY` vacío hace que solo el chatbot termine con un error explícito.
+- `JWT_SECRET` es obligatorio: compose falla al interpolar si falta. `GEMINI_API_KEY` vacío hace que solo el chatbot termine con un error explícito (verificado; ojo: si se deja el comentario en línea de `.env.example` en esa línea, Compose lo toma como valor y el chatbot no falla al arrancar; ver [`local-setup.md`](local-setup.md)).
 - El `.env.example` trae valores de desarrollo (por ejemplo `POSTGRES_PASSWORD=mario_da_parfums` y un `JWT_SECRET` de ejemplo) que **no son seguros como están**: hay que cambiarlos antes de exponer nada.
 
 ### Postgres y persistencia
