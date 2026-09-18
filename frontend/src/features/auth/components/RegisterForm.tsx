@@ -18,9 +18,11 @@ import PasswordChecklist from "./PasswordChecklist";
 const ERROR_MESSAGES: Record<string, (meta?: Record<string, unknown>) => string> = {
   NAME_REQUIRED: () => "El nombre es obligatorio.",
   NAME_INVALID_TYPE: () => "El nombre no es válido.",
+  NAME_ALREADY_TAKEN: () => "Ese nombre ya está en uso.",
   CONTAINS_PROFANITY: () => "Este texto no está permitido.",
   EMAIL_REQUIRED: () => "El correo es obligatorio.",
   EMAIL_INVALID_FORMAT: () => "Ingresá un correo válido.",
+  EMAIL_ALREADY_REGISTERED: () => "Ese correo ya está registrado.",
   PASSWORD_REQUIRED: () => "La contraseña es obligatoria.",
   PASSWORD_INVALID_TYPE: () => "La contraseña no es válida.",
   PASSWORD_NOT_STRING: () => "La contraseña no es válida.",
@@ -67,7 +69,16 @@ export default function RegisterForm() {
         setEmailErrors(translateFieldErrors(err.fieldError("email"), err.message));
         setPasswordErrors(translateFieldErrors(err.fieldError("password"), err.message));
       } else if (err instanceof ApiError && err.statusCode === 409) {
-        setEmailErrors(["Ese correo ya está registrado."]);
+        // The backend names the colliding field in errors[] (see
+        // specs/register-conflict-errors.md). A 409 that names neither
+        // (unrecognized constraint) is not attributed to any input.
+        const nameConflict = translateFieldErrors(err.fieldError("name"), err.message);
+        const emailConflict = translateFieldErrors(err.fieldError("email"), err.message);
+        setNameErrors(nameConflict);
+        setEmailErrors(emailConflict);
+        if (nameConflict.length === 0 && emailConflict.length === 0) {
+          setFormError("No pudimos crear la cuenta: ya existe un usuario con esos datos.");
+        }
       } else {
         setFormError("Ocurrió un error. Intentá de nuevo.");
       }
