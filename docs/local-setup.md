@@ -147,7 +147,7 @@ Los tests marcados `integration` requieren un Postgres accesible (ver el `pytest
 
 ## 7. Desarrollo en el host (sin Docker)
 
-El mismo `.env` de la raíz sirve para correr los servicios fuera de Docker; cada app lo carga desde la raíz del repo (desde `src/` o `dist/` y desde cualquier directorio de trabajo). Es opcional para ellas y el entorno real del proceso siempre tiene precedencia. La sección "HOST-ONLY" de `.env.example` trae las variables que solo usa este modo (`DATABASE_URL` con `localhost`, `PORT`, `CHATBOT_WS_*`, `SIMILARITY_HOST`/`SIMILARITY_PORT`, `MCP_CONFIG_PATH`, ...); Compose las ignora. Para tener solo la base de datos: `docker compose up -d postgres migrate`.
+El mismo `.env` de la raíz sirve para correr los servicios fuera de Docker; cada app lo carga desde la raíz del repo (desde `src/` o `dist/` y desde cualquier directorio de trabajo). Es opcional para ellas y el entorno real del proceso siempre tiene precedencia. La sección "HOST-ONLY" de `.env.example` trae las variables que solo usa este modo (`DATABASE_URL` con `localhost` (descoméntala para desarrollo en el host), `PORT`, `CHATBOT_WS_*`, `SIMILARITY_HOST`/`SIMILARITY_PORT`, `MCP_CONFIG_PATH`, ...); Compose las ignora. Para tener solo la base de datos: `docker compose up -d postgres migrate`.
 
 ```bash
 pnpm --filter backend start:dev
