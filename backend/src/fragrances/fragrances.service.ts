@@ -16,10 +16,7 @@ import { PaginatedFragranceDto } from './dto/paginated-fragrance.dto.js';
 import { BatchResultDto } from './dto/batch-result.dto.js';
 import { CreateBatchResultDto } from './dto/create-batch-result.dto.js';
 import { getPgErrorCode } from '../common/utils/pg-error.util.js';
-import {
-  containsPattern,
-  escapeLikePattern,
-} from '../common/utils/sql-like.util.js';
+import { containsPattern } from '../common/utils/sql-like.util.js';
 
 const UNIQUE_VIOLATION = '23505';
 
@@ -35,9 +32,7 @@ export class FragrancesService {
 
   async findAll(query: FindFragranceDto): Promise<PaginatedFragranceDto> {
     const {
-      name,
       search,
-      brand,
       concentration,
       olfactoryFamily,
       targetAudience,
@@ -47,15 +42,7 @@ export class FragrancesService {
     } = query;
 
     const conditions = [
-      name ? ilike(fragrances.name, containsPattern(name)) : undefined,
       ...this.searchConditions(search),
-      // Case-insensitive exact match — was a plain `eq` (case-sensitive)
-      // until agent testing surfaced it as a latent bug: a caller (the
-      // chatbot agent, or any other consumer) sending different casing than
-      // what's stored gets zero results with no indication why. `ilike`
-      // with no wildcards in the pattern is an exact-value comparison, just
-      // case-insensitive.
-      brand ? ilike(fragrances.brand, escapeLikePattern(brand)) : undefined,
       concentration ? eq(fragrances.concentration, concentration) : undefined,
       olfactoryFamily
         ? eq(fragrances.olfactoryFamily, olfactoryFamily)

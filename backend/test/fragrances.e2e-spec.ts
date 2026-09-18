@@ -229,12 +229,12 @@ describe('Fragrances (e2e, real Postgres)', () => {
         await createViaApi([
           validCreateItem({
             name: `Aventus${suffix} Cologne ${++nameCounter}`,
-            brand: brandX,
+            search: brandX,
             concentration: 'EDP',
           }),
           validCreateItem({
             name: `Aventus${suffix} Parfum ${++nameCounter}`,
-            brand: brandX,
+            search: brandX,
             concentration: 'EDT',
           }),
           validCreateItem({
@@ -245,11 +245,11 @@ describe('Fragrances (e2e, real Postgres)', () => {
         ]);
       });
 
-      it('filters by name (partial, case-insensitive contains)', async () => {
+      it('searches by text (partial, case-insensitive contains)', async () => {
         const res = await request(app.getHttpServer())
           .get('/fragrances')
           .set('Authorization', `Bearer ${adminToken}`)
-          .query({ name: `aventus${suffix}`.toUpperCase(), limit: 100 })
+          .query({ search: `aventus${suffix}`.toUpperCase(), limit: 100 })
           .expect(200);
 
         expect(res.body.data.length).toBe(2);
@@ -260,11 +260,11 @@ describe('Fragrances (e2e, real Postgres)', () => {
         ).toBe(true);
       });
 
-      it('filters by brand (exact match)', async () => {
+      it('searches by brand text', async () => {
         const res = await request(app.getHttpServer())
           .get('/fragrances')
           .set('Authorization', `Bearer ${adminToken}`)
-          .query({ brand: brandX, limit: 100 })
+          .query({ search: brandX, limit: 100 })
           .expect(200);
 
         expect(res.body.data.length).toBe(2);
@@ -277,20 +277,20 @@ describe('Fragrances (e2e, real Postgres)', () => {
         const res = await request(app.getHttpServer())
           .get('/fragrances')
           .set('Authorization', `Bearer ${adminToken}`)
-          .query({ brand: brandX, concentration: 'EDT', limit: 100 })
+          .query({ search: brandX, concentration: 'EDT', limit: 100 })
           .expect(200);
 
         expect(res.body.data).toHaveLength(1);
         expect(res.body.data[0].concentration).toBe('EDT');
       });
 
-      it('combines name + brand + concentration all at once', async () => {
+      it('combines search (name + brand tokens) + concentration all at once', async () => {
         const res = await request(app.getHttpServer())
           .get('/fragrances')
           .set('Authorization', `Bearer ${adminToken}`)
           .query({
             name: `aventus${suffix}`,
-            brand: brandX,
+            search: brandX,
             concentration: 'EDP',
             limit: 100,
           })
@@ -310,7 +310,7 @@ describe('Fragrances (e2e, real Postgres)', () => {
         const res = await request(app.getHttpServer())
           .get('/fragrances')
           .set('Authorization', `Bearer ${adminToken}`)
-          .query({ brand: brandX, limit: 2 })
+          .query({ search: brandX, limit: 2 })
           .expect(200);
 
         expect(res.body.data).toHaveLength(2);
@@ -323,7 +323,7 @@ describe('Fragrances (e2e, real Postgres)', () => {
         const res = await request(app.getHttpServer())
           .get('/fragrances')
           .set('Authorization', `Bearer ${adminToken}`)
-          .query({ brand: brandX, limit: 100 })
+          .query({ search: brandX, limit: 100 })
           .expect(200);
 
         expect(res.body.data).toHaveLength(2);
@@ -334,7 +334,7 @@ describe('Fragrances (e2e, real Postgres)', () => {
         const page1 = await request(app.getHttpServer())
           .get('/fragrances')
           .set('Authorization', `Bearer ${adminToken}`)
-          .query({ brand: brandX, limit: 1 })
+          .query({ search: brandX, limit: 1 })
           .expect(200);
         expect(page1.body.data).toHaveLength(1);
         expect(page1.body.nextCursor).toBe(page1.body.data[0].id);
@@ -342,7 +342,7 @@ describe('Fragrances (e2e, real Postgres)', () => {
         const page2 = await request(app.getHttpServer())
           .get('/fragrances')
           .set('Authorization', `Bearer ${adminToken}`)
-          .query({ brand: brandX, limit: 1, cursor: page1.body.nextCursor })
+          .query({ search: brandX, limit: 1, cursor: page1.body.nextCursor })
           .expect(200);
         expect(page2.body.data).toHaveLength(1);
         expect(page2.body.data[0].id).not.toBe(page1.body.data[0].id);
@@ -354,7 +354,7 @@ describe('Fragrances (e2e, real Postgres)', () => {
         const page3 = await request(app.getHttpServer())
           .get('/fragrances')
           .set('Authorization', `Bearer ${adminToken}`)
-          .query({ brand: brandX, limit: 1, cursor: page2.body.nextCursor })
+          .query({ search: brandX, limit: 1, cursor: page2.body.nextCursor })
           .expect(200);
         expect(page3.body.data).toEqual([]);
         expect(page3.body.nextCursor).toBeNull();
@@ -366,13 +366,13 @@ describe('Fragrances (e2e, real Postgres)', () => {
         const page1 = await request(app.getHttpServer())
           .get('/fragrances')
           .set('Authorization', `Bearer ${adminToken}`)
-          .query({ brand: brandX, limit: 1 })
+          .query({ search: brandX, limit: 1 })
           .expect(200);
 
         const page2 = await request(app.getHttpServer())
           .get('/fragrances')
           .set('Authorization', `Bearer ${adminToken}`)
-          .query({ brand: brandX, limit: 10, cursor: page1.body.nextCursor })
+          .query({ search: brandX, limit: 10, cursor: page1.body.nextCursor })
           .expect(200);
 
         expect(
@@ -387,7 +387,7 @@ describe('Fragrances (e2e, real Postgres)', () => {
           const res = await request(app.getHttpServer())
             .get('/fragrances')
             .set('Authorization', `Bearer ${adminToken}`)
-            .query({ name: `aventus${suffix}`, limit: 1, ...(cursor ? { cursor } : {}) })
+            .query({ search: `aventus${suffix}`, limit: 1, ...(cursor ? { cursor } : {}) })
             .expect(200);
           seen.push(...res.body.data.map((f: any) => f.id));
           cursor = res.body.nextCursor ?? undefined;
@@ -413,7 +413,7 @@ describe('Fragrances (e2e, real Postgres)', () => {
           await request(app.getHttpServer())
             .get('/fragrances')
             .set('Authorization', `Bearer ${adminToken}`)
-            .query({ brand: brandX, cursor: randomUUID(), limit: 10 })
+            .query({ search: brandX, cursor: randomUUID(), limit: 10 })
             .expect(200);
         });
 
@@ -421,14 +421,14 @@ describe('Fragrances (e2e, real Postgres)', () => {
           const full = await request(app.getHttpServer())
             .get('/fragrances')
             .set('Authorization', `Bearer ${adminToken}`)
-            .query({ brand: brandX, limit: 100 })
+            .query({ search: brandX, limit: 100 })
             .expect(200);
           const lastId = full.body.data[full.body.data.length - 1].id;
 
           const res = await request(app.getHttpServer())
             .get('/fragrances')
             .set('Authorization', `Bearer ${adminToken}`)
-            .query({ brand: brandX, cursor: lastId, limit: 100 })
+            .query({ search: brandX, cursor: lastId, limit: 100 })
             .expect(200);
 
           expect(res.body.data).toEqual([]);

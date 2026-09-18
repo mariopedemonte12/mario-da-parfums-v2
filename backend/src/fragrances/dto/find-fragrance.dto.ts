@@ -19,13 +19,6 @@ export const MAX_SEARCH_TOKENS = 5;
 
 export class FindFragranceDto {
   @ApiPropertyOptional({
-    description: 'Filter by name (partial, case-insensitive match)',
-  })
-  @IsOptional()
-  @IsStringField(ValidationErrorCode.NAME_INVALID_TYPE)
-  name?: string;
-
-  @ApiPropertyOptional({
     description:
       'Free-text search: whitespace-separated tokens, each must appear (partial, case-insensitive) in the name or brand, in any order. Max 5 tokens / 100 chars.',
     maxLength: MAX_SEARCH_LENGTH,
@@ -35,11 +28,6 @@ export class FindFragranceDto {
   @MaxLength(MAX_SEARCH_LENGTH)
   @Matches(new RegExp(`^\\s*(\\S+\\s+){0,${MAX_SEARCH_TOKENS - 1}}\\S*\\s*$`))
   search?: string;
-
-  @ApiPropertyOptional({ description: 'Filter by exact brand' })
-  @IsOptional()
-  @IsStringField(ValidationErrorCode.BRAND_INVALID_TYPE)
-  brand?: string;
 
   @ApiPropertyOptional({ description: 'Filter by exact concentration' })
   @IsOptional()

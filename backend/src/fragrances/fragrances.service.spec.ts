@@ -159,8 +159,7 @@ describe('FragrancesService', () => {
     });
 
     it.each([
-      ['name', { name: 'Chanel' }],
-      ['brand', { brand: 'Chanel' }],
+      ['search', { search: 'Chanel' }],
       ['concentration', { concentration: 'EDP' }],
       ['olfactoryFamily', { olfactoryFamily: 'Woody Spicy' }],
       ['targetAudience', { targetAudience: 'Male' }],
@@ -178,42 +177,52 @@ describe('FragrancesService', () => {
       },
     );
 
-    it('filters name as a case-insensitive partial (contains) match, not exact', async () => {
+    it('search: each token becomes an ILIKE on name OR brand (contains, not exact)', async () => {
       mockSelectChain([]);
 
-      await service.findAll({ limit: 20, name: 'Chanel' });
+      await service.findAll({ limit: 20, search: 'dior  sauvage ' });
 
-      expect(ilike).toHaveBeenCalledWith(fragrances.name, '%Chanel%');
-      expect(eq).not.toHaveBeenCalledWith(fragrances.name, 'Chanel');
+      expect(ilike).toHaveBeenCalledWith(fragrances.name, '%dior%');
+      expect(ilike).toHaveBeenCalledWith(fragrances.brand, '%dior%');
+      expect(ilike).toHaveBeenCalledWith(fragrances.name, '%sauvage%');
+      expect(ilike).toHaveBeenCalledWith(fragrances.brand, '%sauvage%');
+      expect(eq).not.toHaveBeenCalled();
+    });
+
+    it('search: repeated tokens are deduplicated', async () => {
+      mockSelectChain([]);
+
+      await service.findAll({ limit: 20, search: 'dior dior dior' });
+
+      expect(ilike).toHaveBeenCalledTimes(2);
+    });
+
+    it('search: blank/whitespace-only adds no filter', async () => {
+      const whereMock = mockSelectChain([]);
+
+      await service.findAll({ limit: 20, search: '   ' });
+
+      expect(whereMock).toHaveBeenCalledWith(undefined);
     });
 
     // Regression: literal `%`/`_` in a search term used to be interpreted as
-    // SQL wildcards instead of the characters the caller typed (e.g. a
-    // fragrance actually named "50%" would match on any name containing
-    // "50" followed by anything) — see common/utils/sql-like.util.ts.
-    it('escapes literal `%`, `_` and `\\` in the name filter before building the ILIKE pattern', async () => {
-      mockSelectChain([], 0);
+    // SQL wildcards — see common/utils/sql-like.util.ts.
+    it('search: escapes literal `%`, `_` and `\\` before building the ILIKE pattern', async () => {
+      mockSelectChain([]);
 
-      await service.findAll({ page: 1, limit: 20, name: '50%_off\\x' });
+      await service.findAll({ limit: 20, search: '50%_off\\x' });
 
       expect(ilike).toHaveBeenCalledWith(fragrances.name, '%50\\%\\_off\\\\x%');
+      expect(ilike).toHaveBeenCalledWith(fragrances.brand, '%50\\%\\_off\\\\x%');
     });
 
-    it('filters brand as an exact match, case-insensitively (ilike with no wildcards), not a case-sensitive eq', async () => {
-      mockSelectChain([], 0);
+    it('ignores legacy name/brand params (removed filters): no condition is built', async () => {
+      const whereMock = mockSelectChain([]);
 
-      await service.findAll({ page: 1, limit: 20, brand: 'giorgio armani' });
+      await service.findAll({ limit: 20, name: 'Chanel', brand: 'Chanel' } as any);
 
-      expect(ilike).toHaveBeenCalledWith(fragrances.brand, 'giorgio armani');
-      expect(eq).not.toHaveBeenCalledWith(fragrances.brand, expect.anything());
-    });
-
-    it('escapes literal `%`/`_` in the brand filter too', async () => {
-      mockSelectChain([], 0);
-
-      await service.findAll({ page: 1, limit: 20, brand: 'A_B%C' });
-
-      expect(ilike).toHaveBeenCalledWith(fragrances.brand, 'A\\_B\\%C');
+      expect(whereMock).toHaveBeenCalledWith(undefined);
+      expect(ilike).not.toHaveBeenCalled();
     });
 
     it.each([
@@ -230,13 +239,12 @@ describe('FragrancesService', () => {
       expect(ilike).not.toHaveBeenCalled();
     });
 
-    it('builds a defined filter condition when name, brand and concentration are all given', async () => {
+    it('builds a defined filter condition when search and concentration are both given', async () => {
       const whereMock = mockSelectChain([]);
 
       await service.findAll({
         limit: 20,
-        name: 'Chanel',
-        brand: 'Chanel',
+        search: 'Chanel',
         concentration: 'EDP',
       });
 
