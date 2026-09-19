@@ -60,6 +60,9 @@ type AuthContextValue = {
 - **`user` is `null` when `/profile` mounts** (no session in this tab, e.g. never logged in or a hard refresh — see rehydration gap above): redirect straight to `/login` without calling either endpoint.
 - **`photoS3Key` is `null`** (always, today — no upload flow exists): the avatar is always the diagonal-stripe placeholder used elsewhere for missing photography, never a broken `<img>`.
 
+- **The session switches from user A to user B without `/profile` unmounting**: A's profile and favorites are never shown to B — the page shows the loading state until B's own data arrives.
+- **Successful response with no body** (e.g. `204`): the API client resolves with an empty result instead of failing to parse it.
+
 ## Out of scope
 
 - Editing profile fields (`PATCH /users/:id` exists on the backend but nothing here calls it).

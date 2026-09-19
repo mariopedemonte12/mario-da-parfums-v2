@@ -12,6 +12,9 @@ const FAVORITES_PAGE = 1;
 const FAVORITES_LIMIT = 20;
 
 type ProfileState = {
+  // Owner of the data below; state that belongs to another user is never
+  // exposed (see the return at the bottom of the hook).
+  userId: number | null;
   profile: UserProfile | null;
   favorites: Favorite[];
   favoritesTotal: number;
@@ -21,6 +24,7 @@ type ProfileState = {
 };
 
 const initialState: ProfileState = {
+  userId: null,
   profile: null,
   favorites: [],
   favoritesTotal: 0,
@@ -57,6 +61,7 @@ export function useProfile() {
         if (cancelled) return;
 
         setState({
+          userId,
           profile,
           favorites: favoritesPage.data,
           favoritesTotal: favoritesPage.total,
@@ -69,12 +74,13 @@ export function useProfile() {
 
         if (err instanceof ApiError && err.statusCode === 401) {
           logout();
-          setState(sessionExpiredState);
+          setState({ ...sessionExpiredState, userId });
           return;
         }
 
         setState((current) => ({
-          ...current,
+          ...(current.userId === userId ? current : initialState),
+          userId,
           loading: false,
           error: "No se pudo cargar tu perfil.",
         }));
@@ -96,5 +102,7 @@ export function useProfile() {
     return sessionExpiredState;
   }
 
-  return state;
+  // State fetched for a different user (A -> B without unmounting) must never
+  // be shown to the current one: treat it as not loaded yet.
+  return state.userId === user.id ? state : initialState;
 }

@@ -204,12 +204,7 @@ describe.each([
       expect(result.current.profile).toEqual(profileOf(userB));
     });
 
-    // BUG (medium, privacy/flash): the hook keeps `state` across user changes
-    // and never resets it. When the session switches from user A to user B
-    // without unmounting (login as another user via the same provider), B's
-    // page renders A's profile and favorites, with loading=false, until B's
-    // requests land. Repro: load profile of user 1, then make auth.user = user 2.
-    it.fails("BUG: switching user does not show the previous user's profile while loading", async () => {
+    it("switching user does not show the previous user's profile while loading", async () => {
       setAuth(userA);
       mockedGetUser.mockResolvedValueOnce(profileOf(userA));
       mockedGetFavorites.mockResolvedValueOnce(page(["fa"]));
