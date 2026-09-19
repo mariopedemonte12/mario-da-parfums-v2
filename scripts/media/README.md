@@ -41,4 +41,8 @@ El GIF del chatbot requiere una clave de Gemini con cuota. Pregunta prevista, qu
 
 El dataset no incluye Chanel; usa marcas existentes (Jean Paul Gaultier, Dior).
 
-Perfil y favoritos: `record-perfil-favoritos.mjs` (en preparacion).
+## Perfil y favoritos
+
+`record-perfil-favoritos.mjs` genera `docs/media/perfil-favoritos.gif` (~23 s: login con escritura lenta y contrasena enmascarada -> `/fragrances`, buscar `jean`, guardar 3 perfumes con el corazon -> `/profile` con "Guardados" -> "Salir") y `docs/media/perfil.png` (perfil con favoritos). `REHEARSE=1` ensaya sin grabar; `QUERY=` cambia la busqueda.
+
+Requiere un usuario ficticio ya registrado (`POST /auths/register`, limitado a 5/min por IP) y sin favoritos previos. Las credenciales se leen de `DEMO_EMAIL`/`DEMO_PASSWORD` o de `.media-run/demo-email` y `.media-run/demo-pass` (fuera de git); nunca se imprimen ni se versionan. Tras un ensayo el usuario conserva los 3 favoritos: borralos (`DELETE /favorites/batch`) antes de grabar.
