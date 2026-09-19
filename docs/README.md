@@ -35,7 +35,7 @@
 
 | Documento | Contenido |
 |---|---|
-| [`agentic-development.md`](agentic-development.md) | Cómo se trabajó con agentes de código: `CLAUDE.md`, skills, specs, worktrees, sesiones separadas. Contiene secciones `TODO(autor)` pendientes. |
+| [`agentic-development.md`](agentic-development.md) | Cómo se trabajó con agentes de código: `CLAUDE.md`, skills, specs, worktrees, sesiones separadas. |
 
 ## Otros documentos del repositorio
 

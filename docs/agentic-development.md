@@ -1,6 +1,6 @@
 # Desarrollo con agentes de código
 
-Este proyecto se construyó trabajando con Claude Code. Este documento describe **el proceso tal como está codificado en el repositorio**: convenciones, specs, skills y flujo de sesiones. No cuenta qué se aprendió ni qué funcionó mejor o peor; eso solo lo puede escribir el autor (secciones `TODO(autor)` más abajo).
+Este proyecto se construyó trabajando con Claude Code. Este documento describe **el proceso tal como está codificado en el repositorio**: convenciones, specs, skills y flujo de sesiones. Lo que se aprendió y qué funcionó mejor o peor está en la última sección, escrita por el autor.
 
 Todo lo afirmado aquí se puede comprobar en los archivos citados.
 
@@ -54,16 +54,17 @@ Hay configuración de mutation testing por paquete: [`backend/stryker.config.jso
 
 (El paso 6 sigue lo que dicen las reglas del repo; el historial de git muestra merges de ramas de feature a `master`, por ejemplo `Merge feature/docker-infra`.)
 
-## Lo que solo puede escribir el autor
+## Reflexión del autor
 
-> TODO(autor): **Qué aprendiste** trabajando así: qué te sorprendió, qué te obligó a cambiar de enfoque.
+**Qué aprendiste** Para gestionar múltiples agentes de IA en paralelo fue necesario desarrollar un proceso de gestión de agentes estricto, esto supuso la creación de múltiples skills y convenciones en los CLAUDE.md que obligaría a los agentes a seguir con las especificaciones de código que yo consideré pertinente. Admito que en principio fue muy difícil seguir el ritmo de los agentes, por lo que ahi aprendí la importancia de la definición de reglas claras para los agentes: Qué deben hacer, que no, cuando consultarme. Una cosa en particular que me llamó la atención es que eventualmente los agentes toman decisiones sin consultarte. Por ello es fundamental explicitar en CLAUDE.md o en alguna skill global que está terminalmente prohibido tomar decisiones sin consultarte. 
+Otro aspecto que me pareció importante es que cada sesión de código o agente tenga un solo objetivo dentro del proceso de software. La idea es que sea la tarea más granular posible para que el agente no tenga problemas tipo "lost in the middle" cuando su contexto crece demasiado. Siempre proponer sesiones cortas, es por ello que estructuré la creación de código en 3 fases separadas, que veremos más adelante.
 
-> TODO(autor): **Qué funcionó bien** (por ejemplo, specs antes de código, sesiones separadas) y por qué crees que fue así.
+**Qué funcionó bien** Dividir el proceso de desarrollo de una feature en 3 partes: Spec, Implement y Testing. Cada sesión cumple con su objetivo en particular y luego otro agente autónomo recibe el producto de la fase anterior, lo analiza y luego según alguna habilidad se encarga de resolver el problema. Esto es limpio porque evita en la sesión de testing el "happy path" bias. Otro aspecto importante fue el uso de la funcionalidad de worktrees de git. Esto permitía que cada agente estuviera contenido en un sandbox donde sus cambios no pisan a los demás. Esto permite trabajar sobre múltiples features y hace el proceso mucho más limpio.
 
-> TODO(autor): **Qué falló o costó** (contexto perdido, agentes que se desviaron del spec, retrabajo) y cómo lo corregiste.
+**Qué falló o costó** Principalmente que los agentes asumieran cosas que yo no les dije explicitamente, esto se mitigó modificando el CLAUDE.md pero para sesiones muy largas el agente puede perder detalle de las instrucciones.
 
-> TODO(autor): **Cómo delegaste y revisaste**: qué pedías a los agentes, qué revisabas tú, qué no delegarías.
+**Cómo delegaste y revisaste**: La creación de los specs siempre fue un trabajo compartido entre yo y los agentes. Siempre iniciaba explicando mi idea general de como quería realizar la feature y luego el agente me hacía preguntas. Una vez completado el spec, lo leía personalmente y revisaba que todas las decisiones fueran lo que yo esperaba. La implementación y testing era delegaba completamente a los agentes, pero bajo estrictas instrucciones de como realizar el proceso. Se crearon skills de testing y de implementación que permitieron definir una estructura de trabajo estricta. En particular la inclusión de mutation testing por parte de la habilidad fue muy útil, permitió ver al agente casos en el código que los tests simplemente no cubrían. Los mutantes equivalentes fueron revisados de forma manual, en ningún caso encontré un falso positivo.
 
-> TODO(autor): **Consejos para otra persona** que quiera reproducir el proceso.
+**Consejos para otra persona** El primer paso es desarrollar los documentos de instrucciones generales para los agentes. Antes de tocar código es importante definir un procedimiento general de desarrollo del software, además de habilidades más específicas que permitan realizar las fases del proceso de forma más precisa. Esto debe estar armado y validado por el usuario antes de iniciar el desarrollo de las features. Esto simplifica el proceso de desarrollo porque no debe repetirte en cada sesión, todos los agentes ya saben como deben trabajar y que cosas no pueden tocar. Es mucho más ordenado. 
 
-> TODO(autor): **Cuánto del resultado es tuyo y cuánto de los agentes**, en tus palabras, para el lector externo.
+**Cuánto del resultado es tuyo y cuánto de los agentes** Si bien los pilares básicos del código los escribí a mano, la mayor parte del código fue generado por agentes de IA. Esto no supone que este proyecto sea propiedad de la IA. Los agentes implementaron bajo mis decisiones, mis reglas y mi criterio. Todas las decisiones de diseño y features son de mi propiedad y soy responsable de ellas. Los agentes fueron una herramienta que me permitió desarrollar un software completo por mi mismo, con relativa velocidad y con buenos estándares de calidad. No estoy diciendo que el código generado sea perfecto, pero bajo mi conjunto de reglas y pruebas es suficiente. La estructura es ordenada, y no hay archivos de más de 800 lineas. Aunque como todos sabemos, el código es un ente cambiante y siempre se puede hacer mejor, intente inculcar las mejores prácticas en los agentes pero tampoco seguí todas las reglas de CleanCode, pero conceptos como SRP (Single responsability principle), inyección de dependencias y bajo acoplamiento están presentes en el código generado. 

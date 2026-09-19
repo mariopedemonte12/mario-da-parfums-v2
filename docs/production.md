@@ -80,4 +80,4 @@ Cada punto indica dónde verificarlo.
 - Automatizar build y despliegue con CI/CD (tests, lint y construcción de imágenes) y versionar las imágenes.
 - Si los datos se volvieran reales, programar los jobs de carga con un scheduler externo; hoy son manuales.
 
-> TODO(autor): si alguna vez se despliega el sistema, documentar aquí qué de esta sección se llegó a hacer realmente y con qué resultado.
+No se ha desplegado el software hasta la fecha
