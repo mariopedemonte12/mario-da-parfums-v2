@@ -4,6 +4,7 @@ import {
   createContext,
   useContext,
   useEffect,
+  useRef,
   useState,
   type ReactNode,
 } from "react";
@@ -26,9 +27,15 @@ export function FavoritesProvider({ children }: { children: ReactNode }) {
   const [favoriteIds, setFavoriteIds] = useState<Set<string>>(new Set());
   const [pendingIds, setPendingIds] = useState<Set<string>>(new Set());
   const [loaded, setLoaded] = useState(false);
+  // Bumped whenever the session changes (logout / another user). A toggle
+  // remembers the value it started under and must not touch state after it
+  // changed: its rollback would put a favorite into the wrong user's set.
+  const sessionRef = useRef(0);
 
   useEffect(() => {
     if (isHydrating) return;
+
+    sessionRef.current++;
 
     if (!user) {
       // Synchronizes React state with the external "is there a session"
@@ -36,6 +43,7 @@ export function FavoritesProvider({ children }: { children: ReactNode }) {
       // own post-mount setState.
       // eslint-disable-next-line react-hooks/set-state-in-effect
       setFavoriteIds(new Set());
+      setPendingIds(new Set());
       setLoaded(false);
       return;
     }
@@ -59,6 +67,7 @@ export function FavoritesProvider({ children }: { children: ReactNode }) {
 
   function toggleFavorite(fragranceId: string) {
     const wasFavorite = favoriteIds.has(fragranceId);
+    const session = sessionRef.current;
 
     setFavoriteIds((prev) => {
       const next = new Set(prev);
@@ -75,6 +84,8 @@ export function FavoritesProvider({ children }: { children: ReactNode }) {
 
     request
       .catch(() => {
+        if (sessionRef.current !== session) return;
+
         setFavoriteIds((prev) => {
           const next = new Set(prev);
           if (wasFavorite) {
@@ -86,6 +97,8 @@ export function FavoritesProvider({ children }: { children: ReactNode }) {
         });
       })
       .finally(() => {
+        if (sessionRef.current !== session) return;
+
         setPendingIds((prev) => {
           const next = new Set(prev);
           next.delete(fragranceId);

@@ -49,6 +49,9 @@ No new route, no new page. Existing components are extended, not replaced.
   toggling anything (mirrors the "Entrar" link's destination in the
   Navbar). No favorites are fetched for a logged-out session — the context
   holds an empty set and every heart renders unfilled.
+- A toggle request that settles after the session ended or changed
+  (logout, other user) has no effect on the favorites set: a late failure
+  never puts a favorite back into a logged-out (or other) user's set.
 - A heart is disabled (not clickable, but same visuals) while its own
   toggle request is in flight, to prevent a double-click firing two
   overlapping requests for the same fragrance.

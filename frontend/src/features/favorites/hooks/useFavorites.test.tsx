@@ -203,13 +203,7 @@ describe.each([
       expect(remove).toHaveBeenCalledTimes(1);
     });
 
-    // BUG (low/medium): a toggle that fails AFTER the user logged out
-    // re-applies its rollback to the (already cleared) set, so the logged-out
-    // session shows a filled heart, contradicting "Not logged in: the context
-    // holds an empty set and every heart renders unfilled". Repro: logged in
-    // with favorite "a", click to unfavorite (request in flight), session
-    // expires/logout, request rejects.
-    it.fails("BUG: a late failure does not resurrect a favorite after logout", async () => {
+    it("a late failure does not resurrect a favorite after logout", async () => {
       const { result, rerender } = await ready(["a"]);
       const d = deferred<void>();
       remove.mockReturnValue(d.promise);
