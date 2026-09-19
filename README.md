@@ -114,6 +114,9 @@ La lista completa y verificada está en [`docs/limitations.md`](docs/limitations
 
 El código se distribuye bajo la licencia MIT (ver [`LICENSE`](LICENSE)). El dataset de perfumes no forma parte del repositorio y tiene su propia licencia (ver más abajo).
 
-## Créditos de datos
+## Créditos
 
-El catálogo parte de "Perfume Dataset" de Ayush (`ayushghawana`) en Kaggle, bajo licencia CC BY 4.0: <https://www.kaggle.com/datasets/ayushghawana/perfume-dataset>. Detalle en [`similarityServer/data/README.md`](similarityServer/data/README.md).
+- **Dataset de perfumes:** "Perfume Dataset" de Ayush (`ayushghawana`) en Kaggle, licencia CC BY 4.0: <https://www.kaggle.com/datasets/ayushghawana/perfume-dataset>. No se incluye en el repositorio; detalle en [`similarityServer/data/README.md`](similarityServer/data/README.md).
+- **Modelo de embeddings:** [`sentence-transformers/paraphrase-multilingual-MiniLM-L12-v2`](https://huggingface.co/sentence-transformers/paraphrase-multilingual-MiniLM-L12-v2), licencia Apache-2.0, usado a través de la biblioteca [Sentence-Transformers](https://www.sbert.net/). Si usas este trabajo, cita a sus autores: Reimers, N. y Gurevych, I., *Sentence-BERT: Sentence Embeddings using Siamese BERT-Networks*, EMNLP 2019 (<https://arxiv.org/abs/1908.10084>). El modelo se descarga al construir la imagen del servicio de similitud y no se redistribuye en este repositorio.
+- **Índice de vecinos más cercanos:** [`hnswlib`](https://github.com/nmslib/hnswlib), licencia Apache-2.0 (algoritmo HNSW: Malkov, Y. y Yashunin, D., 2016, <https://arxiv.org/abs/1603.09320>).
+- **LLM del chatbot:** Gemini, a través de la API de Google (`@google/genai`), sujeto a sus propios términos de servicio.
