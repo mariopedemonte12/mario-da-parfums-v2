@@ -10,7 +10,7 @@ Scripts de Playwright que generan los GIFs y PNG de `docs/media/` (los referenci
 | `screenshots.mjs` | `docs/media/hero.png`, `docs/media/detalle.png` |
 | `lib.mjs` | helpers: cursor falso, escritura lenta, grabacion, webm -> GIF |
 
-`docs/media/chatbot.gif` no esta: requiere Gemini con cuota (ver "Chatbot" abajo).
+Segunda pasada en curso: `chatbot.gif` (nuevo) y regrabacion de `busqueda-semantica.gif` (bug visual del arco corregido en master).
 
 ## Como regenerar
 
