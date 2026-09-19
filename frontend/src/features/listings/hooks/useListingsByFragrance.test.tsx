@@ -42,7 +42,7 @@ describe("useListingsByFragrance", () => {
     const { result } = renderHook(() => useListingsByFragrance("f1"));
     await waitFor(() => expect(result.current.loading).toBe(false));
     expect(result.current.listings.map((x) => x.id)).toEqual([1, 2, 3, 4]);
-    expect(mocked.mock.calls.map((c) => c[0].cursor)).toEqual([undefined, 2, 3]);
+    expect(mocked.mock.calls.map((c) => c[0]?.cursor)).toEqual([undefined, 2, 3]);
   });
 
   it("nextCursor of 0 is a real cursor value, not the end (boundary)", async () => {

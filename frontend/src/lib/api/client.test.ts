@@ -47,7 +47,7 @@ describe("createApiClient", () => {
     const errors = [{ field: "name", errors: [{ code: "TOO_SHORT", meta: { min: 3 } }] }];
     stubFetch(() => jsonResponse({ statusCode: 400, message: "Validation failed", errors }, 400));
     const api = createApiClient("http://api");
-    const error = await api.post("/x").catch((e) => e);
+    const error = (await api.post("/x").catch((e) => e)) as ApiError;
     expect(error).toBeInstanceOf(ApiError);
     expect(error.statusCode).toBe(400);
     expect(error.message).toBe("Validation failed");
@@ -57,14 +57,14 @@ describe("createApiClient", () => {
 
   it("non-OK without message falls back to statusText", async () => {
     stubFetch(() => new Response("{}", { status: 503, statusText: "Service Unavailable" }));
-    const error = await createApiClient("http://api").get("/x").catch((e) => e);
+    const error = (await createApiClient("http://api").get("/x").catch((e) => e)) as ApiError;
     expect(error.statusCode).toBe(503);
     expect(error.message).toBe("Service Unavailable");
   });
 
   it("non-OK with a non-JSON body still throws ApiError", async () => {
     stubFetch(() => new Response("oops", { status: 500, statusText: "ISE" }));
-    const error = await createApiClient("http://api").delete("/x").catch((e) => e);
+    const error = (await createApiClient("http://api").delete("/x").catch((e) => e)) as ApiError;
     expect(error).toBeInstanceOf(ApiError);
     expect(error.statusCode).toBe(500);
   });

@@ -208,6 +208,18 @@ describe("createWsClient — send", () => {
   );
 });
 
+describe("createWsClient — send after an error", () => {
+  it("open -> error (close event not yet delivered): send is refused even though the socket object still says OPEN", () => {
+    const { client } = setup();
+    client.connect();
+    FakeWebSocket.last.open();
+    FakeWebSocket.last.fail();
+    expect(client.getState()).toBe("error");
+    expect(() => client.send({ type: "message", text: "x" })).toThrow();
+    expect(FakeWebSocket.last.sent).toEqual([]);
+  });
+});
+
 describe("createWsClient — incoming messages", () => {
   const valid: ChatbotServerMessage[] = [
     { type: "status", text: "Buscando" },

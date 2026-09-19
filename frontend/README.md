@@ -30,7 +30,9 @@ The backend API, the similarity search service and the chatbot server must be ru
 
 Vitest (same version as backend and chatbot). Tests live next to the code as `*.test.ts` / `*.test.tsx`. The default environment is `node`, for pure logic (utils, api functions with `fetch` mocked). A component test opts into the DOM with a `// @vitest-environment jsdom` comment on its first line and uses `@testing-library/react` + `@testing-library/user-event`. `@/*` resolves to `src/*` (see `vitest.config.mts`).
 
-Hook and WebSocket tests (in progress on `test/frontend-hooks-ws`) live next to the hooks; shared fakes (`FakeWebSocket`, fetch helpers) are in `src/test/`.
+Hook, context and WebSocket-client tests live next to the code: `useAuth`, `useProfile`, `useFavorites`, `useFragrances`, `useFragranceDetail`, `useFragranceSearch`, `useListingsByFragrance`, `useVendors`, `useDebounce`, `useChatbotSession` (plain and under `<StrictMode>`, to catch impure `setState` updaters), `lib/ws/client` and `lib/api/client`. Shared test doubles are in `src/test/`: `FakeWebSocket` (hand-driven socket events), `FakeWsClient` (stand-in for `chatbotWs`) and fetch helpers (`stubFetch`, `deferred` for out-of-order responses). Use braces in `beforeEach(() => { mock.mockReset(); })`: vitest 4 `mockReset()` returns the mock, and a returned function is run as teardown.
+
+Known defects are recorded as `it.fails(...)` cases whose title starts with `BUG:` (the suite stays green; when the bug is fixed the case flips to failing, so remove `.fails`). Find them with `grep -rn "it.fails" src`.
 
 ## Environment variables
 
