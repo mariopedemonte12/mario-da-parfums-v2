@@ -34,6 +34,7 @@ chatbot/
 
 - **Module boundaries**: `mcp/`, `guardrail/`, `agent/` are self-contained — `session.ts` orchestrates them but doesn't reach into their internals beyond the exported functions/classes.
 - **Adding/removing an MCP server**: edit `mcp-servers.json` (or whatever `MCP_CONFIG_PATH` points at). Never hardcode a server's connection details in `mcp-manager.ts` — that file has no server-specific code, by design (specs/chatbot-server.md, "Registro modular de tools multi-MCP").
+- **Tool-calling budget**: `CHATBOT_MAX_TOOL_ITERATIONS` (default 14) caps Gemini round-trips per turn (parallel calls in one response count once). The agent keeps turns short via the efficiency rules in `agent/system-prompt.ts` and a per-turn memo of identical (tool + args) calls in `agent/chat-agent.ts`. Keep those rules and the MCP tool `description`s in sync with `specs/chatbot-server.md`, "Eficiencia en el uso de tools".
 - **Errors**: match the table in `specs/chatbot-server.md`, "Manejo de errores" — a broken MCP server, a failed tool call, or a failed Gemini call must never crash the WS connection; they become a `{"type":"error"}` turn-level message or an error result handed back to Gemini, per case.
 - **History**: never truncate mid-turn (see `src/NOTES.md`, "Truncamiento de historial por turno completo") — a "turn" includes every tool-calling round-trip within it.
 - **Lint/format**: run `pnpm lint` (oxlint) and `pnpm format` (prettier) before finishing a task, same as `backend/`.

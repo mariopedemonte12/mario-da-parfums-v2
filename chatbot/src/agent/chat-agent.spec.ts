@@ -264,7 +264,9 @@ describe('runTurn — tool calling loop', () => {
   });
 
   it('stops after maxIterations and returns a turn-level error instead of looping forever', async () => {
-    const { ai } = fakeAi(() => [fnCallChunk('catalog.search', 'x')]);
+    const { ai } = fakeAi((n) => [
+      fnCallChunk('catalog.search', `x${n}`, { q: n }),
+    ]);
     const callTool = vi.fn().mockResolvedValue({ isError: false, payload: [] });
     const result = await runTurn(
       baseParams({
@@ -447,5 +449,86 @@ describe('runTurn — present_fragrances (local presentation tool)', () => {
     expect(
       secondCallArgs.contents.at(-1)?.parts[0]?.functionResponse?.response,
     ).toEqual({ error: 'Argumentos inválidos para present_fragrances.' });
+  });
+});
+
+describe('runTurn — per-turn memoization of identical tool calls', () => {
+  it('does not call the MCP server twice for the same tool + args (key order irrelevant)', async () => {
+    const { ai } = fakeAi((n) =>
+      n === 0
+        ? [fnCallChunk('catalog.search', 'a', { q: 'sauvage', limit: 3 })]
+        : n === 1
+          ? [fnCallChunk('catalog.search', 'b', { limit: 3, q: 'sauvage' })]
+          : [textChunk('listo')],
+    );
+    const callTool = vi
+      .fn()
+      .mockResolvedValue({ isError: false, payload: [{ id: '1' }] });
+    const onStatus = vi.fn();
+    const result = await runTurn(
+      baseParams({
+        ai,
+        onStatus,
+        mcpManager: { callTool } as unknown as McpManager,
+      }),
+    );
+    expect(result.ok).toBe(true);
+    expect(callTool).toHaveBeenCalledTimes(1);
+    expect(onStatus).toHaveBeenCalledTimes(1);
+    // the model still receives a response for the repeated call
+    const parts = result.newContents
+      .flatMap((c) => c.parts ?? [])
+      .filter((p) => p.functionResponse);
+    expect(parts).toHaveLength(2);
+    expect(parts[1].functionResponse?.response).toEqual({
+      output: [{ id: '1' }],
+    });
+  });
+
+  it('calls again when the args differ or the tool differs', async () => {
+    const { ai } = fakeAi((n) =>
+      n === 0
+        ? [fnCallChunk('catalog.search', 'a', { q: 'x' })]
+        : n === 1
+          ? [fnCallChunk('catalog.search', 'b', { q: 'y' })]
+          : n === 2
+            ? [fnCallChunk('catalog.other', 'c', { q: 'x' })]
+            : [textChunk('listo')],
+    );
+    const callTool = vi.fn().mockResolvedValue({ isError: false, payload: [] });
+    await runTurn(
+      baseParams({ ai, mcpManager: { callTool } as unknown as McpManager }),
+    );
+    expect(callTool).toHaveBeenCalledTimes(3);
+  });
+
+  it('does not cache error results (a retry hits the server again)', async () => {
+    const { ai } = fakeAi((n) =>
+      n < 2
+        ? [fnCallChunk('catalog.search', `e${n}`, { q: 'x' })]
+        : [textChunk('ok')],
+    );
+    const callTool = vi
+      .fn()
+      .mockResolvedValue({ isError: true, payload: 'boom' });
+    await runTurn(
+      baseParams({ ai, mcpManager: { callTool } as unknown as McpManager }),
+    );
+    expect(callTool).toHaveBeenCalledTimes(2);
+  });
+
+  it('does not share the cache across turns', async () => {
+    const callTool = vi.fn().mockResolvedValue({ isError: false, payload: [] });
+    for (let turn = 0; turn < 2; turn++) {
+      const { ai } = fakeAi((n) =>
+        n === 0
+          ? [fnCallChunk('catalog.search', 'a', { q: 'x' })]
+          : [textChunk('ok')],
+      );
+      await runTurn(
+        baseParams({ ai, mcpManager: { callTool } as unknown as McpManager }),
+      );
+    }
+    expect(callTool).toHaveBeenCalledTimes(2);
   });
 });

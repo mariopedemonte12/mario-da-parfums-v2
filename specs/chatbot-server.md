@@ -179,10 +179,30 @@ pasa el clasificador de la etapa 1.
   el servidor los ejecuta (ver dispatch en la sección siguiente), agrega los
   resultados a la conversación, y vuelve a llamar a Gemini; se repite hasta
   que la respuesta no pide más tools.
-- **Límite de iteraciones del ciclo** (config, con default conservador): si se
-  supera, el servidor corta el ciclo y responde con un error de turno en vez
-  de loopear indefinidamente — protección contra un patrón de tool calling
-  que no converge.
+- **Límite de iteraciones del ciclo** (`CHATBOT_MAX_TOOL_ITERATIONS`, default
+  **14**): si se supera, el servidor corta el ciclo y responde con un error de
+  turno en vez de loopear indefinidamente — protección contra un patrón de
+  tool calling que no converge. Una iteración es una respuesta de Gemini;
+  varias `function_call` en la misma respuesta cuentan una sola vez. El
+  default anterior (8) resultó insuficiente en uso real: con preguntas como
+  "un perfume parecido a Sauvage EDP de Dior pero más barato" 3 de 5 intentos
+  terminaron en el error de límite de pasos (búsqueda semántica + búsqueda
+  por nombre para obtener cada id + precio de cada uno + `present_fragrances`).
+- **Eficiencia en el uso de tools** (requisito acordado): el system prompt del
+  agente incluye reglas cortas para gastar pocos pasos — planificar antes de
+  llamar; recomendar solo la cantidad pedida (máx. 3 si no se indica); para
+  "parecido a X" hacer una sola búsqueda semántica sin variantes; no repetir
+  llamadas con los mismos argumentos; pedir precios solo de los perfumes que se
+  van a mostrar; agrupar en paralelo las llamadas independientes; y dejar de
+  llamar tools en cuanto haya información suficiente. Las `description` de las
+  tools MCP guían lo mismo (p. ej. que la búsqueda semántica devuelve solo
+  nombres y que `search_fragrances` no devuelve precios), sin cambiar nombres
+  ni esquemas.
+- **Memoización por turno**: dentro de un turno, una llamada a una tool MCP con
+  la misma tool y los mismos argumentos (comparación independiente del orden de
+  las claves) devuelve el resultado anterior sin volver a llamar al servidor
+  MCP. Solo se cachean resultados exitosos (un error se puede reintentar) y la
+  caché no sobrevive al turno.
 - Solo la respuesta de texto final de cada turno se streamea al cliente
   (`token`); los `function_call`/resultados intermedios no se exponen tal
   cual, como mucho generan eventos `status` genéricos.

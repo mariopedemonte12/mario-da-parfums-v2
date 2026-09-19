@@ -49,7 +49,14 @@ def create_mcp_server(get_index: Callable[[], PerfumeSimilarityIndex]) -> FastMC
             int, Field(ge=1, le=50, description="Maximum number of results")
         ] = 5,
     ) -> list[SimilarFragrance]:
-        """Search fragrances by free-text scent description, ranked by similarity."""
+        """Search fragrances by free-text scent description, ranked by similarity.
+
+        One call is enough for a "similar to X" request: use the returned list
+        as-is instead of repeating the search with variations. Returns only
+        fragrance names and scores (no ids or prices): look each name up in
+        the catalog (search_fragrances) to get its id and prices. Use a small
+        top_k (3-5).
+        """
         try:
             results = get_index().search(query, top_k=top_k)
         except RuntimeError as exc:
