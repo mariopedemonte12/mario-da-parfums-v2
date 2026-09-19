@@ -5,7 +5,7 @@ import { getFragranceById } from "../api/fragrances.api";
 import type { FragranceDetail } from "../types/fragrance.types";
 
 export function useFragranceDetail(id: string) {
-  const [fragrance, setFragrance] = useState<FragranceDetail | null>(null);
+  const [loaded, setLoaded] = useState<{ id: string; data: FragranceDetail | null } | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -16,11 +16,12 @@ export function useFragranceDetail(id: string) {
       try {
         setLoading(true);
         setError(null);
+        setLoaded(null);
 
         const data = await getFragranceById(id);
 
         if (!cancelled) {
-          setFragrance(data);
+          setLoaded({ id, data });
         }
       } catch {
         if (!cancelled) {
@@ -39,6 +40,9 @@ export function useFragranceDetail(id: string) {
       cancelled = true;
     };
   }, [id]);
+
+  // Data fetched for another id is never exposed for the current one.
+  const fragrance = loaded?.id === id ? loaded.data : null;
 
   return { fragrance, loading, error };
 }

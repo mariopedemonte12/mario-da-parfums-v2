@@ -98,12 +98,7 @@ describe("useFragranceDetail", () => {
     });
   });
 
-  // BUG (low): after navigating to an id whose request fails, the hook keeps
-  // returning the previous fragrance (only `loading`/`error` change): the page
-  // can render fragrance A's data under the error banner for B. (A 404 is fine:
-  // null overwrites it.) Repro: view fragrance a, navigate client-side to b
-  // whose request fails -> `fragrance` is still a.
-  it.fails("BUG: after navigating to an id whose request fails, the previous fragrance is not kept", async () => {
+  it("after navigating to an id whose request fails, the previous fragrance is not kept", async () => {
     mocked.mockResolvedValueOnce(detail("a"));
     const { result, rerender } = renderHook(({ id }) => useFragranceDetail(id), {
       initialProps: { id: "a" },

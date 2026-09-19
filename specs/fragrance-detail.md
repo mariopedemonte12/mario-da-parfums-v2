@@ -38,7 +38,10 @@ no se vuelve a pedir al backend por cada cambio de filtro.
 2. **404 / fragancia inexistente**: la UI lo maneja explícitamente (no deja
    propagar un error genérico) — mensaje "No encontramos este perfume" +
    link de vuelta a `/fragrances`. No es un estado de error de red.
-3. **Error de red** (fragancia, listings o vendors): mensaje de error
+3. **Cambio de id**: al navegar a otro perfume nunca se muestran los datos
+   del anterior: durante la carga y si la nueva petición falla, no hay
+   fragancia.
+3b. **Error de red** (fragancia, listings o vendors): mensaje de error
    separado del 404, tono consistente con el resto del sitio
    ("No pudimos cargar ...").
 4. **Fragancia encontrada, sin listings**: se muestra igual la fragancia
