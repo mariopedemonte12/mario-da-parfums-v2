@@ -15,6 +15,21 @@ import {
 } from './present-fragrances-tool.js';
 import { AGENT_SYSTEM_PROMPT } from './system-prompt.js';
 
+/** JSON.stringify with object keys sorted recursively, so equal args compare equal. */
+function stableStringify(value: unknown): string {
+  if (Array.isArray(value)) {
+    return `[${value.map(stableStringify).join(',')}]`;
+  }
+  if (value !== null && typeof value === 'object') {
+    const entries = Object.entries(value as Record<string, unknown>)
+      .filter(([, v]) => v !== undefined)
+      .sort(([a], [b]) => (a < b ? -1 : a > b ? 1 : 0))
+      .map(([k, v]) => `${JSON.stringify(k)}:${stableStringify(v)}`);
+    return `{${entries.join(',')}}`;
+  }
+  return JSON.stringify(value) ?? 'null';
+}
+
 export type RunTurnParams = {
   ai: GoogleGenAI;
   model: string;
@@ -60,6 +75,15 @@ export async function runTurn(params: RunTurnParams): Promise<RunTurnResult> {
   } = params;
 
   const allTools = [...tools, PRESENT_FRAGRANCES_TOOL];
+
+  // Per-turn memoization of MCP calls (same tool + same args): the tool
+  // catalog is read-only, so a repeated call returns the earlier result
+  // instead of hitting the server again. Errors are not cached (a retry may
+  // legitimately succeed).
+  const toolCache = new Map<
+    string,
+    Awaited<ReturnType<McpManager['callTool']>>
+  >();
 
   const newContents: Content[] = [
     { role: 'user', parts: [{ text: userText }] },
@@ -165,8 +189,17 @@ export async function runTurn(params: RunTurnParams): Promise<RunTurnResult> {
         continue;
       }
 
-      onStatus(`Usando ${call.name}...`);
-      const outcome = await mcpManager.callTool(call.name, call.args);
+      const cacheKey = `${call.name}\u0000${stableStringify(call.args)}`;
+      let outcome = toolCache.get(cacheKey);
+      if (outcome) {
+        log.info(
+          `Llamada repetida ${call.name}: se reutiliza el resultado previo`,
+        );
+      } else {
+        onStatus(`Usando ${call.name}...`);
+        outcome = await mcpManager.callTool(call.name, call.args);
+        if (!outcome.isError) toolCache.set(cacheKey, outcome);
+      }
       const responsePayload = outcome.isError
         ? { error: outcome.payload }
         : { output: outcome.payload };

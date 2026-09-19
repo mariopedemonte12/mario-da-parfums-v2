@@ -53,7 +53,7 @@ export function registerCatalogTools(
     {
       title: 'Search fragrances',
       description:
-        'Search the fragrance catalog by free text (name and/or brand) and/or concentration (paginated).',
+        'Search the fragrance catalog by free text (name and/or brand) and/or concentration (paginated). Returns fragrance ids, names and brands but NO prices; use the returned id with get_cheapest_listing / get_listings_for_fragrance for prices. To resolve a fragrance name to its id, search by its name (e.g. "Sauvage" or "Dior Sauvage") with a small limit.',
       inputSchema: {
         search: z
           .string()
@@ -90,7 +90,7 @@ export function registerCatalogTools(
     'get_fragrance',
     {
       title: 'Get fragrance by id',
-      description: 'Get a single fragrance by its id.',
+      description: 'Get a single fragrance by its id. Only needed if you already have an id and need its details; do not call it after search_fragrances already returned those details.',
       inputSchema: { id: z.string().uuid().describe('Fragrance id') },
     },
     async ({ id }) => {
@@ -142,7 +142,7 @@ export function registerCatalogTools(
     {
       title: 'Get listings for a fragrance',
       description:
-        'Get vendor listings (price, size, availability) for a fragrance — the basis for comparing prices across vendors.',
+        'Get vendor listings (price, size, availability) for ONE fragrance — use it to compare prices across vendors. If you only need the lowest price, call get_cheapest_listing instead. Only call it for fragrances you will actually show.',
       inputSchema: {
         fragranceId: z.string().uuid(),
         inStock: z.boolean().optional(),
@@ -167,7 +167,7 @@ export function registerCatalogTools(
     {
       title: 'Get cheapest available listing for a fragrance',
       description:
-        'Find the cheapest in-stock listing for a fragrance across all vendors, or an explicit empty result if none is available.',
+        'Find the cheapest in-stock listing for ONE fragrance (by id) across all vendors, or an explicit empty result if none is available. Call it only for the fragrances you will present, in parallel for several ids, and never twice for the same id.',
       inputSchema: { fragranceId: z.string().uuid() },
     },
     async ({ fragranceId }) => {

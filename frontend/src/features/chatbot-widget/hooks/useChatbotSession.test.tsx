@@ -139,17 +139,17 @@ describe.each([
       expect(hook.result.current.turnInProgress).toBe(false);
       expect(hook.result.current.isThinking).toBe(false);
       const errors = hook.result.current.messages.filter((m) => m.role === "error");
-      // BUG-adjacent: see the it.fails below about duplicated error entries
-      expect(errors.length).toBeGreaterThanOrEqual(1);
+      // exactly one entry: see the regression test below
+      expect(errors).toHaveLength(1);
     });
 
-    // BUG (low/medium): while the socket is connecting, TWO listeners react to
+    // Regression (fixed) (low/medium): while the socket is connecting, TWO listeners react to
     // the same failure (the effect listener -> "Se perdió la conexión..." and
     // the pending-send listener -> "No se pudo conectar..."), so the history
     // gets two error bubbles for one failed turn. Spec: "agrega una entrada de
     // error" (singular). Repro: closed socket, sendMessage("hola"), then the
     // socket errors before opening.
-    it.fails("BUG: a failed connection produces exactly one error entry", () => {
+    it("a failed connection produces exactly one error entry", () => {
       const hook = setup();
       act(() => hook.result.current.sendMessage("hola"));
       act(() => ws.setState("error"));
@@ -274,11 +274,11 @@ describe.each([
       expect(hook.result.current.messages.at(-1)?.fragrances).toEqual([]);
     });
 
-    // BUG (low): spec says cards are added "en el orden en que llega" and can be
+    // Regression (fixed) (low): spec says cards are added "en el orden en que llega" and can be
     // interleaved with tokens. Sequence token, fragrances, token appends the
     // second token to the FIRST bubble (streamingIdRef is still set), so the
     // text ends up before the cards instead of after them.
-    it.fails("BUG: text arriving after a card entry lands after it, not in the earlier bubble", () => {
+    it("text arriving after a card entry lands after it, not in the earlier bubble", () => {
       const hook = openAndSend();
       act(() => ws.emit({ type: "token", text: "antes " }));
       act(() => ws.emit({ type: "fragrances", items: [item("a")] }));
@@ -289,6 +289,19 @@ describe.each([
   });
 
   describe("turn errors (server error frame)", () => {
+    it("keeps the cards but discards all partial text bubbles of the turn on error", () => {
+      const hook = openAndSend();
+      const card = { id: "a", name: "A", brand: "B", price: 1, imageUrl: null };
+      act(() => ws.emit({ type: "token", text: "antes " }));
+      act(() => ws.emit({ type: "fragrances", items: [card] }));
+      act(() => ws.emit({ type: "token", text: "despues" }));
+      act(() => ws.emit({ type: "error", text: "fallo" }));
+      const list = hook.result.current.messages;
+      expect(list.filter((m) => m.role === "assistant" && !m.fragrances)).toEqual([]);
+      expect(list.some((m) => m.fragrances)).toBe(true);
+      expect(list.at(-1)).toMatchObject({ role: "error", text: "fallo" });
+    });
+
     it("shows the server text as an error entry and re-enables input", () => {
       const hook = openAndSend();
       act(() => ws.emit({ type: "error", text: "rate limit" }));
@@ -315,12 +328,12 @@ describe.each([
       expect(assistant.at(-1)?.text).toBe("nuevo");
     });
 
-    // BUG (medium): spec ("Manejo de error de turno"): "Cualquier texto parcial
+    // Regression (fixed) (medium): spec ("Manejo de error de turno"): "Cualquier texto parcial
     // que se hubiera empezado a streamear como token antes del error del mismo
     // turno se descarta — solo se conserva la entrada de error." The hook
     // keeps the half-written assistant bubble. Repro: token "Hola mund", then
     // {"type":"error"}.
-    it.fails("BUG: partial streamed text is discarded when the turn errors", () => {
+    it("partial streamed text is discarded when the turn errors", () => {
       const hook = openAndSend();
       act(() => ws.emit({ type: "token", text: "Hola mund" }));
       act(() => ws.emit({ type: "error", text: "fallo" }));
@@ -372,8 +385,8 @@ describe.each([
       expect(hook.result.current.messages.map((m) => m.text)).toContain("r");
     });
 
-    // BUG (medium): same spec section, "descarta cualquier streaming parcial".
-    it.fails("BUG: partial streamed text is discarded when the socket drops mid-stream", () => {
+    // Regression (fixed) (medium): same spec section, "descarta cualquier streaming parcial".
+    it("partial streamed text is discarded when the socket drops mid-stream", () => {
       const hook = openAndSend();
       act(() => ws.emit({ type: "token", text: "Hola mund" }));
       act(() => ws.setState("closed"));
@@ -410,13 +423,13 @@ describe.each([
       }).not.toThrow();
     });
 
-    // BUG (medium, leak): sendMessage on a non-open socket registers a
+    // Regression (fixed) (medium, leak): sendMessage on a non-open socket registers a
     // one-shot state listener that is only removed when the socket opens or
     // fails. If the provider unmounts while connecting, the listener stays
     // registered on the module-level singleton and later calls
     // chatbotWs.send() for a session that no longer exists.
     // Repro: closed socket, sendMessage("hola"), unmount, socket opens.
-    it.fails("BUG: a pending send listener is removed on unmount", () => {
+    it("a pending send listener is removed on unmount", () => {
       const hook = setup();
       act(() => hook.result.current.sendMessage("hola"));
       hook.unmount();

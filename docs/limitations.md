@@ -30,6 +30,7 @@
 
 - En Docker el chatbot usa `chatbot/mcp-servers.docker.json` (backend y similarity). Fuera de Docker, `chatbot/mcp-servers.json` está vacío por defecto y el agente no tiene tools hasta configurarlo.
 - Sin `GEMINI_API_KEY` el chatbot termina al arrancar (con error explícito; compose reintenta 3 veces) y el resto del sistema sigue funcionando.
+- El ciclo de tool calling tiene tope de 14 pasos por pregunta (`CHATBOT_MAX_TOOL_ITERATIONS`); preguntas que encadenan muchas búsquedas y precios (p. ej. "parecido a X pero más barato") aún pueden agotarlo y responder "Se superó el límite de pasos"; el prompt y la memoización por turno reducen el consumo pero no lo garantizan.
 - Guardrail basado en LLM, con clasificador que falla abierto; no es barrera dura.
 - Depende de un servicio externo (Gemini) y de su clave; modelos con fallback pero sin garantía de disponibilidad.
 - Sesión en memoria, sin persistencia ni identidad de usuario; solo lectura.

@@ -107,11 +107,11 @@ export function loadConfig(): ChatbotConfig {
     agentHistoryTurns: intEnv('CHATBOT_AGENT_HISTORY_TURNS', 12),
     classifierHistoryTurns: intEnv('CHATBOT_CLASSIFIER_HISTORY_TURNS', 4),
     // 5 was enough before present_fragrances existed; that tool adds one more
-    // mandatory round-trip (its own function_call + function_response) on
-    // top of whatever catalog lookups already ran, so a 2+-fragrance answer
-    // (search + per-item price lookup + present_fragrances + final text) can
-    // need more room — see agent/present-fragrances-tool.ts.
-    maxToolIterations: intEnv('CHATBOT_MAX_TOOL_ITERATIONS', 8),
+    // mandatory round-trip. 8 then proved too tight in real use: "similar to X
+    // but cheaper" chains a similarity search, name->id lookups, price lookups
+    // and present_fragrances, and 3 of 5 demo attempts hit the cap. 14 leaves
+    // room; the system prompt's efficiency rules keep typical turns well below.
+    maxToolIterations: intEnv('CHATBOT_MAX_TOOL_ITERATIONS', 14),
     rejectionMessage:
       process.env.CHATBOT_REJECTION_MESSAGE ?? DEFAULT_REJECTION_MESSAGE,
     mcpServers: loadMcpServers(
