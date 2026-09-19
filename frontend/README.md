@@ -32,7 +32,7 @@ Vitest (same version as backend and chatbot). Tests live next to the code as `*.
 
 Hook, context and WebSocket-client tests live next to the code: `useAuth`, `useProfile`, `useFavorites`, `useFragrances`, `useFragranceDetail`, `useFragranceSearch`, `useListingsByFragrance`, `useVendors`, `useDebounce`, `useChatbotSession` (plain and under `<StrictMode>`, to catch impure `setState` updaters), `lib/ws/client` and `lib/api/client`. Shared test doubles are in `src/test/`: `FakeWebSocket` (hand-driven socket events), `FakeWsClient` (stand-in for `chatbotWs`) and fetch helpers (`stubFetch`, `deferred` for out-of-order responses). Use braces in `beforeEach(() => { mock.mockReset(); })`: vitest 4 `mockReset()` returns the mock, and a returned function is run as teardown.
 
-Known defects are recorded as `it.fails(...)` cases whose title starts with `BUG:` (the suite stays green; when the bug is fixed the case flips to failing, so remove `.fails`). Find them with `grep -rn "it.fails" src`.
+The data-hook, auth-cache and API-client defects found by the independent testing session are fixed and their cases are ordinary `it(...)` tests. Known defects still open are recorded as `it.fails(...)` cases whose title starts with `BUG:` (the suite stays green; when the bug is fixed the case flips to failing, so remove `.fails`); at the moment they are all in the chatbot session hook and WebSocket client. Find them with `grep -rn "it.fails" src`.
 
 ## Environment variables
 
