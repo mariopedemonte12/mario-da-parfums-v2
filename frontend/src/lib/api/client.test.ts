@@ -76,14 +76,15 @@ describe("createApiClient", () => {
     await expect(createApiClient("http://api").get("/x")).rejects.toBeInstanceOf(TypeError);
   });
 
-  // BUG (low): a successful 204 No Content (POST /auths/logout per
-  // specs/auth-logout-conflict-messages.md) makes `post` reject with a
-  // SyntaxError because it unconditionally calls response.json() on an empty
-  // body. `logout()` swallows it so users don't notice, but any caller that
-  // treats a rejected post as failure (e.g. a future favorites toggle on a
-  // 204 endpoint) would mis-handle a success.
-  it.fails("BUG: a 204 response resolves instead of throwing on empty body", async () => {
+  it("a 204 response resolves with an empty result instead of throwing", async () => {
     stubFetch(() => new Response(null, { status: 204 }));
     await expect(createApiClient("http://api").post("/auths/logout")).resolves.toBeUndefined();
+  });
+
+  it("a 200 with an empty body resolves with an empty result on get and delete", async () => {
+    stubFetch(() => new Response("", { status: 200 }));
+    const api = createApiClient("http://api");
+    await expect(api.get("/x")).resolves.toBeUndefined();
+    await expect(api.delete("/x")).resolves.toBeUndefined();
   });
 });

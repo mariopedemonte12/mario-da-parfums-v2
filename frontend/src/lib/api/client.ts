@@ -17,6 +17,18 @@ async function parseErrorResponse(response: Response): Promise<ApiError> {
   }
 }
 
+// A successful response may legitimately have no body (204 No Content, e.g.
+// POST /auths/logout): resolve with `undefined` instead of failing to parse it.
+async function parseSuccessBody<T>(response: Response): Promise<T> {
+  if (response.status === 204 || response.status === 205) {
+    return undefined as T;
+  }
+
+  const text = await response.text();
+
+  return (text ? JSON.parse(text) : undefined) as T;
+}
+
 // `credentials: "include"` is what lets a request carry the auth session
 // cookie cross-origin (this app has no BFF layer, see frontend/CLAUDE.md).
 // Only pass `withCredentials: false` for a client whose target has no
@@ -36,7 +48,7 @@ export function createApiClient(baseUrl: string, options?: { withCredentials?: b
         throw await parseErrorResponse(response);
       }
 
-      return response.json();
+      return parseSuccessBody<T>(response);
     },
 
     async post<T>(endpoint: string, body?: unknown): Promise<T> {
@@ -53,7 +65,7 @@ export function createApiClient(baseUrl: string, options?: { withCredentials?: b
         throw await parseErrorResponse(response);
       }
 
-      return response.json();
+      return parseSuccessBody<T>(response);
     },
 
     async delete<T>(endpoint: string, body?: unknown): Promise<T> {
@@ -70,7 +82,7 @@ export function createApiClient(baseUrl: string, options?: { withCredentials?: b
         throw await parseErrorResponse(response);
       }
 
-      return response.json();
+      return parseSuccessBody<T>(response);
     },
   };
 }
