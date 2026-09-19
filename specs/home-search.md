@@ -105,6 +105,17 @@ One component, not a separate route — Tailwind breakpoints only:
 - Results panel: single column (protagonist stacked above the secondary
   list) below `md:`, the mock's two-column grid at `md:` and above.
 
+## Visual integrity of the protagonist card
+
+- The protagonist's text block (affinity, name, description, tags, CTA) is
+  never covered, overlapped or clipped by a decorative element (the arched
+  bottle illustration, wind lines, favorite heart), at any supported
+  viewport width (from 390px mobile up to wide desktop) and for any
+  description length, including very long ones.
+- The illustration and the text block occupy separate, non-intersecting
+  areas of the card; the description's first character is always fully
+  visible.
+
 ## Out of scope (this iteration)
 
 - Combining results with `listings` price data (see table above).
