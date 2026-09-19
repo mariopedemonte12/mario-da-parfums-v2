@@ -165,12 +165,7 @@ describe("useFragranceSearch", () => {
     expect(result.current).toMatchObject({ status: "idle", query: "", matches: [] });
   });
 
-  // BUG (medium): searches are not sequenced. Repro: search("lento") whose
-  // /search is slow, then search("rapido") which resolves first; when the old
-  // request finally resolves it overwrites matches/status with the results of
-  // the OLD query while `query` shows the NEW one (results panel shows the
-  // wrong perfumes under the new quote).
-  it.fails("BUG: a slow older search must not overwrite the newer one", async () => {
+  it("a slow older search must not overwrite the newer one", async () => {
     const slow = deferred<SemanticSearchResponse>();
     semantic.mockReturnValueOnce(slow.promise);
     semantic.mockResolvedValueOnce(results(["Fast", 0.9]));
@@ -188,11 +183,7 @@ describe("useFragranceSearch", () => {
     expect(result.current.matches.map((m) => m.fragrance.name)).toEqual(["Fast"]);
   });
 
-  // BUG (medium): "← Otra búsqueda" (reset) while a search is in flight: spec
-  // says it "resets straight back to idle ... from any of the four states",
-  // but the in-flight search resolves afterwards and pushes the hook back to
-  // success/empty/error, re-opening the results panel the user just closed.
-  it.fails("BUG: a search resolving after reset() does not leave idle", async () => {
+  it("a search resolving after reset() does not leave idle", async () => {
     const d = deferred<SemanticSearchResponse>();
     semantic.mockReturnValue(d.promise);
     const { result } = renderHook(() => useFragranceSearch());

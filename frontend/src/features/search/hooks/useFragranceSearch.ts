@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useRef, useState } from "react";
 
 import { findFragranceByExactName } from "@/features/fragrances/api/fragrances.api";
 import { searchFragrancesByDescription } from "../api/search.api";
@@ -14,12 +14,18 @@ export function useFragranceSearch() {
   const [query, setQuery] = useState("");
   const [matches, setMatches] = useState<FragranceMatch[]>([]);
 
+  // Sequence token: only the latest search()/reset() may write state, so a
+  // slow older search can't overwrite a newer one or leave `idle` after reset.
+  const sequenceRef = useRef(0);
+
   async function search(rawQuery: string) {
     const trimmed = rawQuery.trim();
 
     if (!trimmed) {
       return;
     }
+
+    const sequence = ++sequenceRef.current;
 
     setQuery(trimmed);
     setStatus("loading");
@@ -41,15 +47,20 @@ export function useFragranceSearch() {
         (match): match is FragranceMatch => match !== null
       );
 
+      if (sequenceRef.current !== sequence) return;
+
       setMatches(found);
       setStatus(found.length > 0 ? "success" : "empty");
     } catch {
+      if (sequenceRef.current !== sequence) return;
+
       setMatches([]);
       setStatus("error");
     }
   }
 
   function reset() {
+    sequenceRef.current++;
     setStatus("idle");
     setQuery("");
     setMatches([]);

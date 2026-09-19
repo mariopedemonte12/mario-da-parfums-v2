@@ -49,7 +49,10 @@ placeholder, not a cut-down version of the mock).
 (1a/1i); every other state renders the results panel (1c), which always
 shows the submitted query (as a quote) and a "← Otra búsqueda" control that
 resets straight back to `idle` (a fresh, empty hero — no carried-over input
-text) from any of the four states.
+text) from any of the four states. A search still in flight when `← Otra
+búsqueda` is pressed is discarded: it never moves the hook out of `idle`.
+When several searches overlap, only the most recently submitted one may
+update the state (a slower older response never overwrites a newer one).
 
 - **loading**: shown immediately on submit, before either network call
   resolves.
