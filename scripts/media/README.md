@@ -6,11 +6,12 @@ Scripts de Playwright que generan los GIFs y PNG de `docs/media/` (los referenci
 |---|---|
 | `record-comparador.mjs` | `docs/media/comparador.gif` (buscar `jean` -> detalle -> tabla de precios) |
 | `record-busqueda-semantica.mjs` | `docs/media/busqueda-semantica.gif` (home: "perfumes frescos para verano" -> afinidad -> abrir uno) |
+| `record-chatbot.mjs` | `docs/media/chatbot.gif` (widget Sensei: pregunta -> tools -> tarjetas; `REHEARSE=1` ensaya sin grabar, `QUESTION=` cambia la pregunta) |
 | `record-busqueda-parcial.mjs` | `docs/media/busqueda-parcial.gif` (`jean`, `gaultier`, `dior sauvage` en /fragrances) |
 | `screenshots.mjs` | `docs/media/hero.png`, `docs/media/detalle.png` |
 | `lib.mjs` | helpers: cursor falso, escritura lenta, grabacion, webm -> GIF |
 
-Segunda pasada en curso: `chatbot.gif` (nuevo) y regrabacion de `busqueda-semantica.gif` (bug visual del arco corregido en master).
+`docs/media/chatbot.gif` lo genera `record-chatbot.mjs` (ver "Chatbot" abajo).
 
 ## Como regenerar
 
