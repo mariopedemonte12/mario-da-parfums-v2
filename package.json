@@ -2,5 +2,6 @@
   "name": "mario-da-parfums",
   "version": "0.0.1",
   "private": true,
+  "license": "MIT",
   "packageManager": "pnpm@12.4.1"
 }

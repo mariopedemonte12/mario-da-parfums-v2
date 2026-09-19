@@ -103,10 +103,14 @@ El agente produce código; la descomposición del problema, las restricciones, l
 - Precios, tiendas, tamaños y stock son simulados; no es un comparador real.
 - Las descripciones de los perfumes son plantillas: la búsqueda semántica no tiene evaluación de relevancia y refleja poco más que marca, familia y concentración.
 - La búsqueda textual no ordena por relevancia ni tolera erratas ni acentos.
-- El chatbot depende de Gemini y de su clave; es de solo lectura y su guardrail no es una barrera dura.
+- El chatbot depende de Gemini y de su clave; es de solo lectura y su guardrail no es una barrera dura. Sus respuestas pueden tardar entre unos 5 y 40 s, sobre todo por las llamadas secuenciales a la API de Gemini.
 - Diseñado y medido a escala de ~1.000 perfumes; no hay scheduler ni infraestructura de producción implementada.
 
 La lista completa y verificada está en [`docs/limitations.md`](docs/limitations.md).
+
+## Licencia
+
+El código se distribuye bajo la licencia MIT (ver [`LICENSE`](LICENSE)). El dataset de perfumes no forma parte del repositorio y tiene su propia licencia (ver más abajo).
 
 ## Créditos de datos
 
