@@ -101,7 +101,9 @@ equivalent) to ask the backend directly. Until one exists, `useAuth` does:
 2. On mount, hydrate the context synchronously from that `localStorage` cache
    (if present) so the UI can paint an optimistic logged-in state without a
    flash — `isHydrating` is `true` only for the duration of this synchronous
-   read, so in practice it resolves within the same tick/first render.
+   read, so in practice it resolves within the same tick/first render. A cached value that is not a user object (wrong
+   type, or missing `id`/`name`/`email`/`role`) is treated as absent: the
+   visitor is logged out and the invalid cache entry is removed.
 3. This is **optimistic, not verified** — the cookie backing it may have
    expired or been invalidated server-side without the frontend knowing. The
    contract for any feature making an authenticated call: if a request comes

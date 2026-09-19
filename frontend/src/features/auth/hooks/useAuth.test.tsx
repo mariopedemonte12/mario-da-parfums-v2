@@ -101,14 +101,12 @@ describe.each([
       expect(result.current.isHydrating).toBe(false);
     });
 
-    // BUG (low): the cache is trusted blindly. A cache holding any truthy
-    // JSON that is not a user object (e.g. `true`, `123`, `[]`, or a stale
-    // schema) is exposed as `user`, so the navbar/profile treat the visitor as
-    // logged in. Repro: localStorage["mdp:auth:user"] = "true" then load.
-    it.fails("BUG: a cache that is not a user object is ignored", () => {
-      window.localStorage.setItem(CACHE_KEY, "true");
+    it.each(["true", "123", "[]", "\"str\"", "{}", "{\"id\":\"1\",\"name\":\"a\"}"])("an invalid cache (%s) is ignored and cleared", (raw) => {
+      window.localStorage.setItem(CACHE_KEY, raw);
       const { result } = setup();
       expect(result.current.user).toBeNull();
+      expect(result.current.isHydrating).toBe(false);
+      expect(window.localStorage.getItem(CACHE_KEY)).toBeNull();
     });
   });
 

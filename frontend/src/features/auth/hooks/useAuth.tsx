@@ -20,10 +20,34 @@ import type { User } from "../types/user.types";
 // to ask the backend directly on page load.
 const CACHE_KEY = "mdp:auth:user";
 
+// Minimal shape check: the cache is untrusted input (stale schema, manual
+// edit, other app on the same origin), so anything that is not a user object
+// is discarded instead of exposed as a logged-in `user`.
+function isCachedUser(value: unknown): value is User {
+  if (typeof value !== "object" || value === null || Array.isArray(value)) {
+    return false;
+  }
+
+  const candidate = value as Record<string, unknown>;
+
+  return (
+    typeof candidate.id === "number" &&
+    typeof candidate.name === "string" &&
+    typeof candidate.email === "string" &&
+    (candidate.role === "user" || candidate.role === "admin")
+  );
+}
+
 function readCachedUser(): User | null {
   try {
     const raw = window.localStorage.getItem(CACHE_KEY);
-    return raw ? (JSON.parse(raw) as User) : null;
+    if (!raw) return null;
+
+    const parsed: unknown = JSON.parse(raw);
+    if (isCachedUser(parsed)) return parsed;
+
+    window.localStorage.removeItem(CACHE_KEY);
+    return null;
   } catch {
     return null;
   }
