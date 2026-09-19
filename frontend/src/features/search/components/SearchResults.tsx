@@ -52,8 +52,8 @@ export default function SearchResults({
           />
 
           <div className="relative grid w-full gap-10 md:grid-cols-[1.2fr_1fr] md:items-center md:gap-12">
-            <div className="grid gap-8 sm:grid-cols-[220px_1fr] sm:items-center">
-              <div className="relative mx-auto">
+            <div className="grid gap-8 sm:grid-cols-[auto_minmax(0,1fr)] sm:items-center">
+              <div className="relative mx-auto sm:mx-0">
                 <BottlePlaceholder className="h-[280px] w-[170px] md:h-[420px] md:w-[260px]" />
                 <FavoriteHeart
                   fragranceId={protagonist.fragrance.id}
@@ -61,7 +61,7 @@ export default function SearchResults({
                 />
               </div>
 
-              <div className="flex flex-col gap-4">
+              <div className="flex min-w-0 flex-col gap-4">
                 <p className="text-xs tracking-[0.28em] text-text-muted uppercase">
                   Afinidad {protagonist.affinity}%
                 </p>
