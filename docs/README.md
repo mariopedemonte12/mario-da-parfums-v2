@@ -47,4 +47,4 @@
 
 ## Convenciones de estos documentos
 
-- Lo no verificable desde el repositorio se marca `TODO(verificar)`; lo que solo el autor puede escribir, `TODO(autor)`.
+- Lo no verificable desde el repositorio se marca `TODO(verificar)`.

@@ -143,8 +143,6 @@ python -m pytest priceGenerator
 
 Los tests marcados `integration` requieren un Postgres accesible (ver el `pytest.ini` de cada paquete). El frontend tiene Vitest (`pnpm --filter frontend test`), además de `pnpm --filter frontend lint` y `pnpm --filter frontend typecheck`; el backend y el chatbot también tienen `typecheck` y `test:mutation`.
 
-> TODO(autor): si hay un procedimiento propio de verificación (por ejemplo, el orden en que corres las suites o el mutation testing con `test:mutation`), anótalo aquí; no se puede inferir del repo.
-
 ## 7. Desarrollo en el host (sin Docker)
 
 El mismo `.env` de la raíz sirve para correr los servicios fuera de Docker; cada app lo carga desde la raíz del repo (desde `src/` o `dist/` y desde cualquier directorio de trabajo). Es opcional para ellas y el entorno real del proceso siempre tiene precedencia. La sección "HOST-ONLY" de `.env.example` trae las variables que solo usa este modo (`DATABASE_URL` con `localhost` (descoméntala para desarrollo en el host), `PORT`, `CHATBOT_WS_*`, `SIMILARITY_HOST`/`SIMILARITY_PORT`, `MCP_CONFIG_PATH`, ...); Compose las ignora. Para tener solo la base de datos: `docker compose up -d postgres migrate`.

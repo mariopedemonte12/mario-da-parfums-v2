@@ -26,8 +26,6 @@ Comparador de precios de perfumes para Chile, con búsqueda textual, búsqueda s
 |---|---|
 | ![Chatbot](docs/media/chatbot.gif) | ![Búsqueda parcial](docs/media/busqueda-parcial.gif) |
 
-Video de demostración: `TODO(autor): enlace al video`
-
 ## Arquitectura
 
 ```

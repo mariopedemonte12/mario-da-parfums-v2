@@ -159,7 +159,7 @@ Ver [features/chatbot.md](features/chatbot.md).
 - Configuración: un único `.env` raíz (a partir de [`.env.example`](../.env.example), gitignored). `JWT_SECRET` es obligatorio (compose falla al interpolar si falta); `GEMINI_API_KEY` vacío hace que solo el chatbot termine con error explícito.
 - URLs: entre contenedores, por nombre de servicio (`backend:3000`, `similarity:8001` en `chatbot/mcp-servers.docker.json`); para el navegador, URLs públicas. Las `NEXT_PUBLIC_*` se hornean en `next build`, y `FRONTEND_URL` debe ser exactamente el origen de la barra de direcciones (CORS con credenciales).
 
-**Alternativas.** Los documentos del repo no registran alternativas evaluadas (por ejemplo un compose por paquete o una imagen única); solo el resultado. > TODO(autor): si se descartó alguna opción, anotarla aquí con su razón.
+**Alternativas.** Los documentos del repo no registran alternativas evaluadas (por ejemplo un compose por paquete o una imagen única); solo el resultado.
 
 **Trade-offs (verificados).** La imagen de similarity pesa alrededor de 2 GB por torch y el modelo; su primer arranque puede tardar minutos. Las variables `NEXT_PUBLIC_*` obligan a reconstruir el frontend al cambiarlas. No incluye TLS, reverse proxy, CI ni despliegue en la nube (fuera de alcance según el spec); ver [`production.md`](production.md).
 
