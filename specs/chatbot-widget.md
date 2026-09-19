@@ -155,6 +155,10 @@ el catálogo".
 - Puede llegar más de una vez por turno (0 o más), siempre antes o
   intercalado con los `token` de la respuesta final — se agrega en el orden
   en que llega, como cualquier otro evento del turno.
+- **Orden token / fichas / token**: una entrada de fichas corta la burbuja de
+  texto en curso; los `token` que llegan después de las fichas abren una burbuja
+  de asistente nueva debajo de ellas (el texto nunca se agrega a una burbuja
+  anterior a las fichas), de modo que el historial respeta el orden de llegada.
 - **Link "ver en el catálogo"**: apunta a `/fragrances/<id>` (artboard 1f,
   "Product detail" — mergeado a `master` por `fragrance-detail` mientras esta
   sesión estaba en curso). Versión anterior de esta nota: antes de que esa
@@ -175,8 +179,19 @@ el catálogo".
 - Cualquier texto parcial que se hubiera empezado a streamear como `token` antes
   del `error` del mismo turno **se descarta** (no queda una burbuja de asistente a
   medias) — solo se conserva la entrada de error.
+- "Descarta" aplica a todas las burbujas de texto del turno (puede haber más de
+  una si hubo fichas en medio); las fichas ya mostradas se conservan.
 - Tras un error de turno, el input se vuelve a habilitar de inmediato: el usuario
   puede reintentar con un mensaje nuevo sin acciones adicionales.
+
+## Validación de frames del cliente
+
+El cliente WS valida la forma de cada tipo de frame (`status`/`token`/`error`
+con `text` string; `fragrances` con `items` array de fichas bien formadas;
+`done`) y descarta en silencio los frames malformados, sin lanzar. Los eventos
+(`open`, `message`, `close`, `error`) de un socket que ya no es el actual
+(cerrado a propósito con `close()` y/o reemplazado por una reconexión) se
+ignoran, y `close()` deja el estado en `idle`.
 
 ## Pérdida de conexión inesperada
 
@@ -185,6 +200,9 @@ el catálogo".
   lo trata igual que un error de turno de cara al usuario: agrega una entrada de
   error genérica al historial ("se perdió la conexión…"), descarta cualquier
   streaming parcial, y vuelve a habilitar el input.
+- Un fallo de conexión al enviar (el socket falla antes de abrir) produce una
+  única entrada de error, y el listener de envío pendiente se elimina al
+  desmontar el widget.
 - El próximo intento de envío dispara una reconexión (nueva conexión WS) de forma
   transparente — el usuario no tiene que hacer nada distinto de escribir y
   enviar de nuevo. No hay reintento automático en segundo plano ni backoff: la

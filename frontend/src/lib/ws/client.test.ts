@@ -151,7 +151,7 @@ describe("createWsClient — state machine (0-switch)", () => {
     expect(client.getState()).toBe("idle");
   });
 
-  it.fails("BUG(low): the `close` event of a socket closed on purpose should not overwrite `idle` with `closed`", () => {
+  it("the `close` event of a socket closed on purpose should not overwrite `idle` with `closed`", () => {
     // After close() the client is `idle`; the browser then fires `close` on the
     // old socket and the client reports `closed`. Both allow reconnect, so it
     // is cosmetic.
@@ -163,13 +163,13 @@ describe("createWsClient — state machine (0-switch)", () => {
     expect(client.getState()).toBe("idle");
   });
 
-  // BUG (medium, latent — nothing in the app calls close() today):
+  // Regression (was latent — nothing in the app calls close() today):
   // repro: connect(); open; close(); connect() [socket B, open];
   // then the *old* socket A's `close` event fires. The handler sets
   // `socket = null` and state `closed`, orphaning the healthy socket B:
   // send() throws and connect() opens a third socket. Stale-socket events
   // must be ignored.
-  it.fails("BUG: a late close event from a superseded socket must not tear down the new connection", () => {
+  it("a late close event from a superseded socket must not tear down the new connection", () => {
     const { client } = setup();
     client.connect();
     const a = FakeWebSocket.last;
@@ -277,13 +277,13 @@ describe("createWsClient — incoming messages", () => {
     expect(messages).toEqual([{ type: "done" }]);
   });
 
-  // BUG (medium): the type guard only checks `type`. A frame like
+  // Regression: the type guard used to check only `type`. A frame like
   // {"type":"fragrances"} (no items) or {"type":"token"} (no text) passes and
   // reaches the consumer: useChatbotSession then does `message.items.map`
   // (TypeError thrown out of the websocket handler, aborting the remaining
   // listeners) or appends "undefined" to the bubble. Repro: server (or a
   // proxy) sends `{"type":"token"}`.
-  it.fails("BUG: rejects `token` frames whose text is not a string", () => {
+  it("rejects `token` frames whose text is not a string", () => {
     const { client, messages } = setup();
     client.connect();
     FakeWebSocket.last.open();
@@ -291,11 +291,26 @@ describe("createWsClient — incoming messages", () => {
     expect(messages).toEqual([]);
   });
 
-  it.fails("BUG: rejects `fragrances` frames whose items is not an array", () => {
+  it("rejects `fragrances` frames whose items is not an array", () => {
     const { client, messages } = setup();
     client.connect();
     FakeWebSocket.last.open();
     FakeWebSocket.last.receive({ type: "fragrances" });
+    expect(messages).toEqual([]);
+  });
+});
+
+describe("createWsClient — frame shape validation", () => {
+  it.each([
+    { type: "status" },
+    { type: "error", text: 5 },
+    { type: "fragrances", items: [{ id: "1" }] },
+    { type: "fragrances", items: [null] },
+  ])("drops malformed frame %j", (frame) => {
+    const { client, messages } = setup();
+    client.connect();
+    FakeWebSocket.last.open();
+    FakeWebSocket.last.receive(frame);
     expect(messages).toEqual([]);
   });
 });

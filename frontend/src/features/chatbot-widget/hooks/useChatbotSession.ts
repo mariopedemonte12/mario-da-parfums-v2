@@ -27,6 +27,16 @@ export function useChatbotSession() {
 
   const turnInProgressRef = useRef(false);
   const streamingIdRef = useRef<string | null>(null);
+  // Ids of the assistant text bubbles streamed during the current turn, so a
+  // failed turn can discard them (specs/chatbot-widget.md, "Manejo de error").
+  const turnTextIdsRef = useRef<string[]>([]);
+  // Unsubscribe for the one-shot "send once the socket opens" listener.
+  const pendingSendRef = useRef<(() => void) | null>(null);
+
+  function clearPendingSend() {
+    pendingSendRef.current?.();
+    pendingSendRef.current = null;
+  }
 
   function setTurn(inProgress: boolean) {
     turnInProgressRef.current = inProgress;
@@ -36,28 +46,31 @@ export function useChatbotSession() {
     }
   }
 
-  function failTurn(text: string) {
-    streamingIdRef.current = null;
-    setStatusText(null);
-    setTurn(false);
-    setMessages((prev) => [...prev, { id: createMessageId(), role: "error", text }]);
-  }
-
   useEffect(() => {
     function fail(text: string) {
+      clearPendingSend();
+      const discardedIds = turnTextIdsRef.current;
+      turnTextIdsRef.current = [];
       streamingIdRef.current = null;
       turnInProgressRef.current = false;
       setStatusText(null);
       setTurnInProgress(false);
       setIsThinking(false);
-      setMessages((prev) => [...prev, { id: createMessageId(), role: "error", text }]);
+      // Partial streamed text is dropped; only the error entry is kept.
+      setMessages((prev) => [
+        ...prev.filter((existing) => !discardedIds.includes(existing.id)),
+        { id: createMessageId(), role: "error", text },
+      ]);
     }
 
     const unsubscribeState = chatbotWs.onStateChange((state) => {
       setConnectionState(state);
 
       if ((state === "closed" || state === "error") && turnInProgressRef.current) {
-        fail(CONNECTION_LOST_TEXT);
+        // A socket that fails while a send is still waiting for it to open
+        // is a failed connection; otherwise it is a dropped one. Either way
+        // it is a single error entry.
+        fail(pendingSendRef.current ? CONNECTION_FAILED_TEXT : CONNECTION_LOST_TEXT);
       }
     });
 
@@ -80,6 +93,7 @@ export function useChatbotSession() {
           // pure and safe to invoke more than once.
           if (streamingIdRef.current === null) {
             streamingIdRef.current = createMessageId();
+            turnTextIdsRef.current = [...turnTextIdsRef.current, streamingIdRef.current];
           }
           const id = streamingIdRef.current;
           setMessages((prev) => {
@@ -107,6 +121,8 @@ export function useChatbotSession() {
             // link straight to it now.
             href: `/fragrances/${item.id}`,
           }));
+          // Text that arrives after the cards goes in a new bubble below them.
+          streamingIdRef.current = null;
           setMessages((prev) => [
             ...prev,
             { id: createMessageId(), role: "assistant", text: "", fragrances },
@@ -116,6 +132,7 @@ export function useChatbotSession() {
 
         case "done":
           streamingIdRef.current = null;
+          turnTextIdsRef.current = [];
           turnInProgressRef.current = false;
           setStatusText(null);
           setTurnInProgress(false);
@@ -131,6 +148,7 @@ export function useChatbotSession() {
     return () => {
       unsubscribeState();
       unsubscribeMessage();
+      clearPendingSend();
     };
   }, []);
 
@@ -152,19 +170,20 @@ export function useChatbotSession() {
     setIsThinking(true);
     setStatusText(null);
     streamingIdRef.current = null;
+    turnTextIdsRef.current = [];
 
     if (chatbotWs.getState() === "open") {
       chatbotWs.send({ type: "message", text });
       return;
     }
 
-    const unsubscribe = chatbotWs.onStateChange((next) => {
+    // Failures are handled by the effect's state listener (one error entry);
+    // this one only sends once the socket opens.
+    clearPendingSend();
+    pendingSendRef.current = chatbotWs.onStateChange((next) => {
       if (next === "open") {
-        unsubscribe();
+        clearPendingSend();
         chatbotWs.send({ type: "message", text });
-      } else if (next === "error" || next === "closed") {
-        unsubscribe();
-        failTurn(CONNECTION_FAILED_TEXT);
       }
     });
 
