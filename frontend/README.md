@@ -30,6 +30,8 @@ The backend API, the similarity search service and the chatbot server must be ru
 
 Vitest (same version as backend and chatbot). Tests live next to the code as `*.test.ts` / `*.test.tsx`. The default environment is `node`, for pure logic (utils, api functions with `fetch` mocked). A component test opts into the DOM with a `// @vitest-environment jsdom` comment on its first line and uses `@testing-library/react` + `@testing-library/user-event`. `@/*` resolves to `src/*` (see `vitest.config.mts`).
 
+Hook and WebSocket tests (in progress on `test/frontend-hooks-ws`) live next to the hooks; shared fakes (`FakeWebSocket`, fetch helpers) are in `src/test/`.
+
 ## Environment variables
 
 There is no env file or example for this package: `next.config.ts` loads the single repo-root env file (`<repo root>/.env`, template [`../.env.example`](../.env.example)) with `@next/env`, so `next dev` / `next build` see its `NEXT_PUBLIC_*` values. The file is optional (in Docker they come from build args) and real environment variables win over it. Do not put a `.env` in `frontend/`. All variables are optional and have local defaults in `src/lib`:
