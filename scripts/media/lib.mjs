@@ -62,7 +62,7 @@ export async function typeHuman(locator, text, delay = 80) {
 export async function finish({ browser, ctx, page }) {
   const video = page.video();
   await ctx.close();
-  const p = await video.path();
+  const p = video ? await video.path() : null;
   await browser.close();
   return p;
 }
