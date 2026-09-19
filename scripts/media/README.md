@@ -40,3 +40,5 @@ El GIF del chatbot requiere una clave de Gemini con cuota. Pregunta prevista, qu
 ## Requisitos de los datos
 
 El dataset no incluye Chanel; usa marcas existentes (Jean Paul Gaultier, Dior).
+
+Perfil y favoritos: `record-perfil-favoritos.mjs` (en preparacion).
