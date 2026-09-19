@@ -62,7 +62,10 @@ product behavior beyond the pagination UX forced by the contract change.
 - Race safety: if a filter changes while a "Cargar más" fetch for the
   previous filter set is still in flight, the stale response must not be
   appended once it resolves (must not corrupt the freshly-reset list for
-  the new filters).
+  the new filters). The "Cargar más" button's loading state is also
+  released by that filter change, so pagination keeps working for the new
+  filters. Two "Cargar más" activations before the first re-renders fetch
+  the page once (never twice, never appended twice).
 
 ### Fragrance detail page (`/fragrances/[id]`) — listings/prices table
 

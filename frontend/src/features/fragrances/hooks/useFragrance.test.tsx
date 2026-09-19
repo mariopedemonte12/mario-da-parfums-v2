@@ -230,14 +230,7 @@ describe.each([
       expect(result.current.hasMore).toBe(false);
     });
 
-    // BUG (medium): loadMore's `finally` only clears `loadingMore` when the
-    // request is still the current one. If a filter changes while "Cargar
-    // más" is in flight, the stale request never resets the flag, so
-    // `loadingMore` stays true forever and loadMore() short-circuits from then
-    // on: the button is stuck in its loading state and pagination is dead
-    // until the page is reloaded. Repro: load page 1 (nextCursor set), click
-    // "Cargar más", change any filter before the response, let it resolve.
-    it.fails("BUG: loadingMore returns to false after a filter change interrupts a load-more", async () => {
+    it("loadingMore returns to false after a filter change interrupts a load-more", async () => {
       mocked.mockResolvedValueOnce(pageOf(["1"], "c"));
       const { result, rerender } = setup({ search: "a", limit: 2 });
       await waitFor(() => expect(result.current.loading).toBe(false));
@@ -255,11 +248,7 @@ describe.each([
       expect(result.current.loadingMore).toBe(false);
     });
 
-    // BUG (low): two loadMore() calls in the same tick (before React
-    // re-renders with loadingMore=true) both pass the guard because it reads a
-    // stale closure, sending two requests with the same cursor and appending
-    // the page twice (duplicate cards / duplicate React keys).
-    it.fails("BUG: a double loadMore in the same tick fetches once", async () => {
+    it("a double loadMore in the same tick fetches once", async () => {
       mocked.mockResolvedValueOnce(pageOf(["1"], "c"));
       const { result } = setup();
       await waitFor(() => expect(result.current.loading).toBe(false));
